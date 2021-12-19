@@ -46,6 +46,38 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-li {
+.drop {
+    display: none;
     list-style: none;
+    grid-template-rows: 33% 33% 33%;
+    padding: 3px;
+    background-color: white;
+    justify-items: center;
+    width: 100%;
+    row-gap: 30%;
+    position: relative;
+    overflow: auto;
+}
+
+.dropper {
+    background: url(../images/dropdown.png);
+    height: 20px;
+    margin-left: 20px;
+    background-size: 20px 20px;
+    background-repeat: no-repeat;
+}
+
+
+.dropper:hover .drop {
+    display: block;
+    position: relative
+}
+
+.drop a {
+    text-decoration: none;
+    color: black;
+}
+
+.hrwidth {
+    width: inherit;
 }
