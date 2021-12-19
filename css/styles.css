@@ -1,10 +1,9 @@
 .grid {
     display: grid;
     grid-template-columns: 33% 33% 33%;
-    grid-template-rows: 500px 500px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px;
     justify-content: center;
     background-color: #fff;
-
+    grid-auto-rows: auto;
 }
 .grid-test {
     display: grid;
@@ -55,13 +54,15 @@
     justify-items: center;
     width: 100%;
     row-gap: 30%;
-    position: relative;
-    overflow: auto;
+    text-align: center;
+
+
 }
 
 .dropper {
     background: url(../images/dropdown.png);
-    height: 20px;
+    height: 10%;
+    width: 10%;
     margin-left: 20px;
     background-size: 20px 20px;
     background-repeat: no-repeat;
@@ -71,6 +72,7 @@
 .dropper:hover .drop {
     display: block;
     position: relative
+    
 }
 
 .drop a {
