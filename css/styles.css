@@ -1,11 +1,12 @@
 .grid {
     display: grid;
-    grid-template-columns: 20% 20% 20%;
-    grid-template-rows: 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px;
+    grid-template-columns: 35% 35%;
+    grid-template-rows: 500px 500px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px;
     justify-content: center;
     background-color: #fff;
-    column-gap: 15%;
+    column-gap: 10%;
     row-gap: 1%;
+    z-index: 2;
 }
 
 .grid-item {
@@ -15,6 +16,12 @@
     border: solid black 2px;
     padding: 10px;
     text-align: center;
+    z-index: 1;
+}
+
+.grid-item:hover  {
+    background-color: #8f7f7f;
+    z-index: 0;
 }
 
 
