@@ -1,12 +1,30 @@
 .grid {
     display: grid;
-    grid-template-columns: 35% 35%;
+    grid-template-columns: 33% 33% 33%;
     grid-template-rows: 500px 500px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px 100px;
     justify-content: center;
     background-color: #fff;
-    column-gap: 10%;
-    row-gap: 1%;
-    z-index: 2;
+
+}
+.grid-test {
+    display: grid;
+    grid-template-columns: 70% 30%;
+    grid-template-rows: 300px;
+    column-gap: 2px;
+    background-repeat: no-repeat;
+}
+.bgimg {
+    background: url(https://images.unsplash.com/photo-1554415707-6e8cfc93fe23?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80);
+    background-size: cover;
+    border-radius: 5px;
+    border: solid black 2px;
+}
+.bgimg0 {
+    background: url(https://images.unsplash.com/photo-1486663845017-3eedaa78617f?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80);
+    background-size: cover;
+    background-position: left center;
+    border-radius: 5px;
+    border: solid black 2px;
 }
 
 .grid-item {
@@ -16,7 +34,7 @@
     border: solid black 2px;
     padding: 10px;
     text-align: center;
-    z-index: 1;
+
 }
 
 .grid-item:hover  {
@@ -24,4 +42,10 @@
     z-index: 0;
 }
 
+::selection {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
 
+li {
+    list-style: none;
+}
