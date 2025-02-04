@@ -1,0 +1,38 @@
+final List<Map<String, dynamic>> learningPaths = [
+  {
+    'id': 'basic_addition',
+    'title': 'Basic Addition',
+    'description': 'Learn to add numbers from 1 to 100',
+    'subject': 'arithmetic',
+    'totalVideos': 6,
+    'estimatedHours': 0.5,
+    'thumbnail': '', // URL for path thumbnail
+    'difficulty': 'beginner',
+    'prerequisites': [],
+    'creatorId': 'teacher1',
+  },
+  {
+    'id': 'shapes_colors',
+    'title': 'Shapes and Colors',
+    'description': 'Discover basic shapes and colors in the world around us',
+    'subject': 'visual_learning',
+    'totalVideos': 6,
+    'estimatedHours': 0.5,
+    'thumbnail': '',
+    'difficulty': 'beginner',
+    'prerequisites': [],
+    'creatorId': 'teacher2',
+  },
+  {
+    'id': 'time_money',
+    'title': 'Time and Money',
+    'description': 'Learn to tell time and count money',
+    'subject': 'practical_math',
+    'totalVideos': 6,
+    'estimatedHours': 0.5,
+    'thumbnail': '',
+    'difficulty': 'beginner',
+    'prerequisites': ['counting'],
+    'creatorId': 'teacher3',
+  },
+]; 

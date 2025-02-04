@@ -34,6 +34,14 @@ class AppDrawer extends StatelessWidget {
               Navigator.pushNamed(context, '/topics');
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.route),
+            title: const Text('Learning Paths'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/learning_paths');
+            },
+          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),

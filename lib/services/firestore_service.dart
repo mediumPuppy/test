@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:test/data/learning_paths.dart';
+import 'package:test/data/sample_videos.dart';
+import 'package:test/data/topics.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -27,8 +30,20 @@ class FirestoreService {
   }
 
   // Learning Path Methods
+  Future<void> initializeSampleData() async {
+    // Upload learning paths
+    for (var path in learningPaths) {
+      await _db.collection('learning_paths').doc(path['id']).set(path);
+    }
+
+    // Upload videos
+    for (var video in sampleVideos) {
+      await _db.collection('videos').add(video);
+    }
+  }
+
   Stream<QuerySnapshot> getLearningPaths() {
-    return _db.collection('learningPaths').snapshots();
+    return _db.collection('learning_paths').snapshots();
   }
 
   // Progress Methods
@@ -63,5 +78,53 @@ class FirestoreService {
       'text': text,
       'timestamp': FieldValue.serverTimestamp(),
     });
+  }
+
+  // Topic Methods
+  Future<void> initializeTopics() async {
+    for (var topic in topics) {
+      await _db.collection('topics').doc(topic['id']).set(topic);
+    }
+  }
+
+  Stream<QuerySnapshot> getTopics() {
+    return _db.collection('topics').snapshots();
+  }
+
+  Stream<QuerySnapshot> getVideosByTopic(String topicId) {
+    return _db.collection('videos')
+        .where('topic', isEqualTo: topicId)
+        .orderBy('orderInPath')
+        .snapshots();
+  }
+
+  // Add these methods to FirestoreService class
+  Stream<QuerySnapshot> getVideosByLearningPath(String learningPathId) {
+    return _db.collection('videos')
+        .where('learningPathId', isEqualTo: learningPathId)
+        .orderBy('orderInPath')
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getRandomVideos() {
+    // Simplified query to avoid needing a composite index
+    return _db.collection('videos')
+        .limit(20)
+        .snapshots();
+  }
+
+  // Method to update selected learning path
+  Future<void> setUserLearningPath(String userId, String learningPathId) async {
+    await _db.collection('users').doc(userId).set({
+      'currentLearningPath': learningPathId,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Stream<String?> getUserLearningPath(String userId) {
+    return _db.collection('users')
+        .doc(userId)
+        .snapshots()
+        .map((snapshot) => snapshot.data()?['currentLearningPath'] as String?);
   }
 } 
