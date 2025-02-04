@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "300888098553",
+    "project_id": "reelmath-jl",
+    "storage_bucket": "reelmath-jl.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:300888098553:android:33633154f51017d5888428",
+        "android_client_info": {
+          "package_name": "com.example.reelmath"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMf5MKr1iJuQy3hKgPfnY-NIhzXEPSp4g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:300888098553:android:718ef08e22403cc8888428",
+        "android_client_info": {
+          "package_name": "com.reelmath"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMf5MKr1iJuQy3hKgPfnY-NIhzXEPSp4g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
