@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../screens/upload_answer_screen.dart';
+import 'package:flutter/material.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -40,6 +41,17 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/learning_paths');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('Upload Answer'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const UploadAnswerScreen()),
+              );
             },
           ),
           const Divider(),

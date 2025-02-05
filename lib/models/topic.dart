@@ -3,6 +3,9 @@ class Topic {
   final String title;
   final String description;
   final String difficulty; // 'beginner', 'intermediate', 'advanced'
+  final String subject; // 'arithmetic', 'visual_learning', 'geometry', 'practical_math'
+  final List<String> prerequisites;
+  final String thumbnail;
   final int orderIndex;
 
   Topic({
@@ -10,6 +13,9 @@ class Topic {
     required this.title,
     required this.description,
     required this.difficulty,
+    required this.subject,
+    required this.prerequisites,
+    required this.thumbnail,
     required this.orderIndex,
   });
 
@@ -19,6 +25,9 @@ class Topic {
       title: data['title'] ?? '',
       description: data['description'] ?? '',
       difficulty: data['difficulty'] ?? 'beginner',
+      subject: data['subject'] ?? '',
+      prerequisites: List<String>.from(data['prerequisites'] ?? []),
+      thumbnail: data['thumbnail'] ?? '',
       orderIndex: data['orderIndex'] ?? 0,
     );
   }
@@ -28,6 +37,9 @@ class Topic {
       'title': title,
       'description': description,
       'difficulty': difficulty,
+      'subject': subject,
+      'prerequisites': prerequisites,
+      'thumbnail': thumbnail,
       'orderIndex': orderIndex,
     };
   }

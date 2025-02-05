@@ -1,1 +1,43 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"reelmath-jl","appId":"1:300888098553:android:718ef08e22403cc8888428","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"reelmath-jl","appId":"1:300888098553:ios:a26034d017a42828888428","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"reelmath-jl","configurations":{"android":"1:300888098553:android:718ef08e22403cc8888428","ios":"1:300888098553:ios:a26034d017a42828888428"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "reelmath-jl",
+          "appId": "1:300888098553:android:718ef08e22403cc8888428",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "reelmath-jl",
+          "appId": "1:300888098553:ios:a26034d017a42828888428",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "reelmath-jl",
+          "configurations": {
+            "android": "1:300888098553:android:718ef08e22403cc8888428",
+            "ios": "1:300888098553:ios:a26034d017a42828888428"
+          }
+        }
+      }
+    }
+  },
+  "functions": {
+    "source": "functions",
+    "codebase": "default",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firebase-debug.*.log"
+    ],
+    "predeploy": [
+      "npm --prefix \"$RESOURCE_DIR\" run lint"
+    ]
+  }
+}

@@ -6,6 +6,7 @@ import 'screens/login_screen.dart';
 import 'screens/topics_screen.dart';
 import 'screens/feed_screen.dart';
 import 'screens/learning_paths_screen.dart';
+import 'screens/upload_answer_screen.dart';
 import 'services/auth_service.dart';
 
 void main() async {
@@ -46,6 +47,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/topics': (context) => TopicsScreen(),
         '/learning_paths': (context) => LearningPathsScreen(),
+        '/upload_answer': (context) => const UploadAnswerScreen(),
       },
     );
   }

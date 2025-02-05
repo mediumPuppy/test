@@ -7,6 +7,7 @@ final List<Map<String, dynamic>> topics = [
     'difficulty': 'beginner',
     'thumbnail': '',
     'prerequisites': [],
+    'orderIndex': 1,
   },
   {
     'id': 'addition',
@@ -16,6 +17,7 @@ final List<Map<String, dynamic>> topics = [
     'difficulty': 'beginner',
     'thumbnail': '',
     'prerequisites': ['counting'],
+    'orderIndex': 2,
   },
   {
     'id': 'colors',
@@ -25,6 +27,7 @@ final List<Map<String, dynamic>> topics = [
     'difficulty': 'beginner',
     'thumbnail': '',
     'prerequisites': [],
+    'orderIndex': 3,
   },
   {
     'id': 'shapes',
@@ -34,6 +37,7 @@ final List<Map<String, dynamic>> topics = [
     'difficulty': 'beginner',
     'thumbnail': '',
     'prerequisites': [],
+    'orderIndex': 4,
   },
   {
     'id': 'time',
@@ -43,6 +47,7 @@ final List<Map<String, dynamic>> topics = [
     'difficulty': 'beginner',
     'thumbnail': '',
     'prerequisites': ['counting'],
+    'orderIndex': 5,
   },
   {
     'id': 'money',
@@ -52,5 +57,6 @@ final List<Map<String, dynamic>> topics = [
     'difficulty': 'beginner',
     'thumbnail': '',
     'prerequisites': ['counting', 'addition'],
+    'orderIndex': 6,
   },
 ]; 

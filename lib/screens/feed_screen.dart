@@ -19,12 +19,14 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String? _selectedLearningPath;
+  String? _selectedTopic;
   
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadUserLearningPath();
+    _loadUserSelectedTopic();
   }
 
   void _loadUserLearningPath() {
@@ -33,6 +35,17 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
       _firestoreService.getUserLearningPath(user.uid).listen((pathId) {
         setState(() {
           _selectedLearningPath = pathId;
+        });
+      });
+    }
+  }
+
+  void _loadUserSelectedTopic() {
+    final user = _auth.currentUser;
+    if (user != null) {
+      _firestoreService.getUserSelectedTopic(user.uid).listen((topicId) {
+        setState(() {
+          _selectedTopic = topicId;
         });
       });
     }
@@ -66,6 +79,27 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
     );
   }
 
+  Widget _buildNoTopicSelected() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Select a Topic',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/topics');
+            },
+            child: const Text('Browse Topics'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,7 +111,7 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
           TabBarView(
             controller: _tabController,
             children: [
-              // Up Next Tab
+              // Path Tab (formerly Up Next)
               _selectedLearningPath == null
                   ? _buildNoPathSelected()
                   : StreamBuilder<QuerySnapshot>(
@@ -100,44 +134,42 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
                             return VideoFeedItem(
                               index: index,
                               feed: video,
-                              onLike: () {},
                               onShare: () {},
-                              onComment: () {},
                             );
                           },
                         );
                       },
                     ),
               
-              // Explore Tab (Random Videos)
-              StreamBuilder<QuerySnapshot>(
-                stream: _firestoreService.getRandomVideos(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  }
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  final videos = snapshot.data?.docs ?? [];
-                  return PageView.builder(
-                    controller: _pageController,
-                    scrollDirection: Axis.vertical,
-                    itemCount: videos.length,
-                    itemBuilder: (context, index) {
-                      final videoData = videos[index].data() as Map<String, dynamic>;
-                      final video = VideoFeed.fromFirestore(videoData, videos[index].id);
-                      return VideoFeedItem(
-                        index: index,
-                        feed: video,
-                        onLike: () {},
-                        onShare: () {},
-                        onComment: () {},
-                      );
-                    },
-                  );
-                },
-              ),
+              // Topic Tab (formerly Explore)
+              _selectedTopic == null
+                  ? _buildNoTopicSelected()
+                  : StreamBuilder<QuerySnapshot>(
+                      stream: _firestoreService.getVideosBySelectedTopic(_selectedTopic!),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) {
+                          return Center(child: Text('Error: ${snapshot.error}'));
+                        }
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        final videos = snapshot.data?.docs ?? [];
+                        return PageView.builder(
+                          controller: _pageController,
+                          scrollDirection: Axis.vertical,
+                          itemCount: videos.length,
+                          itemBuilder: (context, index) {
+                            final videoData = videos[index].data() as Map<String, dynamic>;
+                            final video = VideoFeed.fromFirestore(videoData, videos[index].id);
+                            return VideoFeedItem(
+                              index: index,
+                              feed: video,
+                              onShare: () {},
+                            );
+                          },
+                        );
+                      },
+                    ),
             ],
           ),
           
@@ -148,8 +180,8 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
                 TabBar(
                   controller: _tabController,
                   tabs: const [
-                    Tab(text: 'Up Next'),
-                    Tab(text: 'Explore'),
+                    Tab(text: 'Path'),
+                    Tab(text: 'Topic'),
                   ],
                   indicatorColor: Colors.white,
                   labelColor: Colors.white,

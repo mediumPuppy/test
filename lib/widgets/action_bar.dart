@@ -6,6 +6,8 @@ class ActionBar extends StatelessWidget {
   final VoidCallback onComment;
   final int likes;
   final int shares;
+  final int comments;
+  final bool isLiked;
 
   const ActionBar({
     super.key,
@@ -14,6 +16,8 @@ class ActionBar extends StatelessWidget {
     required this.onComment,
     required this.likes,
     required this.shares,
+    required this.comments,
+    required this.isLiked,
   });
 
   @override
@@ -22,43 +26,44 @@ class ActionBar extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _buildActionButton(
-          Icons.favorite_border,
-          likes.toString(),
-          onLike,
+          icon: isLiked ? Icons.favorite : Icons.favorite_border,
+          label: likes.toString(),
+          onTap: onLike,
+          color: isLiked ? Colors.red : Colors.white,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         _buildActionButton(
-          Icons.comment,
-          '0',
-          onComment,
+          icon: Icons.comment,
+          label: comments.toString(),
+          onTap: onComment,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 16),
         _buildActionButton(
-          Icons.share,
-          shares.toString(),
-          onShare,
+          icon: Icons.share,
+          label: shares.toString(),
+          onTap: onShare,
         ),
       ],
     );
   }
 
-  Widget _buildActionButton(
-    IconData icon,
-    String label,
-    VoidCallback onTap,
-  ) {
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color color = Colors.white,
+  }) {
     return Column(
       children: [
         IconButton(
           icon: Icon(icon),
-          color: Colors.white,
+          color: color,
           onPressed: onTap,
         ),
         Text(
           label,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 12,
           ),
         ),
       ],
