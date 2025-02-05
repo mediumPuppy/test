@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
-import '../screens/topics_screen.dart';
+import '../screens/learning_paths_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final AuthService _auth = AuthService();
+    final AuthService auth = AuthService();
 
     return Scaffold(
       appBar: AppBar(
@@ -16,7 +16,7 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await _auth.signOut();
+              await auth.signOut();
             },
           ),
         ],
@@ -41,11 +41,11 @@ class HomeScreen extends StatelessWidget {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => TopicsScreen()),
+            MaterialPageRoute(builder: (context) => LearningPathsScreen()),
           );
         },
         child: const Icon(Icons.school),
       ),
     );
   }
-} 
+}

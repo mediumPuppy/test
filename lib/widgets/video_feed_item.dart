@@ -81,6 +81,7 @@ class VideoFeedItem extends StatelessWidget {
                         shares: feed.shares,
                         comments: commentsSnapshot.data ?? 0,
                         isLiked: likedSnapshot.data ?? false,
+                        currentTopics: feed.topics,
                       );
                     },
                   );

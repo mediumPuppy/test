@@ -15,6 +15,7 @@ class VideoFeed {
   final String subject;
   final String skillLevel;
   final List<String> prerequisites;
+  final List<String> topics;
 
   VideoFeed({
     required this.id,
@@ -31,9 +32,18 @@ class VideoFeed {
     required this.subject,
     required this.skillLevel,
     required this.prerequisites,
-  });
+    List<String>? topics,
+  }) : topics = topics ?? [topic];
 
   factory VideoFeed.fromFirestore(Map<String, dynamic> data, String id) {
+    final List<String> topics = List<String>.from(data['topics'] ?? []);
+    final String topic = data['topicId'] ?? data['topic'] ?? '';
+    
+    // If no topics are specified, use the single topic field
+    if (topics.isEmpty && topic.isNotEmpty) {
+      topics.add(topic);
+    }
+    
     return VideoFeed(
       id: id,
       videoUrl: data['videoUrl'] ?? '',
@@ -41,14 +51,15 @@ class VideoFeed {
       description: data['description'] ?? '',
       likes: data['likes'] ?? 0,
       shares: data['shares'] ?? 0,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       learningPathId: data['learningPathId'] ?? '',
       orderInPath: data['orderInPath'] ?? 0,
       title: data['title'] ?? '',
-      topic: data['topic'] ?? '',
+      topic: topic,
       subject: data['subject'] ?? '',
       skillLevel: data['skillLevel'] ?? '',
       prerequisites: List<String>.from(data['prerequisites'] ?? []),
+      topics: topics,
     );
   }
-} 
+}

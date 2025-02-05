@@ -5,6 +5,7 @@ import '../services/firestore_service.dart';
 import '../services/learning_progress_service.dart';
 import '../services/quiz_scheduler_service.dart';
 import '../screens/quiz_screen.dart';
+import '../screens/topics_screen.dart';
 import '../models/quiz_model.dart';
 import 'dart:async';
 
@@ -25,6 +26,7 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
   String? _selectedPathId;
   StreamSubscription? _pathSubscription;
   Timer? _quizCheckTimer;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -76,8 +78,8 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
         .getLearningPathTopics(_selectedPathId!)
         .first;
 
-    final data = pathDoc.data() as Map<String, dynamic>;
-    return List<String>.from(data['topics'] ?? []);
+    final topics = pathDoc.docs.map((doc) => doc.data()['name'] as String).toList();
+    return topics;
   }
 
   void _showQuizPrompt(Quiz quiz) {
@@ -122,6 +124,7 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
     if (!_isInitialized && mounted) {
       try {
         await _firestoreService.initializeSampleData();
+        await _firestoreService.temporaryUpdateLearningPaths();
         await _firestoreService.initializeTopics();
         if (mounted) {
           setState(() {
@@ -135,6 +138,27 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
           );
         }
       }
+    }
+  }
+
+  Future<void> _refreshData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    try {
+      // Initialize sample data first
+      await FirestoreService().initializeSampleData();
+      // Then refresh the learning paths
+      setState(() {
+        _firestoreService.getLearningPaths();
+      });
+    } catch (e) {
+      print('Error refreshing data: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
@@ -154,25 +178,63 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
   }
 
   Future<void> _selectLearningPath(String pathId) async {
-    if (mounted) {
-      setState(() {
-        _selectedPathId = pathId;
-      });
-    }
-    
-    final User? currentUser = _auth.currentUser;
-    if (currentUser != null) {
-      await _firestoreService.setUserLearningPath(currentUser.uid, pathId);
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    try {
+      await _firestoreService.setCurrentLearningPath(user.uid, pathId);
+      setState(() => _selectedPathId = pathId);
+      
+      // Navigate to topics screen
       if (mounted) {
-        Navigator.pop(context, pathId);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TopicsScreen(
+              learningPathId: pathId,
+            ),
+          ),
+        );
       }
-    } else {
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please log in to select a learning path')),
+          SnackBar(content: Text('Error selecting learning path: $e')),
         );
       }
     }
+  }
+
+  Widget _buildPathCard(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final path = doc.data()!;
+    final pathId = doc.id;
+    
+    return FutureBuilder<int>(
+      future: _firestoreService.getTopicCount(pathId),
+      builder: (context, snapshot) {
+        final topicCount = snapshot.data ?? 0;
+        
+        return Card(
+          margin: EdgeInsets.all(8.0),
+          child: ListTile(
+            title: Text(path['title']),
+            subtitle: Text(path['description']),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Chip(
+                  label: Text('$topicCount topics'),
+                  backgroundColor: Colors.blue.shade100,
+                ),
+                if (_selectedPathId == pathId)
+                  Icon(Icons.check_circle, color: Colors.green),
+              ],
+            ),
+            onTap: () => _selectLearningPath(pathId),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -183,7 +245,7 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
-            onPressed: _initializeData,
+            onPressed: _refreshData,
           ),
         ],
       ),
@@ -202,30 +264,7 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
 
           return ListView.builder(
             itemCount: paths.length,
-            itemBuilder: (context, index) {
-              final path = paths[index].data();
-              final pathId = paths[index].id;
-              
-              return Card(
-                margin: EdgeInsets.all(8.0),
-                child: ListTile(
-                  title: Text(path['title']),
-                  subtitle: Text(path['description']),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Chip(
-                        label: Text('${path['totalVideos']} videos'),
-                        backgroundColor: Colors.blue.shade100,
-                      ),
-                      if (_selectedPathId == pathId)
-                        Icon(Icons.check_circle, color: Colors.green),
-                    ],
-                  ),
-                  onTap: () => _selectLearningPath(pathId),
-                ),
-              );
-            },
+            itemBuilder: (context, index) => _buildPathCard(paths[index]),
           );
         },
       ),

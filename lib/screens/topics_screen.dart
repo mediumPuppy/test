@@ -1,371 +1,262 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/topic.dart';
-import '../services/firestore_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/firestore_service.dart';
+import '../services/learning_progress_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TopicsScreen extends StatefulWidget {
-  const TopicsScreen({super.key});
+  final String learningPathId;
+
+  const TopicsScreen({
+    super.key,
+    required this.learningPathId,
+  });
 
   @override
   State<TopicsScreen> createState() => _TopicsScreenState();
 }
 
 class _TopicsScreenState extends State<TopicsScreen> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirestoreService _firestoreService = FirestoreService();
-  String _selectedSubject = 'All';
-  String _selectedDifficulty = 'All';
-  List<String> _completedTopics = [];
-
-  final Map<String, String> _subjectLabels = {
-    'arithmetic': 'Arithmetic',
-    'visual_learning': 'Visual Learning',
-    'geometry': 'Geometry',
-    'practical_math': 'Practical Math',
-  };
-
-  final List<String> _difficulties = ['All', 'beginner', 'intermediate', 'advanced'];
+  final _firestoreService = FirestoreService();
+  final _progressService = LearningProgressService();
+  final _userId = FirebaseAuth.instance.currentUser?.uid;
+  Map<String, bool> _completedTopics = {};
+  Map<String, double> _masteryLevels = {};
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadCompletedTopics();
+    _loadProgress();
   }
 
-  void _loadCompletedTopics() {
-    _firestoreService.getUserCompletedTopics().listen((completed) {
+  Future<void> _loadProgress() async {
+    if (_userId == null) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final progress = await _progressService.getUserProgress(_userId);
+      final completedMap = progress['topicsCompleted'] as Map<String, dynamic>? ?? {};
+      final masteryMap = progress['performanceMetrics'] as Map<String, dynamic>? ?? {};
+
       setState(() {
-        _completedTopics = completed;
+        _completedTopics = completedMap.map((key, value) => MapEntry(key, true));
+        _masteryLevels = masteryMap.map((key, value) => MapEntry(key, (value as num).toDouble()));
+        _isLoading = false;
       });
-    });
-  }
-
-  Query<Map<String, dynamic>> _buildQuery() {
-    Query<Map<String, dynamic>> query = _firestore.collection('topics');
-    print('Building query for collection: topics');
-    print('Selected subject: $_selectedSubject');
-    print('Selected difficulty: $_selectedDifficulty');
-
-    if (_selectedSubject != 'All') {
-      query = query.where('subject', isEqualTo: _selectedSubject);
-    }
-    if (_selectedDifficulty != 'All') {
-      query = query.where('difficulty', isEqualTo: _selectedDifficulty);
-    }
-
-    // Temporarily removed orderBy to test
-    print('Query path: ${query.parameters}');
-    return query;
-  }
-
-  Widget _buildPrerequisiteBadges(List<String> prerequisites) {
-    return prerequisites.isEmpty
-        ? const SizedBox.shrink()
-        : Wrap(
-            spacing: 4,
-            children: prerequisites.map((prereq) {
-              final isCompleted = _completedTopics.contains(prereq);
-              return Chip(
-                label: Text(
-                  prereq,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isCompleted ? Colors.white : Colors.black87,
-                  ),
-                ),
-                backgroundColor: isCompleted ? Colors.green.shade300 : Colors.grey.shade300,
-              );
-            }).toList(),
-          );
-  }
-
-  void _handleTopicSelection(Topic topic) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await _firestoreService.setUserSelectedTopic(user.uid, topic.id);
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Selected topic: ${topic.title}')),
+          SnackBar(content: Text('Error loading progress: $e')),
         );
-        Navigator.pop(context);
       }
+      setState(() => _isLoading = false);
     }
   }
 
-  Widget _buildTopicCard(Topic topic) {
-    final isCompleted = _completedTopics.contains(topic.id);
-    
-    return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
-      child: InkWell(
-        onTap: () => _handleTopicSelection(topic),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ListTile(
-              title: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      topic.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  if (isCompleted)
-                    const Icon(
-                      Icons.check_circle,
-                      color: Colors.green,
-                    ),
-                ],
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 4),
-                  Text(topic.description),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: topic.difficulty == 'beginner'
-                              ? Colors.green
-                              : topic.difficulty == 'intermediate'
-                                  ? Colors.orange
-                                  : Colors.red,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          topic.difficulty[0].toUpperCase() +
-                              topic.difficulty.substring(1),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          _subjectLabels[topic.subject] ?? topic.subject,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            if (topic.prerequisites.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  bottom: 16,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Prerequisites:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    _buildPrerequisiteBadges(topic.prerequisites),
-                  ],
-                ),
-              ),
-            FutureBuilder<double>(
-              future: _firestoreService.getTopicProgress(topic.id),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const SizedBox.shrink();
-                
-                final progress = snapshot.data ?? 0.0;
-                if (progress == 0.0) return const SizedBox.shrink();
-                
-                return Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Progress:',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      LinearProgressIndicator(
-                        value: progress / 100,
-                        backgroundColor: Colors.grey.shade200,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          progress >= 100 ? Colors.green : Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${progress.toStringAsFixed(0)}%',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+  Future<void> _markTopicComplete(String topicId, String topicName) async {
+    if (_userId == null) return;
+
+    try {
+      // Show performance input dialog
+      final performance = await showDialog<double>(
+        context: context,
+        builder: (context) => _PerformanceDialog(topicName: topicName),
+      );
+
+      if (performance == null) return;
+
+      // Update progress
+      await _progressService.updateUserProgress(
+        userId: _userId,
+        topicId: topicId,
+        performance: performance,
+      );
+
+      // Refresh progress
+      await _loadProgress();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Topic marked as complete'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error marking topic complete: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Math Topics'),
+        title: const Text('Topics'),
       ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Filter Topics',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Subject',
-                          border: OutlineInputBorder(),
-                        ),
-                        value: _selectedSubject,
-                        items: [
-                          const DropdownMenuItem(
-                            value: 'All',
-                            child: Text('All Subjects'),
-                          ),
-                          ..._subjectLabels.entries.map(
-                            (entry) => DropdownMenuItem(
-                              value: entry.key,
-                              child: Text(entry.value),
-                            ),
-                          ),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedSubject = value!;
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Difficulty',
-                          border: OutlineInputBorder(),
-                        ),
-                        value: _selectedDifficulty,
-                        items: _difficulties
-                            .map((difficulty) => DropdownMenuItem(
-                                  value: difficulty,
-                                  child: Text(
-                                    difficulty == 'All'
-                                        ? 'All Difficulties'
-                                        : difficulty[0].toUpperCase() +
-                                            difficulty.substring(1),
-                                  ),
-                                ))
-                            .toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            _selectedDifficulty = value!;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _buildQuery().snapshots(),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: _firestoreService.getLearningPathTopics(widget.learningPathId),
               builder: (context, snapshot) {
-                print('StreamBuilder state: ${snapshot.connectionState}');
                 if (snapshot.hasError) {
-                  print('StreamBuilder error: ${snapshot.error}');
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                print('StreamBuilder has data: ${snapshot.hasData}');
-                print('Number of docs: ${snapshot.data?.docs.length ?? 0}');
-                
-                final topics = snapshot.data?.docs.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  print('Topic data: $data');
-                  return Topic.fromFirestore(data, doc.id);
-                }).toList() ?? [];
-
-                print('Parsed topics length: ${topics.length}');
-
-                if (topics.isEmpty) {
-                  return const Center(
-                    child: Text('No topics found matching your filters'),
-                  );
-                }
-
+                final topics = snapshot.data!.docs;
                 return ListView.builder(
                   itemCount: topics.length,
-                  itemBuilder: (context, index) => _buildTopicCard(topics[index]),
+                  itemBuilder: (context, index) {
+                    final topic = topics[index].data();
+                    // Get the topic ID from the document data, fallback to document ID
+                    final topicId = topic['id']?.toString() ?? topics[index].id;
+                    final isCompleted = _completedTopics[topicId] ?? false;
+                    final mastery = _masteryLevels[topicId] ?? 0.0;
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
+                      child: ExpansionTile(
+                        title: Text(topic['name'] ?? 'Unnamed Topic'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(topic['description'] ?? ''),
+                            if (isCompleted) ...[
+                              const SizedBox(height: 8),
+                              LinearProgressIndicator(
+                                value: mastery,
+                                backgroundColor: Colors.grey[300],
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Colors.blue,
+                                ),
+                              ),
+                              Text(
+                                'Mastery: ${(mastery * 100).toStringAsFixed(1)}%',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ],
+                        ),
+                        trailing: isCompleted
+                            ? const Icon(Icons.check_circle, color: Colors.green)
+                            : TextButton.icon(
+                                icon: const Icon(Icons.check),
+                                label: const Text('Mark Complete'),
+                                onPressed: () => _markTopicComplete(
+                                  topicId,
+                                  topic['name'] ?? 'Unnamed Topic',
+                                ),
+                              ),
+                        children: [
+                          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                            stream: _firestoreService.getVideosByTopic(topicId),
+                            builder: (context, videoSnapshot) {
+                              if (videoSnapshot.hasError) {
+                                return Center(child: Text('Error: ${videoSnapshot.error}'));
+                              }
+
+                              if (!videoSnapshot.hasData) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+
+                              final videos = videoSnapshot.data!.docs;
+                              return Column(
+                                children: videos.map((video) {
+                                  final videoData = video.data();
+                                  return ListTile(
+                                    leading: const Icon(Icons.play_circle_outline),
+                                    title: Text(videoData['title'] ?? 'Untitled Video'),
+                                    subtitle: Text(videoData['description'] ?? ''),
+                                    trailing: Text('${videoData['estimatedMinutes']} min'),
+                                    onTap: () {
+                                      // TODO: Navigate to video player
+                                    },
+                                  );
+                                }).toList(),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 );
               },
             ),
+    );
+  }
+}
+
+class _PerformanceDialog extends StatefulWidget {
+  final String topicName;
+
+  const _PerformanceDialog({required this.topicName});
+
+  @override
+  State<_PerformanceDialog> createState() => _PerformanceDialogState();
+}
+
+class _PerformanceDialogState extends State<_PerformanceDialog> {
+  double _performance = 0.8; // Default performance
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Rate Your Understanding: ${widget.topicName}'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'How well do you understand this topic?',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 16),
+          Slider(
+            value: _performance,
+            onChanged: (value) => setState(() => _performance = value),
+            divisions: 10,
+            label: '${(_performance * 100).round()}%',
+          ),
+          Text(
+            _getPerformanceDescription(_performance),
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.center,
           ),
         ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, _performance),
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
-} 
+
+  String _getPerformanceDescription(double performance) {
+    if (performance < 0.2) return 'Need significant review';
+    if (performance < 0.4) return 'Basic understanding';
+    if (performance < 0.6) return 'Good understanding';
+    if (performance < 0.8) return 'Very good understanding';
+    return 'Complete mastery';
+  }
+}

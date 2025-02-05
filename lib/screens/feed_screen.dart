@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:async';
 import '../widgets/video_feed_item.dart';
 import '../models/video_feed.dart';
 import '../widgets/app_drawer.dart';
@@ -13,91 +14,159 @@ class FeedScreen extends StatefulWidget {
   State<FeedScreen> createState() => _FeedScreenState();
 }
 
-class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _PathVideoFeed extends StatefulWidget {
+  final String? selectedPath;
+
+  const _PathVideoFeed({
+    Key? key,
+    required this.selectedPath,
+  }) : super(key: key);
+
+  @override
+  State<_PathVideoFeed> createState() => _PathVideoFeedState();
+}
+
+class _PathVideoFeedState extends State<_PathVideoFeed> {
   final PageController _pageController = PageController();
+  final FirestoreService _firestoreService = FirestoreService();
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.selectedPath == null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Select a Learning Path',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/learning_paths');
+              },
+              child: const Text('Browse Learning Paths'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    print('Building feed for learning path: ${widget.selectedPath}');
+    return StreamBuilder<QuerySnapshot>(
+      stream: _firestoreService.getVideosByLearningPath(widget.selectedPath!),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          print('Feed error: ${snapshot.error}');
+          print('Feed error stack trace: ${snapshot.stackTrace}');
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          print('Feed loading...');
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        final videos = snapshot.data?.docs ?? [];
+        print('Feed received ${videos.length} videos');
+        
+        if (videos.isEmpty) {
+          return Center(
+            child: Text(
+              'No videos available for this learning path',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Colors.white,
+              ),
+            ),
+          );
+        }
+        
+        return PageView.builder(
+          controller: _pageController,
+          scrollDirection: Axis.vertical,
+          itemCount: videos.length,
+          itemBuilder: (context, index) {
+            final videoData = videos[index].data() as Map<String, dynamic>;
+            final videoId = videos[index].id;
+            print('Building video ${index + 1}/${videos.length}');
+            print('Video data: $videoData');
+            print('Video ID: $videoId');
+            
+            try {
+              final video = VideoFeed.fromFirestore(videoData, videoId);
+              return VideoFeedItem(
+                index: index,
+                feed: video,
+                onShare: () {},
+              );
+            } catch (e, stackTrace) {
+              print('Error building video $videoId:');
+              print('Error: $e');
+              print('Stack trace: $stackTrace');
+              return const SizedBox.shrink(); // Skip invalid videos
+            }
+          },
+        );
+      },
+    );
+  }
+}
+
+class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateMixin {
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String? _selectedLearningPath;
-  String? _selectedTopic;
+  StreamSubscription? _pathSubscription;
+  late AnimationController _animationController;
   
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _loadUserLearningPath();
-    _loadUserSelectedTopic();
   }
 
   void _loadUserLearningPath() {
     final user = _auth.currentUser;
     if (user != null) {
-      _firestoreService.getUserLearningPath(user.uid).listen((snapshot) {
-        setState(() {
-          _selectedLearningPath = snapshot.data()?['currentPath'] as String?;
-        });
-      });
-    }
-  }
-
-  void _loadUserSelectedTopic() {
-    final user = _auth.currentUser;
-    if (user != null) {
-      _firestoreService.getUserSelectedTopic(user.uid).listen((topicId) {
-        setState(() {
-          _selectedTopic = topicId;
-        });
-      });
+      print('Loading learning path for user: ${user.uid}');
+      _pathSubscription = _firestoreService.getUserLearningPath(user.uid).listen(
+        (snapshot) {
+          if (mounted) {
+            final data = snapshot.data();
+            print('User data from Firestore: $data');
+            setState(() {
+              _selectedLearningPath = data?['currentPath'] as String?;
+              print('Selected learning path: $_selectedLearningPath');
+            });
+          }
+        },
+        onError: (error, stackTrace) {
+          print('Error loading learning path:');
+          print('Error: $error');
+          print('Stack trace: $stackTrace');
+        },
+      );
+    } else {
+      print('No user logged in');
     }
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
-    _pageController.dispose();
+    _pathSubscription?.cancel();
+    _animationController.dispose();
     super.dispose();
-  }
-
-  Widget _buildNoPathSelected() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Select a Learning Path',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/learning_paths');
-            },
-            child: const Text('Browse Learning Paths'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNoTopicSelected() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Select a Topic',
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/topics');
-            },
-            child: const Text('Browse Topics'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -105,93 +174,9 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
     return Scaffold(
       drawer: const AppDrawer(),
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
-          // Video Feed
-          TabBarView(
-            controller: _tabController,
-            children: [
-              // Path Tab (formerly Up Next)
-              _selectedLearningPath == null
-                  ? _buildNoPathSelected()
-                  : StreamBuilder<QuerySnapshot>(
-                      stream: _firestoreService.getVideosByLearningPath(_selectedLearningPath!),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
-                        }
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
-                        }
-                        final videos = snapshot.data?.docs ?? [];
-                        return PageView.builder(
-                          controller: _pageController,
-                          scrollDirection: Axis.vertical,
-                          itemCount: videos.length,
-                          itemBuilder: (context, index) {
-                            final videoData = videos[index].data() as Map<String, dynamic>;
-                            final video = VideoFeed.fromFirestore(videoData, videos[index].id);
-                            return VideoFeedItem(
-                              index: index,
-                              feed: video,
-                              onShare: () {},
-                            );
-                          },
-                        );
-                      },
-                    ),
-              
-              // Topic Tab (formerly Explore)
-              _selectedTopic == null
-                  ? _buildNoTopicSelected()
-                  : StreamBuilder<QuerySnapshot>(
-                      stream: _firestoreService.getVideosBySelectedTopic(_selectedTopic!),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
-                        }
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
-                        }
-                        final videos = snapshot.data?.docs ?? [];
-                        return PageView.builder(
-                          controller: _pageController,
-                          scrollDirection: Axis.vertical,
-                          itemCount: videos.length,
-                          itemBuilder: (context, index) {
-                            final videoData = videos[index].data() as Map<String, dynamic>;
-                            final video = VideoFeed.fromFirestore(videoData, videos[index].id);
-                            return VideoFeedItem(
-                              index: index,
-                              feed: video,
-                              onShare: () {},
-                            );
-                          },
-                        );
-                      },
-                    ),
-            ],
-          ),
-          
-          // Top Navigation
-          SafeArea(
-            child: Column(
-              children: [
-                TabBar(
-                  controller: _tabController,
-                  tabs: const [
-                    Tab(text: 'Path'),
-                    Tab(text: 'Topic'),
-                  ],
-                  indicatorColor: Colors.white,
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white60,
-                ),
-              ],
-            ),
-          ),
-        ],
+      body: SafeArea(
+        child: _PathVideoFeed(selectedPath: _selectedLearningPath),
       ),
     );
   }
-} 
+}

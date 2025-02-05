@@ -47,14 +47,6 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.school),
-            title: const Text('Topics'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/topics');
-            },
-          ),
-          ListTile(
             leading: const Icon(Icons.route),
             title: const Text('Learning Paths'),
             onTap: () {

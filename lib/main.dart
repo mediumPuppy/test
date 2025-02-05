@@ -57,7 +57,6 @@ class MyApp extends StatelessWidget {
         },
       ),
       routes: {
-        '/topics': (context) => TopicsScreen(),
         '/learning_paths': (context) => LearningPathsScreen(),
         '/upload_answer': (context) => const UploadAnswerScreen(),
       },

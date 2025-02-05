@@ -5,6 +5,7 @@ import 'package:test/data/sample_videos.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String? userId = FirebaseAuth.instance.currentUser?.uid;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // User Methods
   Future<void> createUserProfile(String userId, String email, {String? userName}) {
@@ -50,17 +51,6 @@ class FirestoreService {
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getLearningPaths() {
     return _db.collection('learning_paths')
-        .orderBy('order')
-        .withConverter<Map<String, dynamic>>(
-          fromFirestore: (snapshot, _) => snapshot.data()!,
-          toFirestore: (data, _) => data,
-        )
-        .snapshots();
-  }
-
-  Stream<DocumentSnapshot<Map<String, dynamic>>> getLearningPathTopics(String pathId) {
-    return _db.collection('learning_paths')
-        .doc(pathId)
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data() ?? {},
           toFirestore: (data, _) => data,
@@ -68,11 +58,40 @@ class FirestoreService {
         .snapshots();
   }
 
+  Stream<QuerySnapshot<Map<String, dynamic>>> getLearningPathTopics(String pathId) {
+    return _db.collection('learning_paths')
+        .doc(pathId)
+        .collection('topics')
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data() ?? {},
+          toFirestore: (data, _) => data,
+        )
+        .orderBy('order')
+        .snapshots();
+  }
+
+  Future<void> setCurrentLearningPath(String userId, String pathId) {
+    return _db.collection('users').doc(userId).update({
+      'currentPath': pathId,
+      'lastUpdated': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> setUserLearningPath(String userId, String pathId) async {
     await _db.collection('users').doc(userId).set({
       'currentPath': pathId,
       'lastUpdated': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+  }
+
+  Future<int> getTopicCount(String pathId) async {
+    final snapshot = await _db
+        .collection('learning_paths')
+        .doc(pathId)
+        .collection('topics')
+        .count()
+        .get();
+    return snapshot.count ?? 0;
   }
 
   // Video Methods
@@ -91,7 +110,7 @@ class FirestoreService {
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByTopic(String topicId) {
     return _db.collection('videos')
-        .where('topic', isEqualTo: topicId)
+        .where('topicId', isEqualTo: topicId)
         .orderBy('orderInPath')
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data()!,
@@ -100,9 +119,105 @@ class FirestoreService {
         .snapshots();
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByLearningPath(String learningPathId) {
-    return _db.collection('videos')
+  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByLearningPath(String learningPathId) async* {
+    print('Getting videos for learning path: $learningPathId');
+    
+    // First, get the learning path topics in order
+    final topicsQuery = await _db.collection('learning_paths')
+        .doc(learningPathId)
+        .collection('topics')
+        .orderBy('order')
+        .get();
+    
+    final topics = topicsQuery.docs;
+    print('Found ${topics.length} topics in learning path');
+    
+    if (topics.isEmpty) {
+      print('No topics found in learning path');
+      yield* _db.collection('videos')
+          .where('learningPathId', isEqualTo: learningPathId)
+          .limit(0)
+          .snapshots();
+      return;
+    }
+
+    // Get user's completed topics
+    final userId = _auth.currentUser?.uid;
+    print('Current user ID: $userId');
+    
+    if (userId == null) {
+      print('No user logged in');
+      yield* _db.collection('videos')
+          .where('learningPathId', isEqualTo: learningPathId)
+          .limit(0)
+          .snapshots();
+      return;
+    }
+
+    final completedTopicsSnapshot = await _db.collection('users')
+        .doc(userId)
+        .collection('completedTopics')
+        .get();
+    
+    final completedTopicIds = completedTopicsSnapshot.docs.map((doc) => doc.id).toSet();
+    print('User completed topics: $completedTopicIds');
+
+    // Find the first incomplete topic
+    String? currentTopicId;
+    for (final topic in topics) {
+      final topicId = topic.id;
+      final topicData = topic.data();
+      final topicName = topicData['name'] as String? ?? 'Unnamed Topic';
+      print('Checking topic: $topicId - $topicName');
+      
+      if (!completedTopicIds.contains(topicId)) {
+        currentTopicId = topicId;
+        print('Found first incomplete topic: $topicId');
+        break;
+      }
+    }
+
+    if (currentTopicId == null) {
+      // All topics completed, show videos from the last topic
+      currentTopicId = topics.last.id;
+      print('All topics completed, using last topic: $currentTopicId');
+    }
+
+    print('Getting videos for topic: $currentTopicId');
+    
+    // First, check if any videos exist
+    final videoCount = await _db.collection('videos')
+        .where('topicId', isEqualTo: currentTopicId)
         .where('learningPathId', isEqualTo: learningPathId)
+        .count()
+        .get();
+    
+    print('Found ${videoCount.count} videos for topic $currentTopicId in learning path $learningPathId');
+    
+    // Get videos for the current topic - simplified query to avoid index requirements
+    yield* _db.collection('videos')
+        .where('topicId', isEqualTo: currentTopicId)
+        .where('learningPathId', isEqualTo: learningPathId)
+        .snapshots()
+        .map((snapshot) {
+          print('Received snapshot with ${snapshot.docs.length} videos');
+          print('Video IDs: ${snapshot.docs.map((d) => d.id).join(', ')}');
+          
+          final sortedDocs = List.from(snapshot.docs)
+            ..sort((a, b) {
+              final orderA = (a.data() as Map<String, dynamic>)['orderInPath'] as int? ?? 0;
+              final orderB = (b.data() as Map<String, dynamic>)['orderInPath'] as int? ?? 0;
+              return orderA.compareTo(orderB);
+            });
+            
+          print('Sorted video order: ${sortedDocs.map((d) => '${d.id}(${(d.data() as Map<String, dynamic>)['orderInPath']})').join(', ')}');
+          return snapshot;
+        });
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosBySelectedTopic(String topicId) {
+    return _db.collection('videos')
+        .where('topic', isEqualTo: topicId)
         .orderBy('orderInPath')
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data()!,
@@ -248,17 +363,6 @@ class FirestoreService {
         .map((snapshot) => snapshot.data()?['selectedTopic'] as String?);
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosBySelectedTopic(String topicId) {
-    return _db.collection('videos')
-        .where('topic', isEqualTo: topicId)
-        .orderBy('orderInPath')
-        .withConverter<Map<String, dynamic>>(
-          fromFirestore: (snapshot, _) => snapshot.data()!,
-          toFirestore: (data, _) => data,
-        )
-        .snapshots();
-  }
-
   Future<void> markTopicAsCompleted(String userId, String topicId) async {
     // Update the completedTopics array
     await _db.collection('users').doc(userId).update({
@@ -302,108 +406,291 @@ class FirestoreService {
 
   // Initialization Methods
   Future<void> initializeSampleData() async {
-    final pathsSnapshot = await _db.collection('learning_paths').get();
-    if (pathsSnapshot.docs.isEmpty) {
-      final batch = _db.batch();
+    print('Starting sample data initialization...');
+    
+    // Clear existing data first
+    print('Clearing existing data...');
+    final batch = _db.batch();
+    
+    // Clear videos
+    final existingVideos = await _db.collection('videos').get();
+    for (final doc in existingVideos.docs) {
+      batch.delete(doc.reference);
+    }
+    
+    // Clear learning paths and their subcollections
+    final existingPaths = await _db.collection('learning_paths').get();
+    for (final pathDoc in existingPaths.docs) {
+      // Clear topics subcollection
+      final topics = await pathDoc.reference.collection('topics').get();
+      for (final topicDoc in topics.docs) {
+        batch.delete(topicDoc.reference);
+      }
+      batch.delete(pathDoc.reference);
+    }
+    
+    // Clear topics
+    final existingTopics = await _db.collection('topics').get();
+    for (final doc in existingTopics.docs) {
+      batch.delete(doc.reference);
+    }
+    
+    await batch.commit();
+    print('Existing data cleared');
+    
+    // Initialize fresh data
+    await initializeSampleLearningPaths();
+    await initializeTopics();
+
+    print('Initializing videos...');
+    
+    // First, get all learning paths to map their IDs
+    final learningPathsSnapshot = await _db.collection('learning_paths').get();
+    final learningPathMap = Map.fromEntries(
+      learningPathsSnapshot.docs.map((doc) => MapEntry(doc.data()['id'] as String, doc.id))
+    );
+    print('Learning path mapping: $learningPathMap');
+    
+    // Then get all topics to map their IDs
+    final topicsSnapshot = await _db.collection('topics').get();
+    final topicMap = Map.fromEntries(
+      topicsSnapshot.docs.map((doc) => MapEntry(doc.data()['id'] as String, doc.id))
+    );
+    print('Topic mapping: $topicMap');
+    
+    // Add sample videos with mapped IDs
+    for (var video in sampleVideos) {
+      final videoData = Map<String, dynamic>.from(video);
       
-      final paths = [
-        {
-          'title': 'Beginner Mathematics',
-          'description': 'Start your journey with basic math concepts',
-          'order': 1,
-          'topics': ['arithmetic', 'basic_algebra', 'geometry_basics'],
-          'totalVideos': 15,
-        },
-        {
-          'title': 'Intermediate Mathematics',
-          'description': 'Advance your mathematical understanding',
-          'order': 2,
-          'topics': ['advanced_algebra', 'trigonometry', 'precalculus'],
-          'totalVideos': 20,
-        },
-        {
-          'title': 'Advanced Mathematics',
-          'description': 'Master complex mathematical concepts',
-          'order': 3,
-          'topics': ['calculus', 'linear_algebra', 'statistics'],
-          'totalVideos': 25,
-        },
-      ];
+      // Map the old topic ID to the new one
+      final oldTopicId = videoData['topicId'] as String;
+      final newTopicId = topicMap[oldTopicId];
+      if (newTopicId == null) {
+        print('Warning: No mapping found for topic ID: $oldTopicId');
+        continue;
+      }
+      videoData['topicId'] = newTopicId;
+      
+      // Map the old learning path ID to the new one
+      final oldPathId = videoData['learningPathId'] as String;
+      final newPathId = learningPathMap[oldPathId];
+      if (newPathId == null) {
+        print('Warning: No mapping found for learning path ID: $oldPathId');
+        continue;
+      }
+      videoData['learningPathId'] = newPathId;
+      
+      // Convert DateTime to Timestamp for Firestore
+      videoData['createdAt'] = Timestamp.fromDate(videoData['createdAt'] as DateTime);
+      
+      await _db.collection('videos').add(videoData);
+      print('Added video: ${videoData['title']} to path: ${videoData['learningPathId']} and topic: ${videoData['topicId']}');
+    }
+    print('Sample data initialization complete');
+  }
 
-      paths.forEach((path) {
-        final docRef = _db.collection('learning_paths').doc();
-        batch.set(docRef, path);
-      });
-
-      await batch.commit();
+  Future<void> initializeSampleLearningPaths() async {
+    // Check if learning paths already exist
+    final existingPaths = await _db.collection('learning_paths').get();
+    if (!existingPaths.docs.isEmpty) {
+      print('Learning paths already initialized');
+      return;
     }
 
-    // Upload videos
-    for (var video in sampleVideos) {
-      await _db.collection('videos').add(video);
+    print('Initializing learning paths...');
+    final learningPaths = [
+      {
+        'creatorId': 'teacher1',
+        'description': 'Learn fundamental algebra concepts',
+        'difficulty': 'beginner',
+        'estimatedHours': 0.5,
+        'id': 'algebra_basics',
+        'prerequisites': [],
+        'subject': 'algebra',
+        'thumbnail': '',
+        'title': 'Algebra Basics',
+        'totalVideos': 7,
+        'topics': [
+          {
+            'id': 'variables_expressions',
+            'name': 'Variables and Expressions',
+            'description': 'Understanding variables and basic expressions',
+            'subject': 'algebra',
+            'prerequisite': null,
+            'order': 1,
+          },
+          {
+            'id': 'equations',
+            'name': 'Equations',
+            'description': 'Solving basic equations',
+            'subject': 'algebra',
+            'prerequisite': 'variables_expressions',
+            'order': 2,
+          },
+          {
+            'id': 'inequalities',
+            'name': 'Inequalities',
+            'description': 'Understanding and solving inequalities',
+            'subject': 'algebra',
+            'prerequisite': 'equations',
+            'order': 3,
+          }
+        ]
+      },
+      {
+        'creatorId': 'teacher1',
+        'description': 'Master basic geometric concepts',
+        'difficulty': 'beginner',
+        'estimatedHours': 0.5,
+        'id': 'geometry_fundamentals',
+        'prerequisites': ['algebra_basics'],
+        'subject': 'geometry',
+        'thumbnail': '',
+        'title': 'Geometry Fundamentals',
+        'totalVideos': 6,
+        'topics': [
+          {
+            'id': 'basic_shapes',
+            'name': 'Basic Shapes',
+            'description': 'Understanding basic geometric shapes',
+            'subject': 'geometry',
+            'prerequisite': null,
+            'order': 1,
+          },
+          {
+            'id': 'area_perimeter',
+            'name': 'Area and Perimeter',
+            'description': 'Calculating area and perimeter',
+            'subject': 'geometry',
+            'prerequisite': 'basic_shapes',
+            'order': 2,
+          }
+        ]
+      }
+    ];
+
+    print('Initializing learning paths...');
+    for (final path in learningPaths) {
+      final topics = List<Map<String, dynamic>>.from(path['topics'] as List);
+      path.remove('topics');
+      
+      final pathRef = await _db.collection('learning_paths').add(path);
+      print('Created learning path: ${path['title']}');
+      
+      for (final topic in topics) {
+        final topicId = topic['id'] as String;
+        await _db
+            .collection('learning_paths')
+            .doc(pathRef.id)
+            .collection('topics')
+            .doc(topicId)  
+            .set(topic);
+        print('Added topic: ${topic['name']} with ID: $topicId to ${path['title']}');
+      }
     }
   }
 
   Future<void> initializeTopics() async {
+    // Check if topics already exist
     final topicsSnapshot = await _db.collection('topics').get();
-    if (topicsSnapshot.docs.isEmpty) {
-      final batch = _db.batch();
-      
-      final topics = [
-        {
-          'name': 'arithmetic',
-          'prerequisite': null,
-          'nextTopics': ['basic_algebra'],
-        },
-        {
-          'name': 'basic_algebra',
-          'prerequisite': 'arithmetic',
-          'nextTopics': ['geometry_basics', 'advanced_algebra'],
-        },
-        {
-          'name': 'geometry_basics',
-          'prerequisite': 'basic_algebra',
-          'nextTopics': ['trigonometry'],
-        },
-        {
-          'name': 'advanced_algebra',
-          'prerequisite': 'basic_algebra',
-          'nextTopics': ['precalculus'],
-        },
-        {
-          'name': 'trigonometry',
-          'prerequisite': 'geometry_basics',
-          'nextTopics': ['precalculus'],
-        },
-        {
-          'name': 'precalculus',
-          'prerequisite': 'advanced_algebra',
-          'nextTopics': ['calculus'],
-        },
-        {
-          'name': 'calculus',
-          'prerequisite': 'precalculus',
-          'nextTopics': ['linear_algebra'],
-        },
-        {
-          'name': 'linear_algebra',
-          'prerequisite': 'calculus',
-          'nextTopics': ['statistics'],
-        },
-        {
-          'name': 'statistics',
-          'prerequisite': 'linear_algebra',
-          'nextTopics': [],
-        },
-      ];
-
-      topics.forEach((topic) {
-        final docRef = _db.collection('topics').doc(topic['name'] as String);
-        batch.set(docRef, topic);
-      });
-
-      await batch.commit();
+    if (!topicsSnapshot.docs.isEmpty) {
+      print('Topics already initialized');
+      return;
     }
+
+    print('Initializing topics...');
+    final batch = _db.batch();
+    
+    final topics = [
+      {
+        'id': 'variables_expressions',
+        'name': 'Variables and Expressions',
+        'description': 'Understanding variables and basic expressions',
+        'subject': 'algebra',
+        'prerequisite': null,
+        'order': 1,
+      },
+      {
+        'id': 'equations',
+        'name': 'Equations',
+        'description': 'Solving basic equations',
+        'subject': 'algebra',
+        'prerequisite': 'variables_expressions',
+        'order': 2,
+      },
+      {
+        'id': 'inequalities',
+        'name': 'Inequalities',
+        'description': 'Understanding and solving inequalities',
+        'subject': 'algebra',
+        'prerequisite': 'equations',
+        'order': 3,
+      },
+      {
+        'id': 'basic_shapes',
+        'name': 'Basic Shapes',
+        'description': 'Understanding basic geometric shapes',
+        'subject': 'geometry',
+        'prerequisite': null,
+        'order': 1,
+      },
+      {
+        'id': 'area_perimeter',
+        'name': 'Area and Perimeter',
+        'description': 'Calculating area and perimeter',
+        'subject': 'geometry',
+        'prerequisite': 'basic_shapes',
+        'order': 2,
+      }
+    ];
+
+    for (final topic in topics) {
+      final id = topic['id'] as String;
+      batch.set(_db.collection('topics').doc(id), topic);
+    }
+
+    await batch.commit();
+    print('Topics initialized');
+  }
+
+  Future<void> temporaryUpdateLearningPaths() async {
+    print('Starting temporary learning path update...');
+    
+    final pathsSnapshot = await _db.collection('learning_paths').get();
+    
+    for (final doc in pathsSnapshot.docs) {
+      final data = doc.data();
+      if (data['title'] == 'Algebra Basics') {
+        await doc.reference.update({
+          'creatorId': 'teacher1',
+          'description': 'Learn fundamental algebra concepts',
+          'difficulty': 'beginner',
+          'estimatedHours': 0.5,
+          'id': 'algebra_basics',
+          'prerequisites': [],
+          'subject': 'algebra',
+          'thumbnail': '',
+          'title': 'Algebra Basics',
+          'totalVideos': 7
+        });
+        print('Updated Algebra Basics path');
+      } else if (data['title'] == 'Geometry Fundamentals') {
+        await doc.reference.update({
+          'creatorId': 'teacher1',
+          'description': 'Master basic geometric concepts',
+          'difficulty': 'beginner',
+          'estimatedHours': 0.5,
+          'id': 'geometry_fundamentals',
+          'prerequisites': ['algebra_basics'],
+          'subject': 'geometry',
+          'thumbnail': '',
+          'title': 'Geometry Fundamentals',
+          'totalVideos': 6
+        });
+        print('Updated Geometry Fundamentals path');
+      }
+    }
+    print('Temporary learning path update complete');
   }
 
   // Progress Methods
