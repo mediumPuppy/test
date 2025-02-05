@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:test/data/sample_videos.dart';
+import './learning_progress_service.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String? userId = FirebaseAuth.instance.currentUser?.uid;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final LearningProgressService _progressService = LearningProgressService();
 
   // User Methods
   Future<void> createUserProfile(String userId, String email, {String? userName}) {
@@ -141,7 +143,7 @@ class FirestoreService {
       return;
     }
 
-    // Get user's completed topics
+    // Get user's progress
     final userId = _auth.currentUser?.uid;
     print('Current user ID: $userId');
     
@@ -154,13 +156,10 @@ class FirestoreService {
       return;
     }
 
-    final completedTopicsSnapshot = await _db.collection('users')
-        .doc(userId)
-        .collection('completedTopics')
-        .get();
-    
-    final completedTopicIds = completedTopicsSnapshot.docs.map((doc) => doc.id).toSet();
-    print('User completed topics: $completedTopicIds');
+    // Get user's progress using LearningProgressService
+    final progress = await _progressService.getUserProgress(userId);
+    final completedTopics = (progress['topicsCompleted'] as Map<String, dynamic>? ?? {}).keys.toSet();
+    print('User completed topics: $completedTopics');
 
     // Find the first incomplete topic
     String? currentTopicId;
@@ -170,7 +169,7 @@ class FirestoreService {
       final topicName = topicData['name'] as String? ?? 'Unnamed Topic';
       print('Checking topic: $topicId - $topicName');
       
-      if (!completedTopicIds.contains(topicId)) {
+      if (!completedTopics.contains(topicId)) {
         currentTopicId = topicId;
         print('Found first incomplete topic: $topicId');
         break;
@@ -185,16 +184,7 @@ class FirestoreService {
 
     print('Getting videos for topic: $currentTopicId');
     
-    // First, check if any videos exist
-    final videoCount = await _db.collection('videos')
-        .where('topicId', isEqualTo: currentTopicId)
-        .where('learningPathId', isEqualTo: learningPathId)
-        .count()
-        .get();
-    
-    print('Found ${videoCount.count} videos for topic $currentTopicId in learning path $learningPathId');
-    
-    // Get videos for the current topic - simplified query to avoid index requirements
+    // Get videos for the current topic
     yield* _db.collection('videos')
         .where('topicId', isEqualTo: currentTopicId)
         .where('learningPathId', isEqualTo: learningPathId)
