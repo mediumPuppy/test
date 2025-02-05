@@ -5,6 +5,8 @@ import 'dart:async';
 import '../models/video_feed.dart';
 import '../services/firestore_service.dart';
 import 'action_bar.dart';
+import '../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' show User;
 
 class VideoFeedItem extends StatelessWidget {
   final int index;
@@ -374,7 +376,7 @@ class _CommentSheetState extends State<CommentSheet> {
             leading: CircleAvatar(
               backgroundColor: Colors.blue.shade100,
               child: Text(
-                (data['userName'] as String? ?? 'A')[0].toUpperCase(),
+                (AuthService().currentUser?.email ?? 'Anonymous')[0].toUpperCase(),
                 style: TextStyle(
                   color: Colors.blue.shade900,
                   fontWeight: FontWeight.bold,
@@ -383,11 +385,16 @@ class _CommentSheetState extends State<CommentSheet> {
             ),
             title: Row(
               children: [
-                Text(
-                  data['userName'] as String? ?? 'Anonymous',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+                StreamBuilder<User?>(
+                  stream: AuthService().authStateChanges,
+                  builder: (context, snapshot) {
+                    return Text(
+                      (snapshot.data?.email ?? 'Anonymous').substring(0, 9) + '...',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    );
+                  }
                 ),
                 const SizedBox(width: 8),
                 if (!isPending) Text(
@@ -443,9 +450,17 @@ class _CommentSheetState extends State<CommentSheet> {
                       },
                     ),
                     if (data['replyToId'] == null)
-                      TextButton(
-                        child: const Text('Reply'),
-                        onPressed: () => _setReplyTo(commentId, data['userName'] as String? ?? 'Anonymous'),
+                      StreamBuilder<User?>(
+                        stream: AuthService().authStateChanges,
+                        builder: (context, snapshot) {
+                          return TextButton(
+                            child: const Text('Reply'),
+                            onPressed: () => _setReplyTo(
+                              commentId, 
+                              snapshot.data?.email ?? 'Anonymous'
+                            ),
+                          );
+                        },
                       ),
                   ],
                 ),
