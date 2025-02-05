@@ -1,32 +1,32 @@
 # Skill Tree Implementation Checklist
 
 ## 1. Data Model Setup
-- [ ] Create `skill.dart` model based on existing `topic.dart`
-  - [ ] Add additional fields:
-    - `List<String> childSkillIds` (for progression branches)
-    - `bool isUnlocked` (track availability)
-    - `bool isMiniChallenge` (for mini-boss nodes)
-    - `String? prerequisiteSkillId` (optional parent skill)
-    - `int difficultyLevel` (1-5 scale)
-    - `Map<String, dynamic> rewards` (for completion rewards)
-  - [ ] Migrate relevant fields from Topic:
-    - title
-    - description
-    - videoUrl
-    - thumbnailUrl
-    - etc.
+- [x] Create `skill.dart` model based on existing `topic.dart`
+  - [x] Add additional fields:
+    - [x] `List<String> childSkillIds` (for progression branches)
+    - [x] `bool isUnlocked` (track availability)
+    - [x] `bool isMiniChallenge` (for mini-boss nodes)
+    - [x] `String? prerequisiteSkillId` (optional parent skill)
+    - [x] `int difficultyLevel` (1-5 scale)
+    - [x] `Map<String, dynamic> rewards` (for completion rewards)
+  - [x] Migrate relevant fields from Topic:
+    - [x] title
+    - [x] description
+    - [x] videoUrl
+    - [x] thumbnailUrl
+    - [x] etc.
 
 ## 2. Firebase/Firestore Integration
-- [ ] Create skills collection in Firestore
-- [ ] Create user_progress collection to track:
-  - [ ] Completed skills
-  - [ ] Unlocked skills
-  - [ ] Performance metrics
-- [ ] Set up Firestore service methods:
-  - [ ] `getSkills()`
-  - [ ] `updateSkillProgress()`
-  - [ ] `unlockSkill()`
-  - [ ] `getSkillProgress()`
+- [x] Create skills collection in Firestore
+- [x] Create user_progress collection to track:
+  - [x] Completed skills
+  - [x] Unlocked skills
+  - [x] Performance metrics
+- [x] Set up Firestore service methods:
+  - [x] `getSkills()`
+  - [x] `updateSkillProgress()`
+  - [x] `unlockSkill()`
+  - [x] `getSkillProgress()`
 
 ## 3. UI Implementation
 - [ ] Create `skill_tree_screen.dart`
@@ -89,7 +89,7 @@
 - [ ] Update project README
 
 ## Implementation Order
-1. Start with data model and Firestore integration
+1. Start with data model and Firestore integration ✓
 2. Create basic UI structure
 3. Implement core navigation
 4. Add state management

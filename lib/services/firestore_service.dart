@@ -423,4 +423,166 @@ class FirestoreService {
         .snapshots()
         .map((snapshot) => snapshot.data()?['likes'] ?? 0);
   }
+
+  // Skill Tree Methods
+  Future<void> initializeSkills(List<Map<String, dynamic>> initialSkills) async {
+    print('Starting to initialize skills...');
+    
+    for (var skill in initialSkills) {
+      print('Initializing skill: ${skill['id']}');
+      await _db.collection('skills').doc(skill['id']).set(skill);
+    }
+    
+    print('Skills initialization complete');
+  }
+
+  Stream<QuerySnapshot> getSkills() {
+    return _db.collection('skills').orderBy('orderIndex').snapshots();
+  }
+
+  Future<void> updateSkillProgress(String skillId, double progress) async {
+    if (userId == null) return;
+
+    await _db.collection('users').doc(userId).update({
+      'skillProgress.$skillId': progress,
+      'skillProgress.$skillId.lastAttempted': FieldValue.serverTimestamp(),
+    });
+
+    // If progress is 100%, unlock child skills
+    if (progress >= 100) {
+      await _unlockChildSkills(skillId);
+    }
+  }
+
+  Future<void> _unlockChildSkills(String skillId) async {
+    if (userId == null) return;
+
+    // Get the skill to find child skills
+    final skillDoc = await _db.collection('skills').doc(skillId).get();
+    if (!skillDoc.exists) return;
+
+    final skill = skillDoc.data() as Map<String, dynamic>;
+    final childSkillIds = List<String>.from(skill['childSkillIds'] ?? []);
+
+    // Update user's unlocked skills
+    await _db.collection('users').doc(userId).update({
+      'unlockedSkills': FieldValue.arrayUnion(childSkillIds)
+    });
+  }
+
+  Stream<List<String>> getUserUnlockedSkills() {
+    if (userId == null) return Stream.value([]);
+    
+    return _db.collection('users')
+        .doc(userId)
+        .snapshots()
+        .map((snapshot) => 
+            List<String>.from(snapshot.data()?['unlockedSkills'] ?? []));
+  }
+
+  Future<Map<String, double>> getSkillProgress() async {
+    if (userId == null) return {};
+
+    final userDoc = await _db.collection('users').doc(userId).get();
+    final progress = (userDoc.data()?['skillProgress'] ?? {}) as Map<String, dynamic>;
+    
+    return Map<String, double>.from(
+      progress.map((key, value) => MapEntry(key, (value['progress'] ?? 0.0) as double))
+    );
+  }
+
+  Future<bool> canAccessSkill(String skillId) async {
+    if (userId == null) return false;
+
+    // Get the skill to check prerequisites
+    final skillDoc = await _db.collection('skills').doc(skillId).get();
+    if (!skillDoc.exists) return false;
+
+    final skill = skillDoc.data() as Map<String, dynamic>;
+    final prerequisiteId = skill['prerequisiteSkillId'] as String?;
+    
+    if (prerequisiteId == null) return true;
+
+    // Get user's skill progress
+    final userDoc = await _db.collection('users').doc(userId).get();
+    final progress = (userDoc.data()?['skillProgress'] ?? {}) as Map<String, dynamic>;
+    
+    // Check if prerequisite is completed (progress >= 100)
+    return (progress[prerequisiteId]?['progress'] ?? 0.0) >= 100;
+  }
+
+  Future<void> unlockInitialSkills() async {
+    if (userId == null) return;
+
+    // Get skills with no prerequisites
+    final initialSkills = await _db.collection('skills')
+        .where('prerequisiteSkillId', isNull: true)
+        .get();
+
+    final initialSkillIds = initialSkills.docs.map((doc) => doc.id).toList();
+
+    // Update user's unlocked skills
+    await _db.collection('users').doc(userId).update({
+      'unlockedSkills': FieldValue.arrayUnion(initialSkillIds)
+    });
+  }
+
+  Future<void> updateSkillRewards(String skillId, Map<String, dynamic> rewards) async {
+    await _db.collection('skills').doc(skillId).update({
+      'rewards': rewards,
+    });
+  }
+
+  Future<void> updateUserXP(int xpPoints) async {
+    if (userId == null) return;
+
+    await _db.collection('users').doc(userId).update({
+      'totalXP': FieldValue.increment(xpPoints),
+    });
+  }
+
+  Stream<int> getUserTotalXP() {
+    if (userId == null) return Stream.value(0);
+    
+    return _db.collection('users')
+        .doc(userId)
+        .snapshots()
+        .map((snapshot) => snapshot.data()?['totalXP'] ?? 0);
+  }
+
+  Future<void> completeSkill(String skillId) async {
+    if (userId == null) return;
+
+    // Get the skill to get XP points
+    final skillDoc = await _db.collection('skills').doc(skillId).get();
+    if (!skillDoc.exists) return;
+
+    final skill = skillDoc.data() as Map<String, dynamic>;
+    final xpPoints = skill['xpPoints'] as int? ?? 0;
+
+    // Update user's completed skills and XP in a transaction
+    await _db.runTransaction((transaction) async {
+      final userRef = _db.collection('users').doc(userId);
+      
+      transaction.update(userRef, {
+        'completedSkills': FieldValue.arrayUnion([skillId]),
+        'totalXP': FieldValue.increment(xpPoints),
+        'skillProgress.$skillId.completionRate': 100.0,
+        'skillProgress.$skillId.lastAttempted': FieldValue.serverTimestamp(),
+      });
+    });
+
+    // Unlock child skills
+    await _unlockChildSkills(skillId);
+  }
+
+  Stream<List<String>> getUserCompletedSkills() {
+    if (userId == null) return Stream.value([]);
+    
+    return _db.collection('users')
+        .doc(userId)
+        .snapshots()
+        .map((snapshot) => 
+            List<String>.from(snapshot.data()?['completedSkills'] ?? []));
+  }
 } 
