@@ -1,6 +1,7 @@
 import '../services/auth_service.dart';
 import '../screens/upload_answer_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -13,12 +14,18 @@ class AppDrawer extends StatelessWidget {
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
-          const UserAccountsDrawerHeader(
-            accountName: Text('Student'),  // Later: Get from user profile
-            accountEmail: Text('student@example.com'),  // Later: Get from Firebase Auth
-            currentAccountPicture: CircleAvatar(
-              child: Icon(Icons.person),
-            ),
+          StreamBuilder<User?>(
+            stream: _auth.authStateChanges,
+            builder: (context, snapshot) {
+              final user = snapshot.data;
+              return UserAccountsDrawerHeader(
+                accountName: Text(user?.displayName ?? 'Student'),  // Use display name from Firebase
+                accountEmail: Text(user?.email ?? 'student@example.com'),  // Use email from Firebase
+                currentAccountPicture: CircleAvatar(
+                  child: Icon(Icons.person),
+                ),
+              );
+            }
           ),
           ListTile(
             leading: const Icon(Icons.home),
