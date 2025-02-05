@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'dart:async';
 import '../models/video_feed.dart';
 import '../services/firestore_service.dart';
 import 'action_bar.dart';
@@ -122,37 +123,64 @@ class CommentSheet extends StatefulWidget {
 class _CommentSheetState extends State<CommentSheet> {
   final _commentController = TextEditingController();
   final _firestoreService = FirestoreService();
-  final _scrollController = ScrollController();
   String? _replyToId;
   String? _replyToUser;
   String _sortBy = 'timestamp'; // or 'likes'
   DocumentSnapshot? _lastDocument;
   bool _isLoading = false;
-  final List<DocumentSnapshot> _comments = [];
+  final List<dynamic> _comments = [];
   final Set<String> _mentionedUsers = {};
   bool _showMentionsList = false;
   List<String> _mentionSuggestions = [];
   final Map<String, int> _optimisticLikes = {};
+  StreamSubscription<QuerySnapshot>? _commentsSubscription;
   
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
-    // Load comments after build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadComments();
-    });
+    widget.scrollController.addListener(_onScroll);
+    _setupCommentsStream();
   }
 
   @override
   void dispose() {
     _commentController.dispose();
-    _scrollController.dispose();
+    _commentsSubscription?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadComments() async {
-    if (_isLoading) return;
+  void _setupCommentsStream() {
+    _commentsSubscription = _firestoreService.getVideoComments(
+      widget.videoId,
+      sortBy: _sortBy,
+    ).listen((snapshot) {
+      if (mounted) {
+        setState(() {
+          _comments.clear();
+          _comments.addAll(snapshot.docs);
+          _lastDocument = snapshot.docs.lastOrNull;
+          _isLoading = false;
+        });
+      }
+    }, onError: (error) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading comments: $error')),
+        );
+      }
+    });
+  }
+
+  void _onScroll() {
+    if (widget.scrollController.position.pixels >= 
+        widget.scrollController.position.maxScrollExtent - 200) {
+      _loadMoreComments();
+    }
+  }
+
+  Future<void> _loadMoreComments() async {
+    if (_isLoading || _lastDocument == null) return;
     setState(() => _isLoading = true);
 
     try {
@@ -162,25 +190,20 @@ class _CommentSheetState extends State<CommentSheet> {
         lastDocument: _lastDocument,
       ).first;
 
-      setState(() {
-        _comments.addAll(snapshot.docs);
-        _lastDocument = snapshot.docs.lastOrNull;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
+        setState(() {
+          _comments.addAll(snapshot.docs);
+          _lastDocument = snapshot.docs.lastOrNull;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading comments: $e')),
+          SnackBar(content: Text('Error loading more comments: $e')),
         );
       }
-    }
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >= 
-        _scrollController.position.maxScrollExtent - 200) {
-      _loadComments();
     }
   }
 
@@ -190,7 +213,8 @@ class _CommentSheetState extends State<CommentSheet> {
       _sortBy = value;
       _comments.clear();
       _lastDocument = null;
-      _loadComments();
+      _commentsSubscription?.cancel();
+      _setupCommentsStream();
     });
   }
 
@@ -257,10 +281,16 @@ class _CommentSheetState extends State<CommentSheet> {
     final text = _commentController.text.trim();
     if (text.isEmpty) return;
 
-    // Optimistic update
+    // Clear the input immediately
+    _commentController.clear();
+    FocusScope.of(context).unfocus();
+
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+    
+    // Create optimistic comment
     final optimisticData = {
       'userId': _firestoreService.userId,
-      'userName': 'You', // Will be replaced with actual data
+      'userName': 'You', // Changed from 'You (Sending...)'
       'comment': text,
       'timestamp': Timestamp.now(),
       'likes': 0,
@@ -269,14 +299,11 @@ class _CommentSheetState extends State<CommentSheet> {
       'isPending': true,
     };
 
-    // Create a fake DocumentSnapshot for optimistic update
-    final optimisticDoc = FakeDocumentSnapshot(
-      'temp_${DateTime.now().millisecondsSinceEpoch}',
-      optimisticData,
-    );
+    final optimisticDoc = FakeDocumentSnapshot(tempId, optimisticData);
 
     setState(() {
       _comments.insert(0, optimisticDoc);
+      _cancelReply();
     });
 
     try {
@@ -286,25 +313,16 @@ class _CommentSheetState extends State<CommentSheet> {
         replyToId: _replyToId,
         mentionedUsers: _mentionedUsers.toList(),
       );
-
-      if (mounted) {
-        _commentController.clear();
-        _cancelReply();
-        FocusScope.of(context).unfocus();
-        
-        // Remove optimistic comment and add real one
-        setState(() {
-          _comments.removeWhere((c) => (c.data() as Map<String, dynamic>)['isPending'] == true);
-        });
-      }
     } catch (e) {
-      // Remove optimistic comment on error
-      setState(() {
-        _comments.removeWhere((c) => (c.data() as Map<String, dynamic>)['isPending'] == true);
-      });
       if (mounted) {
+        setState(() {
+          _comments.removeWhere((c) => c.id == tempId);
+        });
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
+          SnackBar(
+            content: Text('Failed to send comment: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -336,14 +354,16 @@ class _CommentSheetState extends State<CommentSheet> {
     }
   }
 
-  Widget _buildCommentItem(DocumentSnapshot doc) {
+  Widget _buildCommentItem(dynamic doc) {
     final data = doc.data() as Map<String, dynamic>;
-    final timestamp = (data['timestamp'] as Timestamp).toDate();
+    final timestamp = (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
     final commentId = doc.id;
     final isPending = data['isPending'] == true;
     final optimisticLikeCount = _optimisticLikes[commentId];
     final baseCount = data['likes'] as int? ?? 0;
     final displayLikeCount = optimisticLikeCount ?? baseCount;
+    final comment = data['comment'] as String? ?? '';
+    final isLongComment = comment.length > 200;
 
     return Opacity(
       opacity: isPending ? 0.7 : 1.0,
@@ -354,7 +374,7 @@ class _CommentSheetState extends State<CommentSheet> {
             leading: CircleAvatar(
               backgroundColor: Colors.blue.shade100,
               child: Text(
-                data['userName'][0].toUpperCase(),
+                (data['userName'] as String? ?? 'A')[0].toUpperCase(),
                 style: TextStyle(
                   color: Colors.blue.shade900,
                   fontWeight: FontWeight.bold,
@@ -364,7 +384,7 @@ class _CommentSheetState extends State<CommentSheet> {
             title: Row(
               children: [
                 Text(
-                  data['userName'],
+                  data['userName'] as String? ?? 'Anonymous',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
@@ -381,11 +401,11 @@ class _CommentSheetState extends State<CommentSheet> {
               children: [
                 const SizedBox(height: 4),
                 Text(
-                  data['comment'],
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                  comment,
+                  maxLines: isLongComment ? 3 : null,
+                  overflow: isLongComment ? TextOverflow.ellipsis : TextOverflow.clip,
                 ),
-                if (data['commentLength'] > 200)
+                if (isLongComment)
                   TextButton(
                     child: const Text('Show more'),
                     onPressed: () {
@@ -393,7 +413,7 @@ class _CommentSheetState extends State<CommentSheet> {
                         context: context,
                         builder: (context) => AlertDialog(
                           content: SingleChildScrollView(
-                            child: Text(data['comment']),
+                            child: Text(comment),
                           ),
                           actions: [
                             TextButton(
@@ -425,7 +445,7 @@ class _CommentSheetState extends State<CommentSheet> {
                     if (data['replyToId'] == null)
                       TextButton(
                         child: const Text('Reply'),
-                        onPressed: () => _setReplyTo(commentId, data['userName']),
+                        onPressed: () => _setReplyTo(commentId, data['userName'] as String? ?? 'Anonymous'),
                       ),
                   ],
                 ),
@@ -502,7 +522,7 @@ class _CommentSheetState extends State<CommentSheet> {
           ),
           Flexible(
             child: ListView.builder(
-              controller: _scrollController,
+              controller: widget.scrollController,
               reverse: true,
               itemCount: _comments.length + (_isLoading ? 1 : 0),
               itemBuilder: (context, index) {
@@ -579,30 +599,19 @@ class _CommentSheetState extends State<CommentSheet> {
   }
 }
 
-class FakeDocumentSnapshot implements DocumentSnapshot<Map<String, dynamic>> {
-  final String _id;
+class FakeDocumentSnapshot {
+  final String id;
   final Map<String, dynamic> _data;
 
-  FakeDocumentSnapshot(this._id, this._data);
+  FakeDocumentSnapshot(this.id, Map<String, dynamic> data)
+      : _data = {
+          ...data,
+          'timestamp': data['timestamp'] is Timestamp 
+              ? data['timestamp']
+              : Timestamp.now(),
+        };
 
-  @override
-  String get id => _id;
-
-  @override
-  Map<String, dynamic>? data() => _data;
-
-  @override
-  dynamic get(Object field) => _data[field.toString()];
+  Map<String, dynamic> data() => _data;
   
-  @override
-  bool get exists => true;
-
-  @override
-  SnapshotMetadata get metadata => throw UnimplementedError();
-
-  @override
-  dynamic operator [](Object field) => _data[field.toString()];
-
-  @override
-  DocumentReference<Map<String, dynamic>> get reference => throw UnimplementedError();
+  dynamic get(Object field) => _data[field.toString()];
 } 

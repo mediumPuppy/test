@@ -113,12 +113,17 @@ class FirestoreService {
 
     // Get user info
     final userDoc = await _db.collection('users').doc(userId).get();
+    if (!userDoc.exists) throw Exception('User profile not found');
+    
     final userData = userDoc.data() as Map<String, dynamic>;
+    final userName = userData['displayName'] ?? 
+                    userData['email']?.toString().split('@')[0] ?? 
+                    'Anonymous';
 
     final commentData = {
       'userId': userId,
-      'userEmail': userData['email'] ?? 'Anonymous',
-      'userName': userData['displayName'] ?? userData['email']?.split('@')[0] ?? 'Anonymous',
+      'userName': userName,
+      'userEmail': userData['email'],
       'userPhotoUrl': userData['photoUrl'],
       'videoId': videoId,
       'comment': comment,
@@ -126,31 +131,34 @@ class FirestoreService {
       'likes': 0,
       'replyToId': replyToId,
       'mentionedUsers': mentionedUsers,
-      'commentLength': comment.length,
     };
 
-    final commentRef = await _db.collection('video_comments').add(commentData);
+    try {
+      final commentRef = await _db.collection('video_comments').add(commentData);
 
-    // Increment comments count
-    await _db.collection('videos').doc(videoId).update({
-      'comments': FieldValue.increment(1)
-    });
-
-    // Notify mentioned users (you would implement notification logic here)
-    for (final username in mentionedUsers) {
-      await _db.collection('notifications').add({
-        'type': 'mention',
-        'userId': userId,
-        'mentionedUser': username,
-        'mentionedBy': userData['userName'],
-        'commentId': commentRef.id,
-        'videoId': videoId,
-        'timestamp': FieldValue.serverTimestamp(),
-        'read': false,
+      // Increment comments count
+      await _db.collection('videos').doc(videoId).update({
+        'comments': FieldValue.increment(1)
       });
-    }
 
-    return commentRef;
+      // Notify mentioned users
+      for (final username in mentionedUsers) {
+        await _db.collection('notifications').add({
+          'type': 'mention',
+          'userId': userId,
+          'mentionedUser': username,
+          'mentionedBy': userName,
+          'commentId': commentRef.id,
+          'videoId': videoId,
+          'timestamp': FieldValue.serverTimestamp(),
+          'read': false,
+        });
+      }
+
+      return commentRef;
+    } catch (e) {
+      throw Exception('Failed to add comment: $e');
+    }
   }
 
   Future<void> toggleCommentLike(String commentId) async {
@@ -159,28 +167,36 @@ class FirestoreService {
     final likeRef = _db.collection('comment_likes').doc('${userId}_$commentId');
     final commentRef = _db.collection('video_comments').doc(commentId);
 
-    return _db.runTransaction((transaction) async {
-      final likeDoc = await transaction.get(likeRef);
-      final commentDoc = await transaction.get(commentRef);
-      
-      if (!likeDoc.exists) {
-        // Add like
-        transaction.set(likeRef, {
-          'userId': userId,
-          'commentId': commentId,
-          'timestamp': FieldValue.serverTimestamp(),
-        });
-        transaction.update(commentRef, {
-          'likes': (commentDoc.data()?['likes'] ?? 0) + 1
-        });
-      } else {
-        // Remove like
-        transaction.delete(likeRef);
-        transaction.update(commentRef, {
-          'likes': (commentDoc.data()?['likes'] ?? 1) - 1
-        });
-      }
-    });
+    try {
+      await _db.runTransaction((transaction) async {
+        final likeDoc = await transaction.get(likeRef);
+        final commentDoc = await transaction.get(commentRef);
+        
+        if (!commentDoc.exists) {
+          throw Exception('Comment not found');
+        }
+
+        if (!likeDoc.exists) {
+          // Add like
+          transaction.set(likeRef, {
+            'userId': userId,
+            'commentId': commentId,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+          transaction.update(commentRef, {
+            'likes': FieldValue.increment(1)
+          });
+        } else {
+          // Remove like
+          transaction.delete(likeRef);
+          transaction.update(commentRef, {
+            'likes': FieldValue.increment(-1)
+          });
+        }
+      });
+    } catch (e) {
+      throw Exception('Failed to toggle comment like: $e');
+    }
   }
 
   Stream<bool> isCommentLiked(String commentId) {
@@ -359,28 +375,37 @@ class FirestoreService {
     final likeRef = _db.collection('video_likes').doc('${userId}_$videoId');
     final videoRef = _db.collection('videos').doc(videoId);
 
-    return _db.runTransaction((transaction) async {
-      final likeDoc = await transaction.get(likeRef);
-      final videoDoc = await transaction.get(videoRef);
-      
-      if (!likeDoc.exists) {
-        // Add like
-        transaction.set(likeRef, {
-          'userId': userId,
-          'videoId': videoId,
-          'timestamp': FieldValue.serverTimestamp(),
-        });
-        transaction.update(videoRef, {
-          'likes': (videoDoc.data()?['likes'] ?? 0) + 1
-        });
-      } else {
-        // Remove like
-        transaction.delete(likeRef);
-        transaction.update(videoRef, {
-          'likes': (videoDoc.data()?['likes'] ?? 1) - 1
-        });
+    try {
+      // First check if the video document exists
+      final videoDoc = await videoRef.get();
+      if (!videoDoc.exists) {
+        throw Exception('Video not found');
       }
-    });
+
+      await _db.runTransaction((transaction) async {
+        final likeDoc = await transaction.get(likeRef);
+        
+        if (!likeDoc.exists) {
+          // Add like
+          transaction.set(likeRef, {
+            'userId': userId,
+            'videoId': videoId,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+          transaction.update(videoRef, {
+            'likes': FieldValue.increment(1)
+          });
+        } else {
+          // Remove like
+          transaction.delete(likeRef);
+          transaction.update(videoRef, {
+            'likes': FieldValue.increment(-1)
+          });
+        }
+      });
+    } catch (e) {
+      throw Exception('Failed to toggle video like: $e');
+    }
   }
 
   Stream<bool> isVideoLiked(String videoId) {
