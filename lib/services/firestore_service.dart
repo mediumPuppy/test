@@ -1,39 +1,341 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:test/data/learning_paths.dart';
 import 'package:test/data/sample_videos.dart';
-import 'package:test/data/topics.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final String? userId = FirebaseAuth.instance.currentUser?.uid;
 
   // User Methods
-  Future<void> createUserProfile(String userId, String email) {
+  Future<void> createUserProfile(String userId, String email, {String? userName}) {
     return _db.collection('users').doc(userId).set({
       'email': email,
+      'userName': userName ?? email.split('@')[0],
       'createdAt': FieldValue.serverTimestamp(),
       'completedTopics': [],
       'progress': {},
     });
   }
 
-  // Video Methods
-  Stream<QuerySnapshot> getVideosForDifficulty(String difficulty) {
-    if (difficulty == "All") {
-      return _db.collection('videos').orderBy('order').snapshots();
-    }
-    return _db.collection('videos')
-        .where('difficulty', isEqualTo: difficulty)
-        .orderBy('order')
-        .snapshots();
+  Future<String?> getUserName(String userId) async {
+    final doc = await _db.collection('users').doc(userId).get();
+    return doc.data()?['userName'] as String?;
+  }
+
+  Future<List<String>> getMentionSuggestions(String prefix) async {
+    if (prefix.isEmpty) return [];
+    
+    final userQuery = await _db.collection('users')
+        .where('userName', isGreaterThanOrEqualTo: prefix)
+        .where('userName', isLessThan: '${prefix}z')
+        .limit(5)
+        .get();
+
+    return userQuery.docs
+        .map((doc) => doc.data()['userName'] as String)
+        .where((userName) => userName.isNotEmpty)
+        .toList();
   }
 
   // Learning Path Methods
+  Stream<DocumentSnapshot<Map<String, dynamic>>> getUserLearningPath(String userId) {
+    return _db.collection('users')
+        .doc(userId)
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data() ?? {},
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getLearningPaths() {
+    return _db.collection('learning_paths')
+        .orderBy('order')
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data()!,
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
+  }
+
+  Stream<DocumentSnapshot<Map<String, dynamic>>> getLearningPathTopics(String pathId) {
+    return _db.collection('learning_paths')
+        .doc(pathId)
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data() ?? {},
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
+  }
+
+  Future<void> setUserLearningPath(String userId, String pathId) async {
+    await _db.collection('users').doc(userId).set({
+      'currentPath': pathId,
+      'lastUpdated': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  // Video Methods
+  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosForDifficulty(String difficulty) {
+    var query = _db.collection('videos').orderBy('order');
+    
+    if (difficulty != "All") {
+      query = query.where('difficulty', isEqualTo: difficulty);
+    }
+
+    return query.withConverter<Map<String, dynamic>>(
+      fromFirestore: (snapshot, _) => snapshot.data()!,
+      toFirestore: (data, _) => data,
+    ).snapshots();
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByTopic(String topicId) {
+    return _db.collection('videos')
+        .where('topic', isEqualTo: topicId)
+        .orderBy('orderInPath')
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data()!,
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByLearningPath(String learningPathId) {
+    return _db.collection('videos')
+        .where('learningPathId', isEqualTo: learningPathId)
+        .orderBy('orderInPath')
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data()!,
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getRandomVideos() {
+    return _db.collection('videos')
+        .limit(20)
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data()!,
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
+  }
+
+  Stream<int> getVideoCommentsCount(String videoId) {
+    return _db.collection('videos')
+        .doc(videoId)
+        .snapshots()
+        .map((snapshot) => snapshot.data()?['comments'] ?? 0);
+  }
+
+  Stream<int> getVideoLikesCount(String videoId) {
+    return _db.collection('videos')
+        .doc(videoId)
+        .snapshots()
+        .map((snapshot) => snapshot.data()?['likes'] ?? 0);
+  }
+
+  // Comment Methods
+  Stream<QuerySnapshot<Map<String, dynamic>>> getVideoComments(
+    String videoId, {
+    required String sortBy,
+    DocumentSnapshot? lastDocument,
+    int limit = 10,
+  }) {
+    var query = _db.collection('video_comments')
+        .where('videoId', isEqualTo: videoId)
+        .where('replyToId', isNull: true)
+        .limit(limit);
+
+    if (sortBy == 'likes') {
+      query = query.orderBy('likes', descending: true);
+    } else {
+      query = query.orderBy('timestamp', descending: true);
+    }
+
+    if (lastDocument != null) {
+      query = query.startAfterDocument(lastDocument);
+    }
+
+    return query.withConverter<Map<String, dynamic>>(
+      fromFirestore: (snapshot, _) => snapshot.data()!,
+      toFirestore: (data, _) => data,
+    ).snapshots();
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getCommentReplies(String commentId) {
+    return _db.collection('video_comments')
+        .where('replyToId', isEqualTo: commentId)
+        .orderBy('timestamp', descending: false)
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data()!,
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
+  }
+
+  Future<DocumentReference> addVideoComment(
+    String videoId,
+    String comment, {
+    String? replyToId,
+    List<String> mentionedUsers = const [],
+  }) async {
+    if (userId == null) throw Exception('User not signed in');
+    
+    final userName = await getUserName(userId!);
+    if (userName == null) throw Exception('User profile not found');
+
+    final commentData = {
+      'videoId': videoId,
+      'userId': userId,
+      'userName': userName,
+      'comment': comment,
+      'timestamp': FieldValue.serverTimestamp(),
+      'likes': 0,
+      'replyToId': replyToId,
+      'mentionedUsers': mentionedUsers,
+    };
+
+    try {
+      final commentRef = await _db.collection('video_comments').add(commentData);
+
+      // Increment comments count
+      await _db.collection('videos').doc(videoId).update({
+        'comments': FieldValue.increment(1)
+      });
+
+      // Notify mentioned users
+      for (final mentionedUser in mentionedUsers) {
+        await _db.collection('notifications').add({
+          'type': 'mention',
+          'userId': userId,
+          'mentionedUser': mentionedUser,
+          'mentionedBy': userName,
+          'commentId': commentRef.id,
+          'videoId': videoId,
+          'timestamp': FieldValue.serverTimestamp(),
+          'read': false,
+        });
+      }
+
+      return commentRef;
+    } catch (e) {
+      throw Exception('Failed to add comment: $e');
+    }
+  }
+
+  // Topic Methods
+  Stream<QuerySnapshot<Map<String, dynamic>>> getTopics() {
+    return _db.collection('topics')
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data()!,
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
+  }
+
+  Future<void> setUserSelectedTopic(String userId, String topicId) async {
+    await _db.collection('users').doc(userId).set({
+      'selectedTopic': topicId,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Stream<String?> getUserSelectedTopic(String userId) {
+    return _db.collection('users')
+        .doc(userId)
+        .snapshots()
+        .map((snapshot) => snapshot.data()?['selectedTopic'] as String?);
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosBySelectedTopic(String topicId) {
+    return _db.collection('videos')
+        .where('topic', isEqualTo: topicId)
+        .orderBy('orderInPath')
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data()!,
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
+  }
+
+  Future<void> markTopicAsCompleted(String userId, String topicId) async {
+    // Update the completedTopics array
+    await _db.collection('users').doc(userId).update({
+      'completedTopics': FieldValue.arrayUnion([topicId])
+    });
+    
+    // Also store in the subcollection for more detailed tracking
+    await _db.collection('users')
+        .doc(userId)
+        .collection('completedTopics')
+        .doc(topicId)
+        .set({
+      'completedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> markTopicAsIncomplete(String userId, String topicId) async {
+    // Remove from the completedTopics array
+    await _db.collection('users').doc(userId).update({
+      'completedTopics': FieldValue.arrayRemove([topicId])
+    });
+    
+    // Also remove from the subcollection
+    await _db.collection('users')
+        .doc(userId)
+        .collection('completedTopics')
+        .doc(topicId)
+        .delete();
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> getCompletedTopics(String userId) {
+    return _db.collection('users')
+        .doc(userId)
+        .collection('completedTopics')
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data()!,
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
+  }
+
+  // Initialization Methods
   Future<void> initializeSampleData() async {
-    // Upload learning paths
-    for (var path in learningPaths) {
-      await _db.collection('learning_paths').doc(path['id']).set(path);
+    final pathsSnapshot = await _db.collection('learning_paths').get();
+    if (pathsSnapshot.docs.isEmpty) {
+      final batch = _db.batch();
+      
+      final paths = [
+        {
+          'title': 'Beginner Mathematics',
+          'description': 'Start your journey with basic math concepts',
+          'order': 1,
+          'topics': ['arithmetic', 'basic_algebra', 'geometry_basics'],
+          'totalVideos': 15,
+        },
+        {
+          'title': 'Intermediate Mathematics',
+          'description': 'Advance your mathematical understanding',
+          'order': 2,
+          'topics': ['advanced_algebra', 'trigonometry', 'precalculus'],
+          'totalVideos': 20,
+        },
+        {
+          'title': 'Advanced Mathematics',
+          'description': 'Master complex mathematical concepts',
+          'order': 3,
+          'topics': ['calculus', 'linear_algebra', 'statistics'],
+          'totalVideos': 25,
+        },
+      ];
+
+      paths.forEach((path) {
+        final docRef = _db.collection('learning_paths').doc();
+        batch.set(docRef, path);
+      });
+
+      await batch.commit();
     }
 
     // Upload videos
@@ -42,8 +344,66 @@ class FirestoreService {
     }
   }
 
-  Stream<QuerySnapshot> getLearningPaths() {
-    return _db.collection('learning_paths').snapshots();
+  Future<void> initializeTopics() async {
+    final topicsSnapshot = await _db.collection('topics').get();
+    if (topicsSnapshot.docs.isEmpty) {
+      final batch = _db.batch();
+      
+      final topics = [
+        {
+          'name': 'arithmetic',
+          'prerequisite': null,
+          'nextTopics': ['basic_algebra'],
+        },
+        {
+          'name': 'basic_algebra',
+          'prerequisite': 'arithmetic',
+          'nextTopics': ['geometry_basics', 'advanced_algebra'],
+        },
+        {
+          'name': 'geometry_basics',
+          'prerequisite': 'basic_algebra',
+          'nextTopics': ['trigonometry'],
+        },
+        {
+          'name': 'advanced_algebra',
+          'prerequisite': 'basic_algebra',
+          'nextTopics': ['precalculus'],
+        },
+        {
+          'name': 'trigonometry',
+          'prerequisite': 'geometry_basics',
+          'nextTopics': ['precalculus'],
+        },
+        {
+          'name': 'precalculus',
+          'prerequisite': 'advanced_algebra',
+          'nextTopics': ['calculus'],
+        },
+        {
+          'name': 'calculus',
+          'prerequisite': 'precalculus',
+          'nextTopics': ['linear_algebra'],
+        },
+        {
+          'name': 'linear_algebra',
+          'prerequisite': 'calculus',
+          'nextTopics': ['statistics'],
+        },
+        {
+          'name': 'statistics',
+          'prerequisite': 'linear_algebra',
+          'nextTopics': [],
+        },
+      ];
+
+      topics.forEach((topic) {
+        final docRef = _db.collection('topics').doc(topic['name'] as String);
+        batch.set(docRef, topic);
+      });
+
+      await batch.commit();
+    }
   }
 
   // Progress Methods
@@ -63,104 +423,7 @@ class FirestoreService {
     });
   }
 
-  // Comments Methods
-  Stream<QuerySnapshot> getVideoComments(
-    String videoId, {
-    required String sortBy,  // 'timestamp' or 'likes'
-    DocumentSnapshot? lastDocument,
-    int limit = 20,
-  }) {
-    Query query = _db.collection('video_comments')
-        .where('videoId', isEqualTo: videoId)
-        .where('replyToId', isNull: true);  // Only get top-level comments
-
-    // Sort based on user preference
-    if (sortBy == 'likes') {
-      query = query.orderBy('likes', descending: true)
-          .orderBy('timestamp', descending: true);
-    } else {
-      query = query.orderBy('timestamp', descending: true);
-    }
-
-    if (lastDocument != null) {
-      query = query.startAfterDocument(lastDocument);
-    }
-
-    return query.limit(limit).snapshots();
-  }
-
-  Future<List<String>> getMentionSuggestions(String prefix) async {
-    if (prefix.isEmpty) return [];
-    
-    final userQuery = await _db.collection('users')
-        .where('userName', isGreaterThanOrEqualTo: prefix)
-        .where('userName', isLessThan: '${prefix}z')
-        .limit(5)
-        .get();
-
-    return userQuery.docs
-        .map((doc) => doc.data()['userName'] as String)
-        .toList();
-  }
-
-  Future<DocumentReference> addVideoComment(
-    String videoId,
-    String comment, {
-    String? replyToId,
-    List<String> mentionedUsers = const [],
-  }) async {
-    if (userId == null) throw Exception('User must be logged in to comment');
-
-    // Get user info
-    final userDoc = await _db.collection('users').doc(userId).get();
-    if (!userDoc.exists) throw Exception('User profile not found');
-    
-    final userData = userDoc.data() as Map<String, dynamic>;
-    final userName = userData['displayName'] ?? 
-                    userData['email']?.toString().split('@')[0] ?? 
-                    'Anonymous';
-
-    final commentData = {
-      'userId': userId,
-      'userName': userName,
-      'userEmail': userData['email'],
-      'userPhotoUrl': userData['photoUrl'],
-      'videoId': videoId,
-      'comment': comment,
-      'timestamp': FieldValue.serverTimestamp(),
-      'likes': 0,
-      'replyToId': replyToId,
-      'mentionedUsers': mentionedUsers,
-    };
-
-    try {
-      final commentRef = await _db.collection('video_comments').add(commentData);
-
-      // Increment comments count
-      await _db.collection('videos').doc(videoId).update({
-        'comments': FieldValue.increment(1)
-      });
-
-      // Notify mentioned users
-      for (final username in mentionedUsers) {
-        await _db.collection('notifications').add({
-          'type': 'mention',
-          'userId': userId,
-          'mentionedUser': username,
-          'mentionedBy': userName,
-          'commentId': commentRef.id,
-          'videoId': videoId,
-          'timestamp': FieldValue.serverTimestamp(),
-          'read': false,
-        });
-      }
-
-      return commentRef;
-    } catch (e) {
-      throw Exception('Failed to add comment: $e');
-    }
-  }
-
+  // Comment Methods
   Future<void> toggleCommentLike(String commentId) async {
     if (userId == null) return;
     
@@ -208,114 +471,7 @@ class FirestoreService {
         .map((snapshot) => snapshot.exists);
   }
 
-  Stream<QuerySnapshot> getCommentReplies(String commentId) {
-    return _db.collection('video_comments')
-        .where('replyToId', isEqualTo: commentId)
-        .orderBy('timestamp', descending: false)
-        .snapshots();
-  }
-
-  Stream<int> getVideoCommentsCount(String videoId) {
-    return _db.collection('videos')
-        .doc(videoId)
-        .snapshots()
-        .map((snapshot) => snapshot.data()?['comments'] ?? 0);
-  }
-
   // Topic Methods
-  Future<void> initializeTopics() async {
-    print('Starting to initialize topics...');
-    print('Topics to initialize: ${topics.length}');
-    
-    for (var topic in topics) {
-      print('Initializing topic: ${topic['id']}');
-      await _db.collection('topics').doc(topic['id']).set(topic);
-    }
-    
-    print('Topics initialization complete');
-  }
-
-  Stream<QuerySnapshot> getTopics() {
-    print('Getting topics stream');
-    return _db.collection('topics').snapshots();
-  }
-
-  Stream<QuerySnapshot> getVideosByTopic(String topicId) {
-    return _db.collection('videos')
-        .where('topic', isEqualTo: topicId)
-        .orderBy('orderInPath')
-        .snapshots();
-  }
-
-  // Add these methods to FirestoreService class
-  Stream<QuerySnapshot> getVideosByLearningPath(String learningPathId) {
-    return _db.collection('videos')
-        .where('learningPathId', isEqualTo: learningPathId)
-        .orderBy('orderInPath')
-        .snapshots();
-  }
-
-  Stream<QuerySnapshot> getRandomVideos() {
-    // Simplified query to avoid needing a composite index
-    return _db.collection('videos')
-        .limit(20)
-        .snapshots();
-  }
-
-  // Method to update selected learning path
-  Future<void> setUserLearningPath(String userId, String learningPathId) async {
-    await _db.collection('users').doc(userId).set({
-      'currentLearningPath': learningPathId,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  }
-
-  Stream<String?> getUserLearningPath(String userId) {
-    return _db.collection('users')
-        .doc(userId)
-        .snapshots()
-        .map((snapshot) => snapshot.data()?['currentLearningPath'] as String?);
-  }
-
-  // Selected Topic Methods
-  Future<void> setUserSelectedTopic(String userId, String topicId) async {
-    await _db.collection('users').doc(userId).set({
-      'selectedTopic': topicId,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  }
-
-  Stream<String?> getUserSelectedTopic(String userId) {
-    return _db.collection('users')
-        .doc(userId)
-        .snapshots()
-        .map((snapshot) => snapshot.data()?['selectedTopic'] as String?);
-  }
-
-  Stream<QuerySnapshot> getVideosBySelectedTopic(String topicId) {
-    return _db.collection('videos')
-        .where('topic', isEqualTo: topicId)
-        .orderBy('orderInPath')
-        .snapshots();
-  }
-
-  // New Topic Methods
-  Future<void> markTopicAsCompleted(String topicId) async {
-    if (userId == null) return;
-    
-    await _db.collection('users').doc(userId).update({
-      'completedTopics': FieldValue.arrayUnion([topicId])
-    });
-  }
-
-  Future<void> markTopicAsIncomplete(String topicId) async {
-    if (userId == null) return;
-    
-    await _db.collection('users').doc(userId).update({
-      'completedTopics': FieldValue.arrayRemove([topicId])
-    });
-  }
-
   Stream<List<String>> getUserCompletedTopics() {
     if (userId == null) return Stream.value([]);
     
@@ -364,7 +520,7 @@ class FirestoreService {
 
     // If progress is 100%, mark topic as completed
     if (progress >= 100) {
-      await markTopicAsCompleted(topicId);
+      await markTopicAsCompleted(userId!, topicId);
     }
   }
 
@@ -415,12 +571,5 @@ class FirestoreService {
         .doc('${userId}_$videoId')
         .snapshots()
         .map((snapshot) => snapshot.exists);
-  }
-
-  Stream<int> getVideoLikesCount(String videoId) {
-    return _db.collection('videos')
-        .doc(videoId)
-        .snapshots()
-        .map((snapshot) => snapshot.data()?['likes'] ?? 0);
   }
 }

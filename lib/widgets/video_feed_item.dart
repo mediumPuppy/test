@@ -245,7 +245,7 @@ class _CommentSheetState extends State<CommentSheet> {
   void _onMentionSelected(String username) {
     final text = _commentController.text;
     final lastAtIndex = text.lastIndexOf('@');
-    final newText = text.substring(0, lastAtIndex) + '@$username ';
+    final newText = '${text.substring(0, lastAtIndex)}@$username ';
     
     setState(() {
       _mentionedUsers.add(username);
@@ -389,7 +389,7 @@ class _CommentSheetState extends State<CommentSheet> {
                   stream: AuthService().authStateChanges,
                   builder: (context, snapshot) {
                     return Text(
-                      (snapshot.data?.email ?? 'Anonymous').substring(0, 9) + '...',
+                      '${(snapshot.data?.email ?? 'Anonymous').substring(0, 9)}...',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                       ),

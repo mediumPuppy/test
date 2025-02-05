@@ -8,14 +8,26 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final AuthService _auth = AuthService();
+    final AuthService auth = AuthService();
 
     return Drawer(
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(
+              color: Colors.blue,
+            ),
+            child: Text(
+              'Menu',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+              ),
+            ),
+          ),
           StreamBuilder<User?>(
-            stream: _auth.authStateChanges,
+            stream: auth.authStateChanges,
             builder: (context, snapshot) {
               final user = snapshot.data;
               return UserAccountsDrawerHeader(
@@ -66,7 +78,7 @@ class AppDrawer extends StatelessWidget {
             leading: const Icon(Icons.logout),
             title: const Text('Sign Out'),
             onTap: () async {
-              await _auth.signOut();
+              await auth.signOut();
               Navigator.pop(context);
             },
           ),
@@ -74,4 +86,4 @@ class AppDrawer extends StatelessWidget {
       ),
     );
   }
-} 
+}

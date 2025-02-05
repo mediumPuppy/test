@@ -8,6 +8,7 @@ import 'screens/feed_screen.dart';
 import 'screens/learning_paths_screen.dart';
 import 'screens/upload_answer_screen.dart';
 import 'services/auth_service.dart';
+import 'services/quiz_service.dart'; // Added import statement
 
 void main() async {
   try {
@@ -15,6 +16,11 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+
+    // Initialize test data
+    final quizService = QuizService();
+    await quizService.initializeSampleQuizzes();
+
     runApp(const MyApp());
   } catch (e, stackTrace) {
     print('Error during initialization: $e');

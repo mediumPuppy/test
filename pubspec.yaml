@@ -18,6 +18,7 @@ dependencies:
   cloud_functions: ^5.3.1
   firebase_storage: ^12.4.1
   timeago: ^3.6.0
+  math_expressions: ^2.4.0
 
 dev_dependencies:
   flutter_test:

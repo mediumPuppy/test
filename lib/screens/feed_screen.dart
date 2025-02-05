@@ -32,9 +32,9 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
   void _loadUserLearningPath() {
     final user = _auth.currentUser;
     if (user != null) {
-      _firestoreService.getUserLearningPath(user.uid).listen((pathId) {
+      _firestoreService.getUserLearningPath(user.uid).listen((snapshot) {
         setState(() {
-          _selectedLearningPath = pathId;
+          _selectedLearningPath = snapshot.data()?['currentPath'] as String?;
         });
       });
     }
