@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:test/data/learning_paths.dart';
 import 'package:test/data/sample_videos.dart';
 import 'package:test/data/topics.dart';
+import 'package:test/data/skill_tree_seed.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -437,7 +438,19 @@ class FirestoreService {
   }
 
   Stream<QuerySnapshot> getSkills() {
-    return _db.collection('skills').orderBy('orderIndex').snapshots();
+    return _db.collection('skills')
+        .orderBy('orderIndex')
+        .snapshots()
+        .distinct((prev, next) {
+          // Only emit if the data has actually changed
+          if (prev.docs.length != next.docs.length) return false;
+          for (var i = 0; i < prev.docs.length; i++) {
+            if (prev.docs[i].data().toString() != next.docs[i].data().toString()) {
+              return false;
+            }
+          }
+          return true;
+        });
   }
 
   Future<void> updateSkillProgress(String skillId, double progress) async {
@@ -584,5 +597,38 @@ class FirestoreService {
         .snapshots()
         .map((snapshot) => 
             List<String>.from(snapshot.data()?['completedSkills'] ?? []));
+  }
+
+  Future<void> initializeSkillTree() async {
+    try {
+      print('Starting skill tree initialization...');
+      
+      // Initialize skills from seed data
+      final batch = FirebaseFirestore.instance.batch();
+      
+      for (var skill in skillTreeData) {
+        final docRef = _db.collection('skills').doc(skill['id']);
+        batch.set(docRef, skill);
+      }
+      
+      await batch.commit();
+      print('Skill tree initialization complete');
+      
+      // Initialize first skill for all existing users
+      final usersSnapshot = await _db.collection('users').get();
+      for (var userDoc in usersSnapshot.docs) {
+        await _db.collection('users').doc(userDoc.id).update({
+          'unlockedSkills': FieldValue.arrayUnion(['num_recog']),
+          'skillProgress.num_recog': {
+            'isUnlocked': true,
+            'completionRate': 0.0,
+            'lastAttempted': null
+          }
+        });
+      }
+    } catch (e) {
+      print('Error initializing skill tree: $e');
+      rethrow;
+    }
   }
 } 
