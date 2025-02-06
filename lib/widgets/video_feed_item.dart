@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:video_player/video_player.dart';
 import 'dart:async';
 import '../models/video_feed.dart';
 import '../services/firestore_service.dart';
@@ -15,11 +16,11 @@ class VideoFeedItem extends StatefulWidget {
   final VoidCallback onShare;
 
   const VideoFeedItem({
-    super.key,
+    Key? key,
     required this.index,
     required this.feed,
     required this.onShare,
-  });
+  }) : super(key: key);
 
   @override
   State<VideoFeedItem> createState() => _VideoFeedItemState();
@@ -28,10 +29,13 @@ class VideoFeedItem extends StatefulWidget {
 class _VideoFeedItemState extends State<VideoFeedItem> {
   final _progressService = TopicProgressService();
   StreamSubscription? _positionSubscription;
+  late VideoPlayerController _videoController;
+  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
+    _initializeVideo();
     _positionSubscription = _progressService.positionStream.listen((position) {
       if (mounted) {
         setState(() {});
@@ -39,15 +43,43 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
     });
   }
 
+  Future<void> _initializeVideo() async {
+    try {
+      print('Initializing video from URL: ${widget.feed.videoUrl}');
+      _videoController = VideoPlayerController.networkUrl(
+        Uri.parse(widget.feed.videoUrl),
+      );
+      
+      await _videoController.initialize();
+      
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+        _videoController.setLooping(true);
+        _videoController.play();
+        print('Video initialized successfully');
+      }
+    } catch (e, stackTrace) {
+      print('Error initializing video: $e');
+      print('Stack trace: $stackTrace');
+      if (mounted) {
+        setState(() {
+          _isInitialized = false;
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _videoController.dispose();
     _positionSubscription?.cancel();
     super.dispose();
   }
 
   double _calculateProgress() {
     final progress = _progressService.getProgress();
-    print('Progress: position=${_progressService.currentPosition}, totalVideos=${_progressService.totalVideos}, progress=$progress');
     return progress;
   }
 
@@ -98,17 +130,41 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Placeholder for video
-        Container(
-          color: Colors.grey[900],
-          child: Center(
-            child: Text(
-              'Video ${widget.feed.id}',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ),
-        
+        // Video player
+        _isInitialized
+            ? AspectRatio(
+                aspectRatio: _videoController.value.aspectRatio,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    VideoPlayer(_videoController),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (_videoController.value.isPlaying) {
+                            _videoController.pause();
+                          } else {
+                            _videoController.play();
+                          }
+                        });
+                      },
+                      child: Container(
+                        color: Colors.transparent,
+                        child: Center(
+                          child: Icon(
+                            _videoController.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                            size: 50.0,
+                            color: Colors.white.withOpacity(0.7),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : const Center(
+                child: CircularProgressIndicator(),
+              ),
         // Right side action bar
         Positioned(
           right: 16,
@@ -139,7 +195,6 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
             },
           ),
         ),
-        
         // Bottom description
         Positioned(
           left: 16,
