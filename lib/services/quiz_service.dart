@@ -119,6 +119,50 @@ class QuizService {
     }
   }
 
+  // Get a stream of available quizzes
+  Stream<List<Quiz>> getAvailableQuizzes() {
+    try {
+      print('Fetching available quizzes...');
+      return _firestore.collection('quizzes')
+          .orderBy('createdAt', descending: true)
+          .snapshots()
+          .asyncMap((snapshot) async {
+        print('Got ${snapshot.docs.length} quiz documents');
+        
+        final quizzes = await Future.wait(
+          snapshot.docs.map((doc) async {
+            final data = doc.data();
+            print('Processing quiz: ${doc.id}');
+            print('Quiz data: $data');
+            
+            final questionIds = List<String>.from(data['questionIds'] ?? []);
+            print('Question IDs: $questionIds');
+            
+            final questionDocs = await Future.wait(
+              questionIds.map((id) => 
+                _firestore.collection('questions').doc(id).get()
+              )
+            );
+            
+            final questions = questionDocs
+                .where((doc) => doc.exists)
+                .map((doc) => QuizQuestion.fromFirestore(doc))
+                .toList();
+            print('Found ${questions.length} questions for quiz ${doc.id}');
+            
+            return Quiz.fromFirestore(doc, questions);
+          })
+        );
+        
+        print('Returning ${quizzes.length} quizzes');
+        return quizzes;
+      });
+    } catch (e) {
+      print('Error streaming quizzes: $e');
+      return Stream.value([]);
+    }
+  }
+
   // Initialize sample quiz data for testing
   Future<void> initializeSampleQuizzes() async {
     try {
@@ -128,33 +172,48 @@ class QuizService {
       final questions = [
         {
           'id': 'q1',
-          'text': 'What is 2 + 2?',
+          'question': 'What is 2 + 2?',
+          'type': QuestionType.multipleChoice.toString(),
+          'difficulty': DifficultyLevel.beginner.toString(),
+          'topics': ['arithmetic'],
+          'metadata': {'category': 'basic_math'},
           'options': ['3', '4', '5', '6'],
-          'correctOption': 1,
+          'correctAnswer': '4',
           'explanation': 'Basic addition: 2 + 2 = 4',
-          'topic': 'arithmetic',
-          'difficulty': 'beginner',
-          'type': 'multiple_choice',
+          'commonMistakes': {
+            '3': 'Make sure to count carefully',
+            '5': 'You might have counted one number twice'
+          },
         },
         {
           'id': 'q2',
-          'text': 'Solve for x: 2x + 4 = 12',
+          'question': 'Solve for x: 2x + 4 = 12',
+          'type': QuestionType.multipleChoice.toString(),
+          'difficulty': DifficultyLevel.intermediate.toString(),
+          'topics': ['basic_algebra'],
+          'metadata': {'category': 'algebra'},
           'options': ['2', '4', '6', '8'],
-          'correctOption': 1,
+          'correctAnswer': '4',
           'explanation': 'Subtract 4 from both sides: 2x = 8, then divide by 2: x = 4',
-          'topic': 'basic_algebra',
-          'difficulty': 'intermediate',
-          'type': 'multiple_choice',
+          'commonMistakes': {
+            '2': 'Did you forget to divide by 2?',
+            '8': 'Did you forget to subtract 4?'
+          },
         },
         {
           'id': 'q3',
-          'text': 'What is the derivative of x²?',
+          'question': 'What is the derivative of x²?',
+          'type': QuestionType.multipleChoice.toString(),
+          'difficulty': DifficultyLevel.advanced.toString(),
+          'topics': ['calculus'],
+          'metadata': {'category': 'calculus'},
           'options': ['x²', '2x', '2', '0'],
-          'correctOption': 1,
+          'correctAnswer': '2x',
           'explanation': 'The power rule states that the derivative of x^n is nx^(n-1)',
-          'topic': 'calculus',
-          'difficulty': 'advanced',
-          'type': 'multiple_choice',
+          'commonMistakes': {
+            'x²': 'This is the original function, not its derivative',
+            '2': 'You forgot to keep the x term'
+          },
         },
       ];
 
@@ -170,28 +229,34 @@ class QuizService {
           'id': 'quiz1',
           'title': 'Basic Math Quiz',
           'topics': ['arithmetic'],
-          'difficulty': 'beginner',
+          'difficulty': DifficultyLevel.beginner.toString(),
           'questionIds': ['q1'],
           'timeLimit': 300,
           'shuffleQuestions': true,
+          'metadata': {'level': 1, 'points': 10},
+          'createdAt': FieldValue.serverTimestamp(),
         },
         {
           'id': 'quiz2',
           'title': 'Algebra Quiz',
           'topics': ['basic_algebra'],
-          'difficulty': 'intermediate',
+          'difficulty': DifficultyLevel.intermediate.toString(),
           'questionIds': ['q2'],
           'timeLimit': 600,
           'shuffleQuestions': true,
+          'metadata': {'level': 2, 'points': 20},
+          'createdAt': FieldValue.serverTimestamp(),
         },
         {
           'id': 'quiz3',
           'title': 'Advanced Math Quiz',
           'topics': ['calculus'],
-          'difficulty': 'advanced',
+          'difficulty': DifficultyLevel.advanced.toString(),
           'questionIds': ['q3'],
           'timeLimit': 900,
           'shuffleQuestions': true,
+          'metadata': {'level': 3, 'points': 30},
+          'createdAt': FieldValue.serverTimestamp(),
         },
       ];
 

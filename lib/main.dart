@@ -7,6 +7,7 @@ import 'screens/topics_screen.dart';
 import 'screens/feed_screen.dart';
 import 'screens/learning_paths_screen.dart';
 import 'screens/upload_answer_screen.dart';
+import 'screens/quizzes_screen.dart';
 import 'services/auth_service.dart';
 import 'services/quiz_service.dart'; // Added import statement
 
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/learning_paths': (context) => LearningPathsScreen(),
         '/upload_answer': (context) => const UploadAnswerScreen(),
+        '/quizzes': (context) => QuizzesScreen(),
       },
     );
   }

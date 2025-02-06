@@ -128,7 +128,6 @@ class ActionBar extends StatelessWidget {
           icon: Icon(icon),
           color: color,
           onPressed: () {
-            debugPrint('[DEBUG] Action button pressed: $label');
             onTap();
           },
         ),

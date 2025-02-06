@@ -22,19 +22,10 @@ class FirestoreService {
   }
 
   Future<String?> getUserName(String userId) async {
-    debugPrint('[DEBUG] Getting username for userId: $userId');
     try {
       final doc = await _db.collection('users').doc(userId).get();
-      debugPrint('[DEBUG] User document exists: ${doc.exists}');
-      if (doc.exists) {
-        debugPrint('[DEBUG] User data: ${doc.data()}');
-      } else {
-        debugPrint('[DEBUG] No user document found');
-      }
       return doc.data()?['email'] as String?;
     } catch (e, stackTrace) {
-      debugPrint('[ERROR] Error getting username: $e');
-      debugPrint('[ERROR] Stack trace: $stackTrace');
       return null;
     }
   }
@@ -258,26 +249,16 @@ class FirestoreService {
     String? replyToId,
     List<String> mentionedUsers = const [],
   }) async {
-    debugPrint('[DEBUG] Starting addVideoComment - videoId: $videoId, replyToId: $replyToId');
-    debugPrint('[DEBUG] Current FirebaseAuth user: ${FirebaseAuth.instance.currentUser?.uid}');
-    debugPrint('[DEBUG] Service userId: $userId');
     
     if (userId == null) {
       debugPrint('[ERROR] addVideoComment - User not signed in');
       throw Exception('User not signed in');
     }
 
-    // Try getting the user document first to debug
-    final userDoc = await _db.collection('users').doc(userId).get();
-    debugPrint('[DEBUG] User document exists: ${userDoc.exists}');
-    debugPrint('[DEBUG] User document data: ${userDoc.data()}');
-    
-    debugPrint('[DEBUG] Getting username for userId: $userId');
     final userName = await getUserName(userId!);
     if (userName == null) {
       final email = FirebaseAuth.instance.currentUser?.email;
       if (email != null) {
-        debugPrint('[DEBUG] Using email as fallback for username: $email');
         final commentData = {
           'videoId': videoId,
           'userId': userId,
@@ -288,21 +269,14 @@ class FirestoreService {
           'replyToId': replyToId,
           'mentionedUsers': mentionedUsers,
         };
-        debugPrint('[DEBUG] Prepared comment data: $commentData');
 
         try {
-          debugPrint('[DEBUG] Attempting to add comment to video_comments collection');
           final commentRef = await _db.collection('video_comments').add(commentData);
-          debugPrint('[DEBUG] Comment added successfully with id: ${commentRef.id}');
-
-          debugPrint('[DEBUG] Updating video comments count');
           await _db.collection('videos').doc(videoId).update({
             'comments': FieldValue.increment(1)
           });
-          debugPrint('[DEBUG] Video comments count updated');
 
           if (mentionedUsers.isNotEmpty) {
-            debugPrint('[DEBUG] Processing ${mentionedUsers.length} mentioned users');
             for (final mentionedUser in mentionedUsers) {
               await _db.collection('notifications').add({
                 'type': 'mention',
@@ -315,20 +289,15 @@ class FirestoreService {
                 'read': false,
               });
             }
-            debugPrint('[DEBUG] Finished processing mentioned users');
           }
 
           return commentRef;
-        } catch (e, stackTrace) {
-          debugPrint('[ERROR] Failed to add comment: $e');
-          debugPrint('[ERROR] Stack trace: $stackTrace');
+        } catch (e) {
           throw Exception('Failed to add comment: $e');
         }
       }
-      debugPrint('[ERROR] addVideoComment - No username or email found for userId: $userId');
       throw Exception('User profile not found');
     }
-    debugPrint('[DEBUG] Got username: $userName');
 
     final commentData = {
       'videoId': videoId,
@@ -340,21 +309,14 @@ class FirestoreService {
       'replyToId': replyToId,
       'mentionedUsers': mentionedUsers,
     };
-    debugPrint('[DEBUG] Prepared comment data: $commentData');
 
     try {
-      debugPrint('[DEBUG] Attempting to add comment to video_comments collection');
       final commentRef = await _db.collection('video_comments').add(commentData);
-      debugPrint('[DEBUG] Comment added successfully with id: ${commentRef.id}');
-
-      debugPrint('[DEBUG] Updating video comments count');
       await _db.collection('videos').doc(videoId).update({
         'comments': FieldValue.increment(1)
       });
-      debugPrint('[DEBUG] Video comments count updated');
 
       if (mentionedUsers.isNotEmpty) {
-        debugPrint('[DEBUG] Processing ${mentionedUsers.length} mentioned users');
         for (final mentionedUser in mentionedUsers) {
           await _db.collection('notifications').add({
             'type': 'mention',
@@ -367,13 +329,10 @@ class FirestoreService {
             'read': false,
           });
         }
-        debugPrint('[DEBUG] Finished processing mentioned users');
       }
 
       return commentRef;
-    } catch (e, stackTrace) {
-      debugPrint('[ERROR] Failed to add comment: $e');
-      debugPrint('[ERROR] Stack trace: $stackTrace');
+    } catch (e) {
       throw Exception('Failed to add comment: $e');
     }
   }
@@ -384,7 +343,6 @@ class FirestoreService {
     DocumentSnapshot? lastDocument,
     int limit = 10,
   }) {
-    debugPrint('[DEBUG] Getting video comments - videoId: $videoId, sortBy: $sortBy, limit: $limit');
     var query = _db.collection('video_comments')
         .where('videoId', isEqualTo: videoId)
         .where('replyToId', isNull: true)
@@ -400,10 +358,8 @@ class FirestoreService {
       query = query.startAfterDocument(lastDocument);
     }
 
-    debugPrint('[DEBUG] Query parameters set up successfully');
     return query.withConverter<Map<String, dynamic>>(
       fromFirestore: (snapshot, _) {
-        debugPrint('[DEBUG] Converting comment document: ${snapshot.id}');
         return snapshot.data()!;
       },
       toFirestore: (data, _) => data,

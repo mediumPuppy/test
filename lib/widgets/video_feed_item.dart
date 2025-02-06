@@ -22,26 +22,21 @@ class VideoFeedItem extends StatelessWidget {
   });
 
   void _handleLike(BuildContext context) {
-    debugPrint('[DEBUG] Like button pressed for video: ${feed.id}');
     final firestoreService = FirestoreService();
     firestoreService.toggleVideoLike(feed.id);
   }
 
   void _handleComment(BuildContext context) {
-    debugPrint('[DEBUG] Comment button pressed for video: ${feed.id}');
-    debugPrint('[DEBUG] Opening comment sheet');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        debugPrint('[DEBUG] Building comment sheet');
         return DraggableScrollableSheet(
           initialChildSize: 0.9,
           minChildSize: 0.5,
           maxChildSize: 0.9,
           builder: (_, controller) {
-            debugPrint('[DEBUG] Initializing CommentSheet widget');
             return CommentSheet(
               videoId: feed.id,
               scrollController: controller,
@@ -54,7 +49,6 @@ class VideoFeedItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('[DEBUG] Building VideoFeedItem for video: ${feed.id}');
     final firestoreService = FirestoreService();
 
     return Stack(
@@ -78,15 +72,12 @@ class VideoFeedItem extends StatelessWidget {
           child: StreamBuilder<bool>(
             stream: firestoreService.isVideoLiked(feed.id),
             builder: (context, likedSnapshot) {
-              debugPrint('[DEBUG] Building like status for video: ${feed.id}');
               return StreamBuilder<int>(
                 stream: firestoreService.getVideoLikesCount(feed.id),
                 builder: (context, likesSnapshot) {
-                  debugPrint('[DEBUG] Building likes count for video: ${feed.id}');
                   return StreamBuilder<int>(
                     stream: firestoreService.getVideoCommentsCount(feed.id),
                     builder: (context, commentsSnapshot) {
-                      debugPrint('[DEBUG] Building comments count for video: ${feed.id}');
                       return ActionBar(
                         onLike: () => _handleLike(context),
                         onShare: onShare,
@@ -178,18 +169,15 @@ class _CommentSheetState extends State<CommentSheet> {
 
   @override
   void initState() {
-    debugPrint('[DEBUG] Initializing CommentSheet state for video: ${widget.videoId}');
     super.initState();
     _setupCommentsStream();
   }
 
   void _setupCommentsStream() {
-    debugPrint('[DEBUG] Setting up comments stream for video: ${widget.videoId}');
     try {
       _firestoreService
           .getVideoComments(widget.videoId, sortBy: _sortBy)
           .listen((snapshot) {
-        debugPrint('[DEBUG] Received comments update. Count: ${snapshot.docs.length}');
         if (mounted) {
           setState(() {
             _comments = snapshot.docs
@@ -210,24 +198,16 @@ class _CommentSheetState extends State<CommentSheet> {
   }
 
   Future<void> _submitComment() async {
-    debugPrint('[DEBUG] Starting comment submission');
     final text = _commentController.text.trim();
     if (text.isEmpty) {
-      debugPrint('[DEBUG] Comment text is empty, returning');
       return;
     }
-
-    debugPrint('[DEBUG] Comment text: $text');
-    debugPrint('[DEBUG] Reply to: $_replyToId');
-    debugPrint('[DEBUG] Mentioned users: $_mentionedUsers');
-    debugPrint('[DEBUG] Current user ID: ${_firestoreService.userId}');
 
     // Clear the input immediately
     _commentController.clear();
     FocusScope.of(context).unfocus();
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-    debugPrint('[DEBUG] Generated temp id: $tempId');
     
     // Create optimistic comment
     final optimisticData = {
@@ -240,31 +220,26 @@ class _CommentSheetState extends State<CommentSheet> {
       'mentionedUsers': _mentionedUsers.toList(),
       'isPending': true,
     };
-    debugPrint('[DEBUG] Created optimistic data: $optimisticData');
 
     final optimisticComment = CommentData.optimistic(tempId, optimisticData);
 
     setState(() {
-      debugPrint('[DEBUG] Adding optimistic comment to UI');
       _comments.insert(0, optimisticComment);
       _cancelReply();
     });
 
     try {
-      debugPrint('[DEBUG] Attempting to add comment to Firestore');
       await _firestoreService.addVideoComment(
         widget.videoId,
         text,
         replyToId: _replyToId,
         mentionedUsers: _mentionedUsers.toList(),
       );
-      debugPrint('[DEBUG] Successfully added comment to Firestore');
     } catch (e, stackTrace) {
       debugPrint('[ERROR] Failed to submit comment: $e');
       debugPrint('[ERROR] Stack trace: $stackTrace');
       if (mounted) {
         setState(() {
-          debugPrint('[DEBUG] Removing failed optimistic comment from UI');
           _comments.removeWhere((c) => c.id == tempId);
         });
         ScaffoldMessenger.of(context).showSnackBar(
