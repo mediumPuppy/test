@@ -73,12 +73,11 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
           x += 25;
           break;
         case '5':
-          path.moveTo(x + 20, y - 15);  // Top right
+          path.moveTo(x + 16, y - 15);  // Top right (shorter)
           path.lineTo(x, y - 15);       // Top left
           path.lineTo(x, y);            // Down vertical
-          path.quadraticBezierTo(x + 15, y, x + 15, y + 5);  // Bottom curve (smaller)
-          path.quadraticBezierTo(x + 15, y + 16, x, y + 16);  // Bottom curve (slightly lower)
-          path.lineTo(x + 20, y + 16);  // Bottom line
+          path.quadraticBezierTo(x + 15, y, x + 15, y + 5);  // Bottom curve start
+          path.quadraticBezierTo(x + 15, y + 15, x, y + 15);  // Bottom curve end
           x += 25;
           break;
         case '6':
@@ -277,12 +276,11 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                   digitPath.lineTo(x + 20, y + 5);   // Horizontal line
                   break;
                 case '5':
-                  digitPath.moveTo(x + 20, y - 15);  // Top right
+                  digitPath.moveTo(x + 16, y - 15);  // Top right (shorter)
                   digitPath.lineTo(x, y - 15);       // Top left
                   digitPath.lineTo(x, y);            // Down vertical
-                  digitPath.quadraticBezierTo(x + 15, y, x + 15, y + 5);  // Bottom curve (smaller)
-                  digitPath.quadraticBezierTo(x + 15, y + 16, x, y + 16);  // Bottom curve (slightly lower)
-                  digitPath.lineTo(x + 20, y + 16);  // Bottom line
+                  digitPath.quadraticBezierTo(x + 15, y, x + 15, y + 5);  // Bottom curve start
+                  digitPath.quadraticBezierTo(x + 15, y + 15, x, y + 15);  // Bottom curve end
                   break;
                 case '6':
                   // Calculate relative dimensions for the 6
