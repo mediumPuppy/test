@@ -113,15 +113,17 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
           x += 25;
           break;
         case '8':
+          // Top loop (smaller)
           path.addOval(Rect.fromCenter(
-            center: Offset(x + 10, y - 6),
-            width: 16,
-            height: 16,
+            center: Offset(x + 10, y - 8),
+            width: 14,
+            height: 14,
           ));
+          // Bottom loop (slightly larger and wider)
           path.addOval(Rect.fromCenter(
             center: Offset(x + 10, y + 6),
             width: 16,
-            height: 16,
+            height: 12,
           ));
           x += 25;
           break;
@@ -310,15 +312,17 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                   digitPath.lineTo(x + 10, y + 15); // Angled stem aligned with other numbers
                   break;
                 case '8':
+                  // Top loop (smaller)
                   digitPath.addOval(Rect.fromCenter(
-                    center: Offset(x + 10, y - 6),
-                    width: 16,
-                    height: 16,
+                    center: Offset(x + 10, y - 8),
+                    width: 14,
+                    height: 14,
                   ));
+                  // Bottom loop (slightly larger and wider)
                   digitPath.addOval(Rect.fromCenter(
                     center: Offset(x + 10, y + 6),
                     width: 16,
-                    height: 16,
+                    height: 12,
                   ));
                   break;
                 case '9':
