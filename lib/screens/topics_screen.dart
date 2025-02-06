@@ -58,14 +58,20 @@ class _TopicsScreenState extends State<TopicsScreen> {
     if (_userId == null) return;
 
     try {
+      print('[TopicsScreen] Starting topic completion - Topic: $topicId, Name: $topicName');
+      
       // Show performance input dialog
       final performance = await showDialog<double>(
         context: context,
         builder: (context) => _PerformanceDialog(topicName: topicName),
       );
 
-      if (performance == null) return;
+      if (performance == null) {
+        print('[TopicsScreen] Topic completion cancelled - no performance rating');
+        return;
+      }
 
+      print('[TopicsScreen] Updating progress with performance: $performance');
       // Update progress
       await _progressService.updateUserProgress(
         userId: _userId,
@@ -73,10 +79,12 @@ class _TopicsScreenState extends State<TopicsScreen> {
         performance: performance,
       );
 
+      print('[TopicsScreen] Reloading progress after update');
       // Refresh progress
       await _loadProgress();
 
       if (mounted) {
+        print('[TopicsScreen] Showing completion success message');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Topic marked as complete'),
@@ -85,6 +93,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
         );
       }
     } catch (e) {
+      print('[TopicsScreen] Error during topic completion: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -120,8 +129,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
                   itemCount: topics.length,
                   itemBuilder: (context, index) {
                     final topic = topics[index].data();
-                    // Get the topic ID from the document data, fallback to document ID
-                    final topicId = topic['id']?.toString() ?? topics[index].id;
+                    final topicId = topics[index].id;
                     final isCompleted = _completedTopics[topicId] ?? false;
                     final mastery = _masteryLevels[topicId] ?? 0.0;
 

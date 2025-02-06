@@ -69,7 +69,8 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
           return Center(child: Text('Error: ${snapshot.error}'));
         }
         
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        // Only show loading if we're waiting for the first data
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           print('Feed loading...');
           return const Center(child: CircularProgressIndicator());
         }
@@ -79,11 +80,38 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
         
         if (videos.isEmpty) {
           return Center(
-            child: Text(
-              'No videos available for this learning path',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.white,
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.celebration,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Congratulations!',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'You\'ve completed all topics in this learning path.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/learning_paths');
+                  },
+                  icon: const Icon(Icons.explore),
+                  label: const Text('Explore New Learning Paths'),
+                ),
+              ],
             ),
           );
         }

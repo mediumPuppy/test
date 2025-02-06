@@ -9,8 +9,9 @@ class LearningProgressService {
   static const int _defaultInterval = 1;
 
   Future<Map<String, dynamic>> getUserProgress(String userId) async {
+    print('[LearningProgressService] Getting progress for user: $userId');
     final doc = await _firestore.collection('user_progress').doc(userId).get();
-    return doc.data() ?? {
+    final data = doc.data() ?? {
       'currentPath': null,
       'topicsCompleted': {},
       'lastQuizDate': null,
@@ -18,6 +19,8 @@ class LearningProgressService {
       'masteryLevels': {},
       'nextQuizDue': null,
     };
+    print('[LearningProgressService] User progress data: $data');
+    return data;
   }
 
   Future<void> updateUserProgress({
@@ -26,6 +29,7 @@ class LearningProgressService {
     required double performance,
     DateTime? completionDate,
   }) async {
+    print('[LearningProgressService] Updating progress - User: $userId, Topic: $topicId, Performance: $performance');
     final now = completionDate ?? DateTime.now();
     
     await _firestore.collection('user_progress').doc(userId).set({
@@ -37,6 +41,7 @@ class LearningProgressService {
       },
       'lastUpdated': now.toIso8601String(),
     }, SetOptions(merge: true));
+    print('[LearningProgressService] Progress updated in Firestore');
 
     // Schedule next quiz based on performance
     final nextQuizDate = await _scheduleNextQuiz(
@@ -48,6 +53,7 @@ class LearningProgressService {
     await _firestore.collection('user_progress').doc(userId).update({
       'nextQuizDue': nextQuizDate.toIso8601String(),
     });
+    print('[LearningProgressService] Next quiz scheduled for: $nextQuizDate');
   }
 
   Future<DateTime> _scheduleNextQuiz({

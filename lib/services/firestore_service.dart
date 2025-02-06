@@ -122,9 +122,23 @@ class FirestoreService {
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByLearningPath(String learningPathId) async* {
-    print('Getting videos for learning path: $learningPathId');
-    
-    // First, get the learning path topics in order
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) {
+      print('[VideoFeed] No user logged in');
+      yield* _db.collection('videos')
+          .where('learningPathId', isEqualTo: learningPathId)
+          .limit(0)
+          .snapshots();
+      return;
+    }
+
+    // Get current progress
+    final progressDoc = await _db.collection('user_progress').doc(userId).get();
+    final progress = progressDoc.data() ?? {};
+    final completedTopics = (progress['topicsCompleted'] as Map<String, dynamic>? ?? {}).keys.toSet();
+    print('[VideoFeed] Current completed topics: $completedTopics');
+
+    // Get learning path topics
     final topicsQuery = await _db.collection('learning_paths')
         .doc(learningPathId)
         .collection('topics')
@@ -132,34 +146,17 @@ class FirestoreService {
         .get();
     
     final topics = topicsQuery.docs;
-    print('Found ${topics.length} topics in learning path');
+    print('[VideoFeed] Found ${topics.length} topics in learning path');
+    print('[VideoFeed] Topic IDs: ${topics.map((t) => t.id).join(', ')}');
     
     if (topics.isEmpty) {
-      print('No topics found in learning path');
+      print('[VideoFeed] No topics found in learning path');
       yield* _db.collection('videos')
           .where('learningPathId', isEqualTo: learningPathId)
           .limit(0)
           .snapshots();
       return;
     }
-
-    // Get user's progress
-    final userId = _auth.currentUser?.uid;
-    print('Current user ID: $userId');
-    
-    if (userId == null) {
-      print('No user logged in');
-      yield* _db.collection('videos')
-          .where('learningPathId', isEqualTo: learningPathId)
-          .limit(0)
-          .snapshots();
-      return;
-    }
-
-    // Get user's progress using LearningProgressService
-    final progress = await _progressService.getUserProgress(userId);
-    final completedTopics = (progress['topicsCompleted'] as Map<String, dynamic>? ?? {}).keys.toSet();
-    print('User completed topics: $completedTopics');
 
     // Find the first incomplete topic
     String? currentTopicId;
@@ -167,42 +164,42 @@ class FirestoreService {
       final topicId = topic.id;
       final topicData = topic.data();
       final topicName = topicData['name'] as String? ?? 'Unnamed Topic';
-      print('Checking topic: $topicId - $topicName');
+      print('[VideoFeed] Checking topic: $topicId - $topicName (Completed: ${completedTopics.contains(topicId)})');
       
       if (!completedTopics.contains(topicId)) {
         currentTopicId = topicId;
-        print('Found first incomplete topic: $topicId');
+        print('[VideoFeed] Found first incomplete topic: $topicId');
         break;
       }
     }
 
     if (currentTopicId == null) {
-      // All topics completed, show videos from the last topic
-      currentTopicId = topics.last.id;
-      print('All topics completed, using last topic: $currentTopicId');
+      print('[VideoFeed] All topics completed, showing completion screen');
+      yield* _db.collection('videos')
+          .where('learningPathId', isEqualTo: 'completed_${learningPathId}')
+          .snapshots();
+      return;
     }
 
-    print('Getting videos for topic: $currentTopicId');
+    print('[VideoFeed] Getting videos for topic: $currentTopicId');
     
-    // Get videos for the current topic
-    yield* _db.collection('videos')
-        .where('topicId', isEqualTo: currentTopicId)
-        .where('learningPathId', isEqualTo: learningPathId)
-        .snapshots()
-        .map((snapshot) {
-          print('Received snapshot with ${snapshot.docs.length} videos');
-          print('Video IDs: ${snapshot.docs.map((d) => d.id).join(', ')}');
-          
-          final sortedDocs = List.from(snapshot.docs)
-            ..sort((a, b) {
-              final orderA = (a.data() as Map<String, dynamic>)['orderInPath'] as int? ?? 0;
-              final orderB = (b.data() as Map<String, dynamic>)['orderInPath'] as int? ?? 0;
-              return orderA.compareTo(orderB);
-            });
-            
-          print('Sorted video order: ${sortedDocs.map((d) => '${d.id}(${(d.data() as Map<String, dynamic>)['orderInPath']})').join(', ')}');
-          return snapshot;
-        });
+    // Listen to both progress changes and videos
+    yield* _db.collection('user_progress').doc(userId).snapshots().asyncExpand((progressSnapshot) async* {
+      final newProgress = progressSnapshot.data() ?? {};
+      final newCompletedTopics = (newProgress['topicsCompleted'] as Map<String, dynamic>? ?? {}).keys.toSet();
+      
+      // If this topic is now complete, return empty to trigger completion UI
+      if (newCompletedTopics.contains(currentTopicId)) {
+        yield* _db.collection('videos')
+            .where('learningPathId', isEqualTo: 'completed_${learningPathId}')
+            .snapshots();
+      } else {
+        yield* _db.collection('videos')
+            .where('topicId', isEqualTo: currentTopicId)
+            .where('learningPathId', isEqualTo: learningPathId)
+            .snapshots();
+      }
+    });
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getVideosBySelectedTopic(String topicId) {
