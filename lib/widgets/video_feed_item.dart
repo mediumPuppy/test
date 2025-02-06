@@ -7,7 +7,6 @@ import '../services/firestore_service.dart';
 import 'action_bar.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart' show User;
-import 'package:flutter/foundation.dart' show debugPrint;
 
 class VideoFeedItem extends StatelessWidget {
   final int index;
@@ -190,10 +189,10 @@ class _CommentSheetState extends State<CommentSheet> {
           });
         }
       }, onError: (error) {
-        debugPrint('[ERROR] Error in comments stream: $error');
+        // Removed debug logging
       });
     } catch (e) {
-      debugPrint('[ERROR] Failed to setup comments stream: $e');
+      // Removed debug logging
     }
   }
 
@@ -236,8 +235,7 @@ class _CommentSheetState extends State<CommentSheet> {
         mentionedUsers: _mentionedUsers.toList(),
       );
     } catch (e, stackTrace) {
-      debugPrint('[ERROR] Failed to submit comment: $e');
-      debugPrint('[ERROR] Stack trace: $stackTrace');
+      // Removed debug logging
       if (mounted) {
         setState(() {
           _comments.removeWhere((c) => c.id == tempId);

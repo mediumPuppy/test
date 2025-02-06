@@ -59,24 +59,19 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
       );
     }
 
-    print('Building feed for learning path: ${widget.selectedPath}');
     return StreamBuilder<QuerySnapshot>(
       stream: _firestoreService.getVideosByLearningPath(widget.selectedPath!),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          print('Feed error: ${snapshot.error}');
-          print('Feed error stack trace: ${snapshot.stackTrace}');
           return Center(child: Text('Error: ${snapshot.error}'));
         }
         
         // Only show loading if we're waiting for the first data
         if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
-          print('Feed loading...');
           return const Center(child: CircularProgressIndicator());
         }
         
         final videos = snapshot.data?.docs ?? [];
-        print('Feed received ${videos.length} videos');
         
         if (videos.isEmpty) {
           return Center(
@@ -123,9 +118,6 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
           itemBuilder: (context, index) {
             final videoData = videos[index].data() as Map<String, dynamic>;
             final videoId = videos[index].id;
-            print('Building video ${index + 1}/${videos.length}');
-            print('Video data: $videoData');
-            print('Video ID: $videoId');
             
             try {
               final video = VideoFeed.fromFirestore(videoData, videoId);
@@ -135,9 +127,6 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
                 onShare: () {},
               );
             } catch (e, stackTrace) {
-              print('Error building video $videoId:');
-              print('Error: $e');
-              print('Stack trace: $stackTrace');
               return const SizedBox.shrink(); // Skip invalid videos
             }
           },
@@ -167,15 +156,12 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
   void _loadUserLearningPath() {
     final user = _auth.currentUser;
     if (user != null) {
-      print('Loading learning path for user: ${user.uid}');
       _pathSubscription = _firestoreService.getUserLearningPath(user.uid).listen(
         (snapshot) {
           if (mounted) {
             final data = snapshot.data();
-            print('User data from Firestore: $data');
             setState(() {
               _selectedLearningPath = data?['currentPath'] as String?;
-              print('Selected learning path: $_selectedLearningPath');
             });
           }
         },

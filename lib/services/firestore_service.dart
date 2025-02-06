@@ -129,7 +129,6 @@ class FirestoreService {
   Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByLearningPath(String learningPathId) async* {
     final userId = _auth.currentUser?.uid;
     if (userId == null) {
-      debugPrint('[VideoFeed] No user logged in');
       yield* _db.collection('videos')
           .where('learningPathId', isEqualTo: learningPathId)
           .limit(0)
@@ -141,7 +140,6 @@ class FirestoreService {
     final progressDoc = await _db.collection('user_progress').doc(userId).get();
     final progress = progressDoc.data() ?? {};
     final completedTopics = (progress['topicsCompleted'] as Map<String, dynamic>? ?? {}).keys.toSet();
-    debugPrint('[VideoFeed] Current completed topics: $completedTopics');
 
     // Get learning path topics
     final topicsQuery = await _db.collection('learning_paths')
@@ -151,11 +149,8 @@ class FirestoreService {
         .get();
     
     final topics = topicsQuery.docs;
-    debugPrint('[VideoFeed] Found ${topics.length} topics in learning path');
-    debugPrint('[VideoFeed] Topic IDs: ${topics.map((t) => t.id).join(', ')}');
     
     if (topics.isEmpty) {
-      debugPrint('[VideoFeed] No topics found in learning path');
       yield* _db.collection('videos')
           .where('learningPathId', isEqualTo: learningPathId)
           .limit(0)
@@ -169,25 +164,20 @@ class FirestoreService {
       final topicId = topic.id;
       final topicData = topic.data();
       final topicName = topicData['name'] as String? ?? 'Unnamed Topic';
-      debugPrint('[VideoFeed] Checking topic: $topicId - $topicName (Completed: ${completedTopics.contains(topicId)})');
       
       if (!completedTopics.contains(topicId)) {
         currentTopicId = topicId;
-        debugPrint('[VideoFeed] Found first incomplete topic: $topicId');
         break;
       }
     }
 
     if (currentTopicId == null) {
-      debugPrint('[VideoFeed] All topics completed, showing completion screen');
       yield* _db.collection('videos')
           .where('learningPathId', isEqualTo: 'completed_${learningPathId}')
           .snapshots();
       return;
     }
 
-    debugPrint('[VideoFeed] Getting videos for topic: $currentTopicId');
-    
     // Listen to both progress changes and videos
     yield* _db.collection('user_progress').doc(userId).snapshots().asyncExpand((progressSnapshot) async* {
       final newProgress = progressSnapshot.data() ?? {};

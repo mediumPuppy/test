@@ -25,7 +25,6 @@ class QuizService {
       
       return Quiz.fromFirestore(quizDoc, questions);
     } catch (e) {
-      print('Error fetching quiz: $e');
       return null;
     }
   }
@@ -69,7 +68,6 @@ class QuizService {
       
       return quizzes;
     } catch (e) {
-      print('Error fetching quizzes: $e');
       return [];
     }
   }
@@ -96,7 +94,6 @@ class QuizService {
         'timestamp': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      print('Error recording quiz attempt: $e');
       rethrow;
     }
   }
@@ -114,7 +111,6 @@ class QuizService {
         'id': doc.id,
       }).toList();
     } catch (e) {
-      print('Error fetching quiz history: $e');
       return [];
     }
   }
@@ -122,21 +118,14 @@ class QuizService {
   // Get a stream of available quizzes
   Stream<List<Quiz>> getAvailableQuizzes() {
     try {
-      print('Fetching available quizzes...');
       return _firestore.collection('quizzes')
           .orderBy('createdAt', descending: true)
           .snapshots()
           .asyncMap((snapshot) async {
-        print('Got ${snapshot.docs.length} quiz documents');
-        
         final quizzes = await Future.wait(
           snapshot.docs.map((doc) async {
             final data = doc.data();
-            print('Processing quiz: ${doc.id}');
-            print('Quiz data: $data');
-            
             final questionIds = List<String>.from(data['questionIds'] ?? []);
-            print('Question IDs: $questionIds');
             
             final questionDocs = await Future.wait(
               questionIds.map((id) => 
@@ -148,17 +137,14 @@ class QuizService {
                 .where((doc) => doc.exists)
                 .map((doc) => QuizQuestion.fromFirestore(doc))
                 .toList();
-            print('Found ${questions.length} questions for quiz ${doc.id}');
             
             return Quiz.fromFirestore(doc, questions);
           })
         );
         
-        print('Returning ${quizzes.length} quizzes');
         return quizzes;
       });
     } catch (e) {
-      print('Error streaming quizzes: $e');
       return Stream.value([]);
     }
   }
@@ -220,10 +206,13 @@ class QuizService {
       // Add questions to Firestore
       for (final question in questions) {
         final questionRef = _firestore.collection('questions').doc(question['id'] as String);
-        batch.set(questionRef, question);
+        final questionData = Map<String, dynamic>.from(question);
+        questionData.remove('id');
+        batch.set(questionRef, questionData);
       }
 
       // Create sample quizzes
+      final timestamp = FieldValue.serverTimestamp();
       final quizzes = [
         {
           'id': 'quiz1',
@@ -234,7 +223,7 @@ class QuizService {
           'timeLimit': 300,
           'shuffleQuestions': true,
           'metadata': {'level': 1, 'points': 10},
-          'createdAt': FieldValue.serverTimestamp(),
+          'createdAt': timestamp,
         },
         {
           'id': 'quiz2',
@@ -245,7 +234,7 @@ class QuizService {
           'timeLimit': 600,
           'shuffleQuestions': true,
           'metadata': {'level': 2, 'points': 20},
-          'createdAt': FieldValue.serverTimestamp(),
+          'createdAt': timestamp,
         },
         {
           'id': 'quiz3',
@@ -256,20 +245,21 @@ class QuizService {
           'timeLimit': 900,
           'shuffleQuestions': true,
           'metadata': {'level': 3, 'points': 30},
-          'createdAt': FieldValue.serverTimestamp(),
+          'createdAt': timestamp,
         },
       ];
 
       // Add quizzes to Firestore
       for (final quiz in quizzes) {
         final quizRef = _firestore.collection('quizzes').doc(quiz['id'] as String);
-        batch.set(quizRef, quiz);
+        final quizData = Map<String, dynamic>.from(quiz);
+        quizData.remove('id');
+        batch.set(quizRef, quizData);
       }
 
       await batch.commit();
-      print('Sample quiz data initialized successfully');
     } catch (e) {
-      print('Error initializing sample quiz data: $e');
+      rethrow;
     }
   }
 }

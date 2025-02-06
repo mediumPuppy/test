@@ -34,17 +34,6 @@ class _QuizScreenState extends State<QuizScreen> {
   void initState() {
     super.initState();
     _initializeQuiz();
-    _logQuizDetails(); // Add logging
-  }
-
-  void _logQuizDetails() {
-    if (!_showDebugInfo) return;
-    print('Quiz Details:');
-    print('Title: ${widget.quiz.title}');
-    print('Topics: ${widget.quiz.topics.join(", ")}');
-    print('Difficulty: ${widget.quiz.difficulty}');
-    print('Questions: ${widget.quiz.questions.length}');
-    print('Time Limit: ${widget.quiz.timeLimit} seconds');
   }
 
   void _initializeQuiz() {

@@ -67,7 +67,7 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
         _showQuizPrompt(quiz);
       }
     } catch (e) {
-      print('Error checking for quiz: $e');
+      // Error handling without logging
     }
   }
 
@@ -154,7 +154,7 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
         _firestoreService.getLearningPaths();
       });
     } catch (e) {
-      print('Error refreshing data: $e');
+      // Error handling without logging
     } finally {
       setState(() {
         _isLoading = false;
