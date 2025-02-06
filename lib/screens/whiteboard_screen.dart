@@ -109,7 +109,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
         case '7':
           path.moveTo(x, y - 15);     // Start top left
           path.lineTo(x + 20, y - 15); // Top horizontal
-          path.lineTo(x + 10, y + 10); // Angled stem (shorter and more angled)
+          path.lineTo(x + 10, y + 15); // Angled stem aligned with other numbers
           x += 25;
           break;
         case '8':
@@ -291,7 +291,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                   digitPath.cubicTo(
                     x + width / 2 + 12, y - height/2 - 5,
                     x + width / 5, y - height/5.5,
-                    x + width / 6, y + height/3.8
+                    x + width / 6, y + height/5.5
                   );
                   
                   digitPath.addArc(
@@ -307,7 +307,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                 case '7':
                   digitPath.moveTo(x, y - 15);     // Start top left
                   digitPath.lineTo(x + 20, y - 15); // Top horizontal
-                  digitPath.lineTo(x + 10, y + 10); // Angled stem (shorter and more angled)
+                  digitPath.lineTo(x + 10, y + 15); // Angled stem aligned with other numbers
                   break;
                 case '8':
                   digitPath.addOval(Rect.fromCenter(
