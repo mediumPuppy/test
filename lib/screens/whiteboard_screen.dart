@@ -85,12 +85,12 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
           final width = 20.0;  // Base width for the number
           final height = 30.0; // Base height for the number
           
-          // Top curve of 6
-          path.moveTo(x + width / 1.4, y - height/2);
+          // Top curve of 6 - extends further and curves down more
+          path.moveTo(x + width / 1.2, y - height/2);  // Start further right
           path.cubicTo(
-            x + width / 2 + 10, y - height/2 - 5,  // First control point
-            x + width / 4, y - height/4,           // Second control point
-            x + width / 2.9, y + height/2.8        // End point
+            x + width / 2 + 12, y - height/2 - 5,  // First control point, higher
+            x + width / 5, y - height/4,           // Second control point, more left
+            x + width / 6, y + height/6       // End point, much higher to cut off more bottom
           );
           
           // Bottom circle of 6
@@ -107,9 +107,9 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
           x += width + 5;
           break;
         case '7':
-          path.moveTo(x, y - 15);       // Top left
-          path.lineTo(x + 20, y - 15);  // Top right
-          path.lineTo(x, y + 15);       // Diagonal down
+          path.moveTo(x, y - 15);     // Start top left
+          path.lineTo(x + 20, y - 15); // Top horizontal
+          path.lineTo(x + 10, y + 10); // Angled stem (shorter and more angled)
           x += 25;
           break;
         case '8':
@@ -287,11 +287,11 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                   final width = 20.0;
                   final height = 30.0;
                   
-                  digitPath.moveTo(x + width / 1.4, y - height/2);
+                  digitPath.moveTo(x + width / 1.2, y - height/2);  // Start further right
                   digitPath.cubicTo(
-                    x + width / 2 + 10, y - height/2 - 5,
-                    x + width / 4, y - height/4,
-                    x + width / 2.9, y + height/2.8
+                    x + width / 2 + 12, y - height/2 - 5,
+                    x + width / 5, y - height/5.5,
+                    x + width / 6, y + height/3.8
                   );
                   
                   digitPath.addArc(
@@ -305,9 +305,9 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                   );
                   break;
                 case '7':
-                  digitPath.moveTo(x, y - 15);       // Top left
-                  digitPath.lineTo(x + 20, y - 15);  // Top right
-                  digitPath.lineTo(x, y + 15);       // Diagonal down
+                  digitPath.moveTo(x, y - 15);     // Start top left
+                  digitPath.lineTo(x + 20, y - 15); // Top horizontal
+                  digitPath.lineTo(x + 10, y + 10); // Angled stem (shorter and more angled)
                   break;
                 case '8':
                   digitPath.addOval(Rect.fromCenter(
