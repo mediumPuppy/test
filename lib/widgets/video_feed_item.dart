@@ -4,11 +4,12 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'dart:async';
 import '../models/video_feed.dart';
 import '../services/firestore_service.dart';
+import '../services/topic_progress_service.dart';
 import 'action_bar.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart' show User;
 
-class VideoFeedItem extends StatelessWidget {
+class VideoFeedItem extends StatefulWidget {
   final int index;
   final VideoFeed feed;
   final VoidCallback onShare;
@@ -20,9 +21,39 @@ class VideoFeedItem extends StatelessWidget {
     required this.onShare,
   });
 
+  @override
+  State<VideoFeedItem> createState() => _VideoFeedItemState();
+}
+
+class _VideoFeedItemState extends State<VideoFeedItem> {
+  final _progressService = TopicProgressService();
+  StreamSubscription? _positionSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _positionSubscription = _progressService.positionStream.listen((position) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
+  }
+
+  double _calculateProgress() {
+    final progress = _progressService.getProgress();
+    print('Progress: position=${_progressService.currentPosition}, totalVideos=${_progressService.totalVideos}, progress=$progress');
+    return progress;
+  }
+
   void _handleLike(BuildContext context) {
     final firestoreService = FirestoreService();
-    firestoreService.toggleVideoLike(feed.id);
+    firestoreService.toggleVideoLike(widget.feed.id);
   }
 
   void _handleComment(BuildContext context) {
@@ -37,12 +68,26 @@ class VideoFeedItem extends StatelessWidget {
           maxChildSize: 0.9,
           builder: (_, controller) {
             return CommentSheet(
-              videoId: feed.id,
+              videoId: widget.feed.id,
               scrollController: controller,
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildProgressIndicator(BuildContext context) {
+    return SizedBox(
+      height: 4,
+      child: LinearProgressIndicator(
+        value: _calculateProgress(),
+        backgroundColor: Colors.grey[200],
+        valueColor: AlwaysStoppedAnimation<Color>(
+          Theme.of(context).primaryColor.withOpacity(0.9),
+        ),
+        minHeight: 4,
+      ),
     );
   }
 
@@ -58,7 +103,7 @@ class VideoFeedItem extends StatelessWidget {
           color: Colors.grey[900],
           child: Center(
             child: Text(
-              'Video ${feed.id}',
+              'Video ${widget.feed.id}',
               style: const TextStyle(color: Colors.white),
             ),
           ),
@@ -69,23 +114,23 @@ class VideoFeedItem extends StatelessWidget {
           right: 16,
           bottom: 100,
           child: StreamBuilder<bool>(
-            stream: firestoreService.isVideoLiked(feed.id),
+            stream: firestoreService.isVideoLiked(widget.feed.id),
             builder: (context, likedSnapshot) {
               return StreamBuilder<int>(
-                stream: firestoreService.getVideoLikesCount(feed.id),
+                stream: firestoreService.getVideoLikesCount(widget.feed.id),
                 builder: (context, likesSnapshot) {
                   return StreamBuilder<int>(
-                    stream: firestoreService.getVideoCommentsCount(feed.id),
+                    stream: firestoreService.getVideoCommentsCount(widget.feed.id),
                     builder: (context, commentsSnapshot) {
                       return ActionBar(
                         onLike: () => _handleLike(context),
-                        onShare: onShare,
+                        onShare: widget.onShare,
                         onComment: () => _handleComment(context),
-                        likes: likesSnapshot.data ?? feed.likes,
-                        shares: feed.shares,
+                        likes: likesSnapshot.data ?? widget.feed.likes,
+                        shares: widget.feed.shares,
                         comments: commentsSnapshot.data ?? 0,
                         isLiked: likedSnapshot.data ?? false,
-                        currentTopics: feed.topics,
+                        currentTopics: widget.feed.topics,
                       );
                     },
                   );
@@ -101,12 +146,19 @@ class VideoFeedItem extends StatelessWidget {
           right: 72,
           bottom: 16,
           child: Text(
-            feed.description,
+            widget.feed.description,
             style: const TextStyle(
               color: Colors.white,
               fontSize: 16,
             ),
           ),
+        ),
+        // Progress bar positioned at bottom
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: _buildProgressIndicator(context),
         ),
       ],
     );

@@ -3,6 +3,7 @@ import '../services/quiz_scheduler_service.dart';
 import '../screens/quiz_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import '../services/quiz_service.dart';
 
 class ActionBar extends StatelessWidget {
   final VoidCallback onLike;
@@ -31,40 +32,17 @@ class ActionBar extends StatelessWidget {
     if (user == null) return;
 
     try {
-      final quizScheduler = QuizSchedulerService();
-      final quiz = await quizScheduler.generateQuizForUser(
-        userId: user.uid,
-        currentTopics: currentTopics,
+      final quizService = QuizService();
+      final quizzes = await quizService.getQuizzesForTopics(
+        topics: ['arithmetic'], // Hardcode to match the quiz in Firestore
+        limit: 1,
       );
 
-      if (quiz != null && context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Text('Quiz Ready!'),
-            content: const Text(
-              'Ready to test your knowledge of recent topics? '
-              'This quiz will help reinforce your learning.',
-            ),
-            actions: [
-              TextButton(
-                child: const Text('Later'),
-                onPressed: () => Navigator.pop(context),
-              ),
-              ElevatedButton(
-                child: const Text('Start Quiz'),
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => QuizScreen(quiz: quiz, userId: user.uid),
-                    ),
-                  );
-                },
-              ),
-            ],
+      if (quizzes.isNotEmpty && context.mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => QuizScreen(quiz: quizzes[0], userId: user.uid),
           ),
         );
       } else {
@@ -76,7 +54,7 @@ class ActionBar extends StatelessWidget {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error generating quiz: $e')),
+        SnackBar(content: Text('Error loading quiz: $e')),
       );
     }
   }

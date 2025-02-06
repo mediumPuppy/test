@@ -5,6 +5,7 @@ import '../widgets/video_feed_item.dart';
 import '../models/video_feed.dart';
 import '../widgets/app_drawer.dart';
 import '../services/firestore_service.dart';
+import '../services/topic_progress_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class FeedScreen extends StatefulWidget {
@@ -29,9 +30,33 @@ class _PathVideoFeed extends StatefulWidget {
 class _PathVideoFeedState extends State<_PathVideoFeed> {
   final PageController _pageController = PageController();
   final FirestoreService _firestoreService = FirestoreService();
+  final _progressService = TopicProgressService();
+  int _lastPage = 0;
+  int _lastVideoCount = 0;  // Track video count changes
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(_handlePageChange);
+  }
+
+  void _handlePageChange() {
+    if (_pageController.page != null) {
+      final currentPage = _pageController.page!.round();
+      if (currentPage > _lastPage) {
+        // Scrolling down (next video)
+        _progressService.incrementPosition();
+      } else if (currentPage < _lastPage) {
+        // Scrolling up (previous video)
+        _progressService.decrementPosition();
+      }
+      _lastPage = currentPage;
+    }
+  }
 
   @override
   void dispose() {
+    _pageController.removeListener(_handlePageChange);
     _pageController.dispose();
     super.dispose();
   }
@@ -111,10 +136,22 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
           );
         }
         
+        // Only set total videos when path/topic changes, not during scrolling
+        if (_lastVideoCount != videos.length) {
+          _lastVideoCount = videos.length;
+          _progressService.setTotalVideos(videos.length);
+        }
+        
         return PageView.builder(
           controller: _pageController,
           scrollDirection: Axis.vertical,
           itemCount: videos.length,
+          onPageChanged: (index) {
+            if (index == 0) {
+              // Reset progress when starting a new topic
+              // _progressService.setTotalVideos(videos.length);
+            }
+          },
           itemBuilder: (context, index) {
             final videoData = videos[index].data() as Map<String, dynamic>;
             final videoId = videos[index].id;
