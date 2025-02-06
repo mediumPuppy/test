@@ -1,5 +1,6 @@
 import '../services/auth_service.dart';
 import '../screens/upload_answer_screen.dart';
+import '../screens/whiteboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -71,6 +72,16 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/quizzes');
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.edit),
+            title: const Text('Whiteboard'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const WhiteboardScreen()),
+              );
             },
           ),
           const Divider(),
