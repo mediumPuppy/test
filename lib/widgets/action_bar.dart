@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/quiz_scheduler_service.dart';
 import '../screens/quiz_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 class ActionBar extends StatelessWidget {
   final VoidCallback onLike;
@@ -126,7 +127,10 @@ class ActionBar extends StatelessWidget {
         IconButton(
           icon: Icon(icon),
           color: color,
-          onPressed: onTap,
+          onPressed: () {
+            debugPrint('[DEBUG] Action button pressed: $label');
+            onTap();
+          },
         ),
         Text(
           showCount ? label : '',

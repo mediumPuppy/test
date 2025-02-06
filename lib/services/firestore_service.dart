@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:test/data/sample_videos.dart';
 import './learning_progress_service.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -21,8 +22,21 @@ class FirestoreService {
   }
 
   Future<String?> getUserName(String userId) async {
-    final doc = await _db.collection('users').doc(userId).get();
-    return doc.data()?['userName'] as String?;
+    debugPrint('[DEBUG] Getting username for userId: $userId');
+    try {
+      final doc = await _db.collection('users').doc(userId).get();
+      debugPrint('[DEBUG] User document exists: ${doc.exists}');
+      if (doc.exists) {
+        debugPrint('[DEBUG] User data: ${doc.data()}');
+      } else {
+        debugPrint('[DEBUG] No user document found');
+      }
+      return doc.data()?['email'] as String?;
+    } catch (e, stackTrace) {
+      debugPrint('[ERROR] Error getting username: $e');
+      debugPrint('[ERROR] Stack trace: $stackTrace');
+      return null;
+    }
   }
 
   Future<List<String>> getMentionSuggestions(String prefix) async {
@@ -124,7 +138,7 @@ class FirestoreService {
   Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByLearningPath(String learningPathId) async* {
     final userId = _auth.currentUser?.uid;
     if (userId == null) {
-      print('[VideoFeed] No user logged in');
+      debugPrint('[VideoFeed] No user logged in');
       yield* _db.collection('videos')
           .where('learningPathId', isEqualTo: learningPathId)
           .limit(0)
@@ -136,7 +150,7 @@ class FirestoreService {
     final progressDoc = await _db.collection('user_progress').doc(userId).get();
     final progress = progressDoc.data() ?? {};
     final completedTopics = (progress['topicsCompleted'] as Map<String, dynamic>? ?? {}).keys.toSet();
-    print('[VideoFeed] Current completed topics: $completedTopics');
+    debugPrint('[VideoFeed] Current completed topics: $completedTopics');
 
     // Get learning path topics
     final topicsQuery = await _db.collection('learning_paths')
@@ -146,11 +160,11 @@ class FirestoreService {
         .get();
     
     final topics = topicsQuery.docs;
-    print('[VideoFeed] Found ${topics.length} topics in learning path');
-    print('[VideoFeed] Topic IDs: ${topics.map((t) => t.id).join(', ')}');
+    debugPrint('[VideoFeed] Found ${topics.length} topics in learning path');
+    debugPrint('[VideoFeed] Topic IDs: ${topics.map((t) => t.id).join(', ')}');
     
     if (topics.isEmpty) {
-      print('[VideoFeed] No topics found in learning path');
+      debugPrint('[VideoFeed] No topics found in learning path');
       yield* _db.collection('videos')
           .where('learningPathId', isEqualTo: learningPathId)
           .limit(0)
@@ -164,24 +178,24 @@ class FirestoreService {
       final topicId = topic.id;
       final topicData = topic.data();
       final topicName = topicData['name'] as String? ?? 'Unnamed Topic';
-      print('[VideoFeed] Checking topic: $topicId - $topicName (Completed: ${completedTopics.contains(topicId)})');
+      debugPrint('[VideoFeed] Checking topic: $topicId - $topicName (Completed: ${completedTopics.contains(topicId)})');
       
       if (!completedTopics.contains(topicId)) {
         currentTopicId = topicId;
-        print('[VideoFeed] Found first incomplete topic: $topicId');
+        debugPrint('[VideoFeed] Found first incomplete topic: $topicId');
         break;
       }
     }
 
     if (currentTopicId == null) {
-      print('[VideoFeed] All topics completed, showing completion screen');
+      debugPrint('[VideoFeed] All topics completed, showing completion screen');
       yield* _db.collection('videos')
           .where('learningPathId', isEqualTo: 'completed_${learningPathId}')
           .snapshots();
       return;
     }
 
-    print('[VideoFeed] Getting videos for topic: $currentTopicId');
+    debugPrint('[VideoFeed] Getting videos for topic: $currentTopicId');
     
     // Listen to both progress changes and videos
     yield* _db.collection('user_progress').doc(userId).snapshots().asyncExpand((progressSnapshot) async* {
@@ -238,12 +252,139 @@ class FirestoreService {
   }
 
   // Comment Methods
+  Future<DocumentReference> addVideoComment(
+    String videoId,
+    String comment, {
+    String? replyToId,
+    List<String> mentionedUsers = const [],
+  }) async {
+    debugPrint('[DEBUG] Starting addVideoComment - videoId: $videoId, replyToId: $replyToId');
+    debugPrint('[DEBUG] Current FirebaseAuth user: ${FirebaseAuth.instance.currentUser?.uid}');
+    debugPrint('[DEBUG] Service userId: $userId');
+    
+    if (userId == null) {
+      debugPrint('[ERROR] addVideoComment - User not signed in');
+      throw Exception('User not signed in');
+    }
+
+    // Try getting the user document first to debug
+    final userDoc = await _db.collection('users').doc(userId).get();
+    debugPrint('[DEBUG] User document exists: ${userDoc.exists}');
+    debugPrint('[DEBUG] User document data: ${userDoc.data()}');
+    
+    debugPrint('[DEBUG] Getting username for userId: $userId');
+    final userName = await getUserName(userId!);
+    if (userName == null) {
+      final email = FirebaseAuth.instance.currentUser?.email;
+      if (email != null) {
+        debugPrint('[DEBUG] Using email as fallback for username: $email');
+        final commentData = {
+          'videoId': videoId,
+          'userId': userId,
+          'userName': email,
+          'comment': comment,
+          'timestamp': FieldValue.serverTimestamp(),
+          'likes': 0,
+          'replyToId': replyToId,
+          'mentionedUsers': mentionedUsers,
+        };
+        debugPrint('[DEBUG] Prepared comment data: $commentData');
+
+        try {
+          debugPrint('[DEBUG] Attempting to add comment to video_comments collection');
+          final commentRef = await _db.collection('video_comments').add(commentData);
+          debugPrint('[DEBUG] Comment added successfully with id: ${commentRef.id}');
+
+          debugPrint('[DEBUG] Updating video comments count');
+          await _db.collection('videos').doc(videoId).update({
+            'comments': FieldValue.increment(1)
+          });
+          debugPrint('[DEBUG] Video comments count updated');
+
+          if (mentionedUsers.isNotEmpty) {
+            debugPrint('[DEBUG] Processing ${mentionedUsers.length} mentioned users');
+            for (final mentionedUser in mentionedUsers) {
+              await _db.collection('notifications').add({
+                'type': 'mention',
+                'userId': userId,
+                'mentionedUser': mentionedUser,
+                'mentionedBy': email,
+                'commentId': commentRef.id,
+                'videoId': videoId,
+                'timestamp': FieldValue.serverTimestamp(),
+                'read': false,
+              });
+            }
+            debugPrint('[DEBUG] Finished processing mentioned users');
+          }
+
+          return commentRef;
+        } catch (e, stackTrace) {
+          debugPrint('[ERROR] Failed to add comment: $e');
+          debugPrint('[ERROR] Stack trace: $stackTrace');
+          throw Exception('Failed to add comment: $e');
+        }
+      }
+      debugPrint('[ERROR] addVideoComment - No username or email found for userId: $userId');
+      throw Exception('User profile not found');
+    }
+    debugPrint('[DEBUG] Got username: $userName');
+
+    final commentData = {
+      'videoId': videoId,
+      'userId': userId,
+      'userName': userName,
+      'comment': comment,
+      'timestamp': FieldValue.serverTimestamp(),
+      'likes': 0,
+      'replyToId': replyToId,
+      'mentionedUsers': mentionedUsers,
+    };
+    debugPrint('[DEBUG] Prepared comment data: $commentData');
+
+    try {
+      debugPrint('[DEBUG] Attempting to add comment to video_comments collection');
+      final commentRef = await _db.collection('video_comments').add(commentData);
+      debugPrint('[DEBUG] Comment added successfully with id: ${commentRef.id}');
+
+      debugPrint('[DEBUG] Updating video comments count');
+      await _db.collection('videos').doc(videoId).update({
+        'comments': FieldValue.increment(1)
+      });
+      debugPrint('[DEBUG] Video comments count updated');
+
+      if (mentionedUsers.isNotEmpty) {
+        debugPrint('[DEBUG] Processing ${mentionedUsers.length} mentioned users');
+        for (final mentionedUser in mentionedUsers) {
+          await _db.collection('notifications').add({
+            'type': 'mention',
+            'userId': userId,
+            'mentionedUser': mentionedUser,
+            'mentionedBy': userName,
+            'commentId': commentRef.id,
+            'videoId': videoId,
+            'timestamp': FieldValue.serverTimestamp(),
+            'read': false,
+          });
+        }
+        debugPrint('[DEBUG] Finished processing mentioned users');
+      }
+
+      return commentRef;
+    } catch (e, stackTrace) {
+      debugPrint('[ERROR] Failed to add comment: $e');
+      debugPrint('[ERROR] Stack trace: $stackTrace');
+      throw Exception('Failed to add comment: $e');
+    }
+  }
+
   Stream<QuerySnapshot<Map<String, dynamic>>> getVideoComments(
     String videoId, {
     required String sortBy,
     DocumentSnapshot? lastDocument,
     int limit = 10,
   }) {
+    debugPrint('[DEBUG] Getting video comments - videoId: $videoId, sortBy: $sortBy, limit: $limit');
     var query = _db.collection('video_comments')
         .where('videoId', isEqualTo: videoId)
         .where('replyToId', isNull: true)
@@ -259,8 +400,12 @@ class FirestoreService {
       query = query.startAfterDocument(lastDocument);
     }
 
+    debugPrint('[DEBUG] Query parameters set up successfully');
     return query.withConverter<Map<String, dynamic>>(
-      fromFirestore: (snapshot, _) => snapshot.data()!,
+      fromFirestore: (snapshot, _) {
+        debugPrint('[DEBUG] Converting comment document: ${snapshot.id}');
+        return snapshot.data()!;
+      },
       toFirestore: (data, _) => data,
     ).snapshots();
   }
@@ -274,56 +419,6 @@ class FirestoreService {
           toFirestore: (data, _) => data,
         )
         .snapshots();
-  }
-
-  Future<DocumentReference> addVideoComment(
-    String videoId,
-    String comment, {
-    String? replyToId,
-    List<String> mentionedUsers = const [],
-  }) async {
-    if (userId == null) throw Exception('User not signed in');
-    
-    final userName = await getUserName(userId!);
-    if (userName == null) throw Exception('User profile not found');
-
-    final commentData = {
-      'videoId': videoId,
-      'userId': userId,
-      'userName': userName,
-      'comment': comment,
-      'timestamp': FieldValue.serverTimestamp(),
-      'likes': 0,
-      'replyToId': replyToId,
-      'mentionedUsers': mentionedUsers,
-    };
-
-    try {
-      final commentRef = await _db.collection('video_comments').add(commentData);
-
-      // Increment comments count
-      await _db.collection('videos').doc(videoId).update({
-        'comments': FieldValue.increment(1)
-      });
-
-      // Notify mentioned users
-      for (final mentionedUser in mentionedUsers) {
-        await _db.collection('notifications').add({
-          'type': 'mention',
-          'userId': userId,
-          'mentionedUser': mentionedUser,
-          'mentionedBy': userName,
-          'commentId': commentRef.id,
-          'videoId': videoId,
-          'timestamp': FieldValue.serverTimestamp(),
-          'read': false,
-        });
-      }
-
-      return commentRef;
-    } catch (e) {
-      throw Exception('Failed to add comment: $e');
-    }
   }
 
   // Topic Methods
@@ -393,10 +488,10 @@ class FirestoreService {
 
   // Initialization Methods
   Future<void> initializeSampleData() async {
-    print('Starting sample data initialization...');
+    debugPrint('Starting sample data initialization...');
     
     // Clear existing data first
-    print('Clearing existing data...');
+    debugPrint('Clearing existing data...');
     final batch = _db.batch();
     
     // Clear videos
@@ -423,27 +518,27 @@ class FirestoreService {
     }
     
     await batch.commit();
-    print('Existing data cleared');
+    debugPrint('Existing data cleared');
     
     // Initialize fresh data
     await initializeSampleLearningPaths();
     await initializeTopics();
 
-    print('Initializing videos...');
+    debugPrint('Initializing videos...');
     
     // First, get all learning paths to map their IDs
     final learningPathsSnapshot = await _db.collection('learning_paths').get();
     final learningPathMap = Map.fromEntries(
       learningPathsSnapshot.docs.map((doc) => MapEntry(doc.data()['id'] as String, doc.id))
     );
-    print('Learning path mapping: $learningPathMap');
+    debugPrint('Learning path mapping: $learningPathMap');
     
     // Then get all topics to map their IDs
     final topicsSnapshot = await _db.collection('topics').get();
     final topicMap = Map.fromEntries(
       topicsSnapshot.docs.map((doc) => MapEntry(doc.data()['id'] as String, doc.id))
     );
-    print('Topic mapping: $topicMap');
+    debugPrint('Topic mapping: $topicMap');
     
     // Add sample videos with mapped IDs
     for (var video in sampleVideos) {
@@ -453,7 +548,7 @@ class FirestoreService {
       final oldTopicId = videoData['topicId'] as String;
       final newTopicId = topicMap[oldTopicId];
       if (newTopicId == null) {
-        print('Warning: No mapping found for topic ID: $oldTopicId');
+        debugPrint('Warning: No mapping found for topic ID: $oldTopicId');
         continue;
       }
       videoData['topicId'] = newTopicId;
@@ -462,7 +557,7 @@ class FirestoreService {
       final oldPathId = videoData['learningPathId'] as String;
       final newPathId = learningPathMap[oldPathId];
       if (newPathId == null) {
-        print('Warning: No mapping found for learning path ID: $oldPathId');
+        debugPrint('Warning: No mapping found for learning path ID: $oldPathId');
         continue;
       }
       videoData['learningPathId'] = newPathId;
@@ -471,20 +566,20 @@ class FirestoreService {
       videoData['createdAt'] = Timestamp.fromDate(videoData['createdAt'] as DateTime);
       
       await _db.collection('videos').add(videoData);
-      print('Added video: ${videoData['title']} to path: ${videoData['learningPathId']} and topic: ${videoData['topicId']}');
+      debugPrint('Added video: ${videoData['title']} to path: ${videoData['learningPathId']} and topic: ${videoData['topicId']}');
     }
-    print('Sample data initialization complete');
+    debugPrint('Sample data initialization complete');
   }
 
   Future<void> initializeSampleLearningPaths() async {
     // Check if learning paths already exist
     final existingPaths = await _db.collection('learning_paths').get();
     if (!existingPaths.docs.isEmpty) {
-      print('Learning paths already initialized');
+      debugPrint('Learning paths already initialized');
       return;
     }
 
-    print('Initializing learning paths...');
+    debugPrint('Initializing learning paths...');
     final learningPaths = [
       {
         'creatorId': 'teacher1',
@@ -556,13 +651,13 @@ class FirestoreService {
       }
     ];
 
-    print('Initializing learning paths...');
+    debugPrint('Initializing learning paths...');
     for (final path in learningPaths) {
       final topics = List<Map<String, dynamic>>.from(path['topics'] as List);
       path.remove('topics');
       
       final pathRef = await _db.collection('learning_paths').add(path);
-      print('Created learning path: ${path['title']}');
+      debugPrint('Created learning path: ${path['title']}');
       
       for (final topic in topics) {
         final topicId = topic['id'] as String;
@@ -572,7 +667,7 @@ class FirestoreService {
             .collection('topics')
             .doc(topicId)  
             .set(topic);
-        print('Added topic: ${topic['name']} with ID: $topicId to ${path['title']}');
+        debugPrint('Added topic: ${topic['name']} with ID: $topicId to ${path['title']}');
       }
     }
   }
@@ -581,11 +676,11 @@ class FirestoreService {
     // Check if topics already exist
     final topicsSnapshot = await _db.collection('topics').get();
     if (!topicsSnapshot.docs.isEmpty) {
-      print('Topics already initialized');
+      debugPrint('Topics already initialized');
       return;
     }
 
-    print('Initializing topics...');
+    debugPrint('Initializing topics...');
     final batch = _db.batch();
     
     final topics = [
@@ -637,11 +732,11 @@ class FirestoreService {
     }
 
     await batch.commit();
-    print('Topics initialized');
+    debugPrint('Topics initialized');
   }
 
   Future<void> temporaryUpdateLearningPaths() async {
-    print('Starting temporary learning path update...');
+    debugPrint('Starting temporary learning path update...');
     
     final pathsSnapshot = await _db.collection('learning_paths').get();
     
@@ -660,7 +755,7 @@ class FirestoreService {
           'title': 'Algebra Basics',
           'totalVideos': 7
         });
-        print('Updated Algebra Basics path');
+        debugPrint('Updated Algebra Basics path');
       } else if (data['title'] == 'Geometry Fundamentals') {
         await doc.reference.update({
           'creatorId': 'teacher1',
@@ -674,10 +769,10 @@ class FirestoreService {
           'title': 'Geometry Fundamentals',
           'totalVideos': 6
         });
-        print('Updated Geometry Fundamentals path');
+        debugPrint('Updated Geometry Fundamentals path');
       }
     }
-    print('Temporary learning path update complete');
+    debugPrint('Temporary learning path update complete');
   }
 
   // Progress Methods
