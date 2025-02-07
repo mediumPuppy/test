@@ -9,6 +9,8 @@ import '../services/topic_progress_service.dart';
 import 'action_bar.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart' show User;
+import '../widgets/transition_screen.dart';
+import '../screens/whiteboard_screen.dart';
 
 class VideoFeedItem extends StatefulWidget {
   final int index;
@@ -31,16 +33,32 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
   StreamSubscription? _positionSubscription;
   late VideoPlayerController _videoController;
   bool _isInitialized = false;
+  bool _showTransition = false;
+  bool _videoCompleted = false;
 
   @override
   void initState() {
     super.initState();
+    print('VideoFeedItem: Initializing video');
     _initializeVideo();
     _positionSubscription = _progressService.positionStream.listen((position) {
       if (mounted) {
         setState(() {});
       }
     });
+
+    // Listen for video completion
+    _videoController.addListener(_checkVideoCompletion);
+  }
+
+  void _checkVideoCompletion() {
+    if (!_videoCompleted && 
+        _videoController.value.isInitialized &&
+        _videoController.value.position >= _videoController.value.duration) {
+      print('Video completed - showing transition');
+      _videoCompleted = true;
+      _showTransitionScreen();
+    }
   }
 
   Future<void> _initializeVideo() async {
@@ -49,30 +67,44 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
       _videoController = VideoPlayerController.networkUrl(
         Uri.parse(widget.feed.videoUrl),
       );
-      
+
       await _videoController.initialize();
+      print('Video initialized successfully');
       
       if (mounted) {
         setState(() {
           _isInitialized = true;
         });
-        _videoController.setLooping(true);
-        _videoController.play();
-        print('Video initialized successfully');
       }
-    } catch (e, stackTrace) {
+      
+      _videoController.play();
+    } catch (e) {
       print('Error initializing video: $e');
-      print('Stack trace: $stackTrace');
+    }
+  }
+
+  void _showTransitionScreen() {
+    print('Starting transition screen with whiteboard');
+    setState(() {
+      _showTransition = true;
+      _videoController.pause();
+    });
+
+    // Hide transition screen after duration
+    Future.delayed(const Duration(seconds: 10), () {
+      print('Transition complete');
       if (mounted) {
         setState(() {
-          _isInitialized = false;
+          _showTransition = false;
         });
+        _videoController.play();
       }
-    }
+    });
   }
 
   @override
   void dispose() {
+    _videoController.removeListener(_checkVideoCompletion);
     _videoController.dispose();
     _positionSubscription?.cancel();
     super.dispose();
@@ -215,6 +247,9 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
           bottom: 0,
           child: _buildProgressIndicator(context),
         ),
+        // Transition screen overlay
+        if (_showTransition)
+          const WhiteboardScreen(),
       ],
     );
   }
