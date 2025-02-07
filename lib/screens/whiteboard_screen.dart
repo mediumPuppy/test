@@ -14,13 +14,19 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
   final List<Path> _paths = [];
   final List<double> _pathLengths = [];
   double _totalLength = 0;
+  String _text = "";
 
   @override
   void initState() {
     super.initState();
+    _text = "123 + 456 = 579\n"
+            "(8 × 9) ÷ 3 = 24\n"
+            "42 - 7 = 35\n"
+            "99 ÷ (3 + 3) = 16\n"
+            "888 × 2 = 1776";
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 5), // Adjust duration as needed
+      duration: const Duration(seconds: 10), // Adjust duration as needed
     );
     
     _initializePaths();
@@ -29,13 +35,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
 
   void _initializePaths() {
     // Create paths for each character/symbol in the equation
-    final characters = [
-      '1', ' ', '2', ' ', '3', ' ', '4', ' ', '5', ' ', '6', ' ', '7', ' ', '8', ' ', '9',
-      '\n',
-      '123456789',
-      '\n',
-      '+', ' ', '-', ' ', '×', ' ', '÷', ' ', '=', ' ', '^', ' ', '(', ' ', ')', ' ', '√'
-    ];
+    final characters = _text.split('');
     double x = 50; // Starting x position
     double y = 200; // Vertical position
     
@@ -225,17 +225,28 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
           x += 15;
           break;
         case '√':
-          // Small top line
-          path.moveTo(x + 3, y - 8);
-          path.lineTo(x + 8, y - 8);
-          // Diagonal line down
-          path.lineTo(x + 12, y + 8);
-          // Smooth curve to horizontal
+          // Short, precise vincula at top
+          path.moveTo(x + 2, y - 10);
+          path.lineTo(x + 5, y - 10);
+          
+          // Graceful diagonal with slight curve
           path.quadraticBezierTo(
-            x + 14, y + 12,  // Control point
-            x + 20, y + 12   // End point - extends for number
+            x + 7, y - 8,     // Control point to start curve
+            x + 8, y - 5      // End of initial curve
           );
-          x += 25;
+          
+          // Main diagonal stroke
+          path.quadraticBezierTo(
+            x + 10, y + 3,    // Control point for main descent
+            x + 12, y + 5     // Where we start the bottom curve
+          );
+          
+          // The beautiful asymptotic curve
+          path.quadraticBezierTo(
+            x + 14, y + 6,    // Control point for transition
+            x + 25, y + 6     // Extended end point with slight lift
+          );
+          x += 30;
           break;
         case '\n':
           y += 50;
@@ -392,15 +403,26 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                   );
                   break;
                 case '√':
-                  // Small top line
-                  digitPath.moveTo(x + 3, y - 8);
-                  digitPath.lineTo(x + 8, y - 8);
-                  // Diagonal line down
-                  digitPath.lineTo(x + 12, y + 8);
-                  // Smooth curve to horizontal
+                  // Short, precise vincula at top
+                  digitPath.moveTo(x + 2, y - 10);
+                  digitPath.lineTo(x + 5, y - 10);
+                  
+                  // Graceful diagonal with slight curve
                   digitPath.quadraticBezierTo(
-                    x + 14, y + 12,  // Control point
-                    x + 20, y + 12   // End point - extends for number
+                    x + 7, y - 8,     // Control point to start curve
+                    x + 8, y - 5      // End of initial curve
+                  );
+                  
+                  // Main diagonal stroke
+                  digitPath.quadraticBezierTo(
+                    x + 10, y + 3,    // Control point for main descent
+                    x + 12, y + 5     // Where we start the bottom curve
+                  );
+                  
+                  // The beautiful asymptotic curve
+                  digitPath.quadraticBezierTo(
+                    x + 14, y + 6,    // Control point for transition
+                    x + 25, y + 6     // Extended end point with slight lift
                   );
                   break;
                 case '×':
