@@ -121,9 +121,9 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
           ));
           // Bottom loop (slightly larger and wider)
           path.addOval(Rect.fromCenter(
-            center: Offset(x + 10, y + 6),
+            center: Offset(x + 10, y + 7),  // Moved down slightly to extend bottom
             width: 16,
-            height: 12,
+            height: 14,  // Made taller
           ));
           x += 25;
           break;
@@ -326,9 +326,9 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                   ));
                   // Bottom loop (slightly larger and wider)
                   digitPath.addOval(Rect.fromCenter(
-                    center: Offset(x + 10, y + 6),
+                    center: Offset(x + 10, y + 7),  // Moved down slightly to extend bottom
                     width: 16,
-                    height: 12,
+                    height: 14,  // Made taller
                   ));
                   break;
                 case '9':
