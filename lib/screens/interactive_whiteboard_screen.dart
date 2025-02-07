@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'whiteboard_screen.dart';
 import '../services/explanation_service.dart';
 
-class InteractiveWhiteboardScreen extends StatelessWidget {
+class InteractiveWhiteboardScreen extends StatefulWidget {
   final String? text;
   final List<DrawingCommand>? drawingCommands;
   final Duration duration;
@@ -19,16 +19,32 @@ class InteractiveWhiteboardScreen extends StatelessWidget {
   });
 
   @override
+  State<InteractiveWhiteboardScreen> createState() => _InteractiveWhiteboardScreenState();
+}
+
+class _InteractiveWhiteboardScreenState extends State<InteractiveWhiteboardScreen> {
+  // Add a key to force rebuild of WhiteboardScreen
+  Key _whiteboardKey = UniqueKey();
+
+  void _resetAnimation() {
+    setState(() {
+      // Generate a new key to force rebuild
+      _whiteboardKey = UniqueKey();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         WhiteboardScreen(
-          text: text,
-          drawingCommands: drawingCommands,
-          duration: duration,
-          onAnimationComplete: onAnimationComplete,
+          key: _whiteboardKey,
+          text: widget.text,
+          drawingCommands: widget.drawingCommands,
+          duration: widget.duration,
+          onAnimationComplete: widget.onAnimationComplete,
         ),
-        if (showControls)
+        if (widget.showControls)
           Positioned(
             top: 16,
             right: 16,
@@ -37,15 +53,7 @@ class InteractiveWhiteboardScreen extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const Icon(Icons.refresh),
-                  onPressed: () {
-                    // Rebuild the whiteboard to restart animation
-                    if (context.mounted) {
-                      final state = context.findAncestorStateOfType<State>();
-                      if (state != null) {
-                        state.setState(() {});
-                      }
-                    }
-                  },
+                  onPressed: _resetAnimation,
                   tooltip: 'Replay Animation',
                 ),
                 IconButton(
