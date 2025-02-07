@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import '../services/quiz_scheduler_service.dart';
 import '../screens/quiz_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
 import '../services/quiz_service.dart';
 
 class ActionBar extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onShare;
   final VoidCallback onComment;
+  final VoidCallback onExplain;
   final int likes;
   final int shares;
   final int comments;
@@ -20,6 +19,7 @@ class ActionBar extends StatelessWidget {
     required this.onLike,
     required this.onShare,
     required this.onComment,
+    required this.onExplain,
     required this.likes,
     required this.shares,
     required this.comments,
@@ -88,6 +88,16 @@ class ActionBar extends StatelessWidget {
           label: 'Quiz',
           onTap: () => _triggerQuiz(context),
           showCount: false,
+        ),
+        const SizedBox(height: 16),
+        Column(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.lightbulb_outline),
+              onPressed: onExplain,
+            ),
+            const Text('Explain'),
+          ],
         ),
       ],
     );

@@ -9,8 +9,8 @@ import '../services/topic_progress_service.dart';
 import 'action_bar.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart' show User;
-import '../widgets/transition_screen.dart';
 import '../screens/whiteboard_screen.dart';
+import '../screens/ai_explanation_screen.dart';
 
 class VideoFeedItem extends StatefulWidget {
   final int index;
@@ -102,42 +102,30 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
     });
   }
 
-  @override
-  void dispose() {
-    _videoController.removeListener(_checkVideoCompletion);
-    _videoController.dispose();
-    _positionSubscription?.cancel();
-    super.dispose();
-  }
-
-  double _calculateProgress() {
-    final progress = _progressService.getProgress();
-    return progress;
-  }
-
-  void _handleLike(BuildContext context) {
+  void _handleLike() {
     final firestoreService = FirestoreService();
     firestoreService.toggleVideoLike(widget.feed.id);
   }
 
-  void _handleComment(BuildContext context) {
+  void _handleComment() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.9,
-          minChildSize: 0.5,
-          maxChildSize: 0.9,
-          builder: (_, controller) {
-            return CommentSheet(
-              videoId: widget.feed.id,
-              scrollController: controller,
-            );
-          },
-        );
-      },
+      builder: (context) => CommentSheet(
+        videoId: widget.feed.id,
+        scrollController: ScrollController(),
+      ),
+    );
+  }
+
+  void _handleExplain() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AIExplanationScreen(
+          videoContext: widget.feed.description,
+        ),
+      ),
     );
   }
 
@@ -153,6 +141,19 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
         minHeight: 4,
       ),
     );
+  }
+
+  double _calculateProgress() {
+    final progress = _progressService.getProgress();
+    return progress;
+  }
+
+  @override
+  void dispose() {
+    _videoController.removeListener(_checkVideoCompletion);
+    _videoController.dispose();
+    _positionSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -211,9 +212,10 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
                     stream: firestoreService.getVideoCommentsCount(widget.feed.id),
                     builder: (context, commentsSnapshot) {
                       return ActionBar(
-                        onLike: () => _handleLike(context),
+                        onLike: _handleLike,
                         onShare: widget.onShare,
-                        onComment: () => _handleComment(context),
+                        onComment: _handleComment,
+                        onExplain: _handleExplain,
                         likes: likesSnapshot.data ?? widget.feed.likes,
                         shares: widget.feed.shares,
                         comments: commentsSnapshot.data ?? 0,
