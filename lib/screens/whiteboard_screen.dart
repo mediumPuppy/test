@@ -73,9 +73,9 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
           x += 25;
           break;
         case '5':
-          path.moveTo(x + 16, y - 15);  // Top right (shorter)
-          path.lineTo(x, y - 15);       // Top left
-          path.lineTo(x, y);            // Down vertical
+          path.moveTo(x + 16, y - 15);  // Top right (back to original)
+          path.lineTo(x, y - 15);       // Top left (back to original)
+          path.lineTo(x, y - 5);        // Down vertical (shorter)
           path.quadraticBezierTo(x + 15, y, x + 15, y + 5);  // Bottom curve start
           path.quadraticBezierTo(x + 15, y + 15, x, y + 15);  // Bottom curve end
           x += 25;
@@ -135,12 +135,9 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
             height: 14,
           ));
           
-          // Curved stem flowing from circle
+          // Straight stem
           path.moveTo(x + 18, y - 8);  // Start from medium height on the circle
-          path.quadraticBezierTo(
-            x + 18, y + 8,  // Control point - creates natural curve
-            x + 8, y + 15   // End point - curves more inward
-          );
+          path.lineTo(x + 18, y + 15); // Straight down to baseline
           x += 25;
           break;
         case '0':
@@ -284,9 +281,9 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                   digitPath.lineTo(x + 20, y + 5);   // Horizontal line
                   break;
                 case '5':
-                  digitPath.moveTo(x + 16, y - 15);  // Top right (shorter)
-                  digitPath.lineTo(x, y - 15);       // Top left
-                  digitPath.lineTo(x, y);            // Down vertical
+                  digitPath.moveTo(x + 16, y - 15);  // Top right (back to original)
+                  digitPath.lineTo(x, y - 15);       // Top left (back to original)
+                  digitPath.lineTo(x, y - 5);        // Down vertical (shorter)
                   digitPath.quadraticBezierTo(x + 15, y, x + 15, y + 5);  // Bottom curve start
                   digitPath.quadraticBezierTo(x + 15, y + 15, x, y + 15);  // Bottom curve end
                   break;
@@ -339,12 +336,9 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                     height: 14,
                   ));
                   
-                  // Curved stem flowing from circle
+                  // Straight stem
                   digitPath.moveTo(x + 18, y - 8);  // Start from medium height on the circle
-                  digitPath.quadraticBezierTo(
-                    x + 18, y + 8,  // Control point - creates natural curve
-                    x + 8, y + 15   // End point - curves more inward
-                  );
+                  digitPath.lineTo(x + 18, y + 15); // Straight down to baseline
                   break;
                 case '0':
                   digitPath.addOval(Rect.fromCenter(
