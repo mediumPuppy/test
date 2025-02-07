@@ -9,25 +9,19 @@ import 'screens/learning_paths_screen.dart';
 import 'screens/upload_answer_screen.dart';
 import 'screens/quizzes_screen.dart';
 import 'services/auth_service.dart';
-import 'services/quiz_service.dart'; // Added import statement
+import 'services/quiz_service.dart';
 
 void main() async {
-  try {
-    WidgetsFlutterBinding.ensureInitialized();
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
-    // Initialize test data
-    final quizService = QuizService();
-    await quizService.initializeSampleQuizzes();
+  // Initialize test data
+  final quizService = QuizService();
+  await quizService.initializeSampleQuizzes();
 
-    runApp(const MyApp());
-  } catch (e, stackTrace) {
-    print('Error during initialization: $e');
-    print('Stack trace: $stackTrace');
-    rethrow;
-  }
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

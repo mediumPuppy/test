@@ -57,7 +57,7 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
         _videoController.value.position >= _videoController.value.duration) {
       print('Video completed - showing transition');
       _videoCompleted = true;
-      _showTransitionScreen();
+      // _showTransitionScreen();
     }
   }
 
@@ -250,8 +250,8 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
           child: _buildProgressIndicator(context),
         ),
         // Transition screen overlay
-        if (_showTransition)
-          const WhiteboardScreen(),
+        // if (_showTransition)
+        //   const WhiteboardScreen(),
       ],
     );
   }

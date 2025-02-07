@@ -90,15 +90,13 @@ class ActionBar extends StatelessWidget {
           showCount: false,
         ),
         const SizedBox(height: 16),
-        Column(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.lightbulb_outline),
-              onPressed: onExplain,
-            ),
-            const Text('Explain'),
-          ],
+        _buildActionButton(
+          icon: Icons.lightbulb,
+          label: 'Explain',
+          onTap: onExplain,
+          showCount: false,
         ),
+        const SizedBox(height: 16),
       ],
     );
   }

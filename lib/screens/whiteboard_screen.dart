@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
+import '../services/explanation_service.dart';
 
 class WhiteboardScreen extends StatefulWidget {
-  const WhiteboardScreen({super.key});
+  final List<DrawingCommand>? drawingCommands;
+  final String? text;
+  final Duration duration;
+  final VoidCallback? onAnimationComplete;
+
+  const WhiteboardScreen({
+    super.key,
+    this.drawingCommands,
+    this.text,
+    this.duration = const Duration(seconds: 10),
+    this.onAnimationComplete,
+  });
 
   @override
   State<WhiteboardScreen> createState() => _WhiteboardScreenState();
@@ -14,23 +26,74 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
   final List<Path> _paths = [];
   final List<double> _pathLengths = [];
   double _totalLength = 0;
-  String _text = "";
+  late String _text;
 
   @override
   void initState() {
     super.initState();
-    _text = "123 + 456 = 579\n"
+    _text = widget.text ?? "123 + 456 = 579\n"
             "(8 × 9) ÷ 3 = 24\n"
             "42 - 7 = 35\n"
             "99 ÷ (3 + 3) = 16\n"
             "888 × 2 = 1776";
+            
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 10), // Adjust duration as needed
+      duration: widget.duration,
     );
     
-    _initializePaths();
+    if (widget.drawingCommands != null) {
+      _initializeFromCommands();
+    } else {
+      _initializePaths();
+    }
+    
     _controller.forward();
+    
+    if (widget.onAnimationComplete != null) {
+      _controller.addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          widget.onAnimationComplete!();
+        }
+      });
+    }
+  }
+
+  void _initializeFromCommands() {
+    if (widget.drawingCommands == null) return;
+    
+    double x = 50;
+    double y = 200;
+    
+    for (final command in widget.drawingCommands!) {
+      final path = Path();
+      
+      switch (command.type) {
+        case 'moveTo':
+          final params = command.params;
+          path.moveTo(params['x'].toDouble(), params['y'].toDouble());
+          break;
+        case 'lineTo':
+          final params = command.params;
+          path.lineTo(params['x'].toDouble(), params['y'].toDouble());
+          break;
+        case 'quadraticBezierTo':
+          final params = command.params;
+          path.quadraticBezierTo(
+            params['controlX'].toDouble(),
+            params['controlY'].toDouble(),
+            params['endX'].toDouble(),
+            params['endY'].toDouble(),
+          );
+          break;
+        // Add more command types as needed
+      }
+      
+      _paths.add(path);
+      final length = _computePathLength(path);
+      _pathLengths.add(length);
+      _totalLength += length;
+    }
   }
 
   void _initializePaths() {
@@ -455,6 +518,15 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
         }
       }
     }
+  }
+
+  double _computePathLength(Path path) {
+    final pathMetrics = path.computeMetrics();
+    double pathLength = 0;
+    for (final metric in pathMetrics) {
+      pathLength += metric.length;
+    }
+    return pathLength;
   }
 
   @override
