@@ -128,13 +128,19 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
           x += 25;
           break;
         case '9':
+          // Top circle - slightly oval
           path.addOval(Rect.fromCenter(
-            center: Offset(x + 10, y + 5),
-            width: 20,
-            height: 30,
+            center: Offset(x + 10, y - 8),
+            width: 16,
+            height: 14,
           ));
-          path.moveTo(x + 10, y - 15);
-          path.lineTo(x + 10, y + 15);
+          
+          // Curved stem flowing from circle
+          path.moveTo(x + 18, y - 8);  // Start from medium height on the circle
+          path.quadraticBezierTo(
+            x + 18, y + 8,  // Control point - creates natural curve
+            x + 8, y + 15   // End point - curves more inward
+          );
           x += 25;
           break;
         case '0':
@@ -326,13 +332,19 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                   ));
                   break;
                 case '9':
+                  // Top circle - slightly oval
                   digitPath.addOval(Rect.fromCenter(
-                    center: Offset(x + 10, y + 5),
-                    width: 20,
-                    height: 30,
+                    center: Offset(x + 10, y - 8),
+                    width: 16,
+                    height: 14,
                   ));
-                  digitPath.moveTo(x + 10, y - 15);
-                  digitPath.lineTo(x + 10, y + 15);
+                  
+                  // Curved stem flowing from circle
+                  digitPath.moveTo(x + 18, y - 8);  // Start from medium height on the circle
+                  digitPath.quadraticBezierTo(
+                    x + 18, y + 8,  // Control point - creates natural curve
+                    x + 8, y + 15   // End point - curves more inward
+                  );
                   break;
                 case '0':
                   digitPath.addOval(Rect.fromCenter(
