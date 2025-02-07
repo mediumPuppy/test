@@ -156,49 +156,49 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
           x += 25;
           break;
         case '+':
-          path.moveTo(x + 10, y - 15);
-          path.lineTo(x + 10, y + 15);
-          path.moveTo(x, y);
-          path.lineTo(x + 20, y);
-          x += 30;
-          break;
-        case '-':
-          path.moveTo(x, y);
-          path.lineTo(x + 20, y);
-          x += 30;
-          break;
-        case '×':
           path.moveTo(x + 10, y - 10);
           path.lineTo(x + 10, y + 10);
           path.moveTo(x, y);
           path.lineTo(x + 20, y);
-          x += 30;
+          x += 25;
           break;
-        case '÷':
-          // Top dot
-          path.addOval(Rect.fromCenter(
-            center: Offset(x + 10, y - 12),
-            width: 4,
-            height: 4,
-          ));
-          // Division line
+        case '-':
           path.moveTo(x, y);
-          path.lineTo(x + 20, y);
-          // Bottom dot
-          path.addOval(Rect.fromCenter(
-            center: Offset(x + 10, y + 12),
-            width: 4,
-            height: 4,
-          ));
-          x += 30;
+          path.lineTo(x + 15, y);  // Made less wide
+          x += 25;
           break;
         case '=':
-          // Two parallel lines with more spacing
-          path.moveTo(x, y - 8);
-          path.lineTo(x + 20, y - 8);
-          path.moveTo(x, y + 8);
-          path.lineTo(x + 20, y + 8);
-          x += 30;
+          path.moveTo(x, y - 3);  // Top line, closer to middle
+          path.lineTo(x + 20, y - 3);
+          path.moveTo(x, y + 3);  // Bottom line, closer to middle
+          path.lineTo(x + 20, y + 3);
+          x += 25;
+          break;
+        case '×':
+          // First diagonal (top-left to bottom-right)
+          path.moveTo(x + 5, y - 5);
+          path.lineTo(x + 15, y + 5);
+          // Second diagonal (top-right to bottom-left)
+          path.moveTo(x + 15, y - 5);
+          path.lineTo(x + 5, y + 5);
+          x += 25;
+          break;
+        case '÷':
+          path.moveTo(x, y);
+          path.lineTo(x + 20, y);
+          // Top dot closer to line
+          path.addOval(Rect.fromCenter(
+            center: Offset(x + 10, y - 5),
+            width: 3,
+            height: 3,
+          ));
+          // Bottom dot closer to line
+          path.addOval(Rect.fromCenter(
+            center: Offset(x + 10, y + 5),
+            width: 3,
+            height: 3,
+          ));
+          x += 25;
           break;
         case '^':
           path.moveTo(x, y);
@@ -207,38 +207,34 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
           x += 15;
           break;
         case '(':
+          // Left parenthesis with natural curve
           path.moveTo(x + 10, y - 15);
-          path.lineTo(x + 10, y + 15);
-          path.addArc(
-            Rect.fromCenter(
-              center: Offset(x + 10, y),
-              width: 20,
-              height: 30,
-            ),
-            0,
-            math.pi
+          path.quadraticBezierTo(
+            x + 2, y,      // Control point
+            x + 10, y + 15 // End point
           );
-          x += 25;
+          x += 15;
           break;
         case ')':
-          path.moveTo(x + 10, y - 15);
-          path.lineTo(x + 10, y + 15);
-          path.addArc(
-            Rect.fromCenter(
-              center: Offset(x + 10, y),
-              width: 20,
-              height: 30,
-            ),
-            math.pi,
-            math.pi
+          // Right parenthesis with natural curve
+          path.moveTo(x + 5, y - 15);
+          path.quadraticBezierTo(
+            x + 13, y,     // Control point
+            x + 5, y + 15  // End point
           );
-          x += 25;
+          x += 15;
           break;
         case '√':
-          path.moveTo(x, y - 15);
-          path.lineTo(x + 20, y - 15);
-          path.moveTo(x + 20, y - 15);
-          path.lineTo(x + 10, y + 15);
+          // Small top line
+          path.moveTo(x + 3, y - 8);
+          path.lineTo(x + 8, y - 8);
+          // Diagonal line down
+          path.lineTo(x + 12, y + 8);
+          // Smooth curve to horizontal
+          path.quadraticBezierTo(
+            x + 14, y + 12,  // Control point
+            x + 20, y + 12   // End point - extends for number
+          );
           x += 25;
           break;
         case '\n':
@@ -346,6 +342,74 @@ class _WhiteboardScreenState extends State<WhiteboardScreen> with SingleTickerPr
                     width: 20,
                     height: 30,
                   ));
+                  break;
+                case '+':
+                  digitPath.moveTo(x + 10, y - 10);
+                  digitPath.lineTo(x + 10, y + 10);
+                  digitPath.moveTo(x, y);
+                  digitPath.lineTo(x + 20, y);
+                  break;
+                case '-':
+                  digitPath.moveTo(x, y);
+                  digitPath.lineTo(x + 15, y);  // Made less wide
+                  break;
+                case '=':
+                  digitPath.moveTo(x, y - 3);  // Top line, closer to middle
+                  digitPath.lineTo(x + 20, y - 3);
+                  digitPath.moveTo(x, y + 3);  // Bottom line, closer to middle
+                  digitPath.lineTo(x + 20, y + 3);
+                  break;
+                case '÷':
+                  digitPath.moveTo(x, y);
+                  digitPath.lineTo(x + 20, y);
+                  // Top dot closer to line
+                  digitPath.addOval(Rect.fromCenter(
+                    center: Offset(x + 10, y - 5),
+                    width: 3,
+                    height: 3,
+                  ));
+                  // Bottom dot closer to line
+                  digitPath.addOval(Rect.fromCenter(
+                    center: Offset(x + 10, y + 5),
+                    width: 3,
+                    height: 3,
+                  ));
+                  break;
+                case '(':
+                  // Left parenthesis with natural curve
+                  digitPath.moveTo(x + 10, y - 15);
+                  digitPath.quadraticBezierTo(
+                    x + 2, y,      // Control point
+                    x + 10, y + 15 // End point
+                  );
+                  break;
+                case ')':
+                  // Right parenthesis with natural curve
+                  digitPath.moveTo(x + 5, y - 15);
+                  digitPath.quadraticBezierTo(
+                    x + 13, y,     // Control point
+                    x + 5, y + 15  // End point
+                  );
+                  break;
+                case '√':
+                  // Small top line
+                  digitPath.moveTo(x + 3, y - 8);
+                  digitPath.lineTo(x + 8, y - 8);
+                  // Diagonal line down
+                  digitPath.lineTo(x + 12, y + 8);
+                  // Smooth curve to horizontal
+                  digitPath.quadraticBezierTo(
+                    x + 14, y + 12,  // Control point
+                    x + 20, y + 12   // End point - extends for number
+                  );
+                  break;
+                case '×':
+                  // First diagonal (top-left to bottom-right)
+                  digitPath.moveTo(x + 5, y - 5);
+                  digitPath.lineTo(x + 15, y + 5);
+                  // Second diagonal (top-right to bottom-left)
+                  digitPath.moveTo(x + 15, y - 5);
+                  digitPath.lineTo(x + 5, y + 5);
                   break;
               }
               _paths.add(digitPath);
