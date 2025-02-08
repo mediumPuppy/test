@@ -182,6 +182,45 @@ Provide a clear, helpful explanation that builds on our previous conversation. R
     }
   }
 
+  String _convertLatexToPlainMath(String latex) {
+    final conversions = <String, String Function(Match)?>{
+      r'\frac{(.*?)}{(.*?)}': (Match m) => '${m.group(1)}/${m.group(2)}',
+      r'\cdot': null,
+      r'\times': null,
+      r'\div': null,
+      r'\sqrt{(.*?)}': (Match m) => '√(${m.group(1)})',
+      r'\left\(': null,
+      r'\right\)': null,
+      r'\left\[': null,
+      r'\right\]': null,
+      r'\pi': null,
+      r'\infty': null,
+    };
+
+    String plainMath = latex;
+
+    conversions.forEach((pattern, replacement) {
+      if (replacement == null) {
+        plainMath = plainMath.replaceAll(RegExp(pattern), pattern.substring(1));
+      } else {
+        plainMath = plainMath.replaceAllMapped(RegExp(pattern), replacement);
+      }
+    });
+
+    return plainMath.replaceAll(RegExp(r'\s+'), '').trim();
+  }
+
+  String _extractEquationsForWhiteboard(String message) {
+    final mathRegExp = RegExp(r'\$\$(.*?)\$\$');
+    final equations = mathRegExp.allMatches(message).map((match) {
+      final latex = match.group(1)!;
+      return _convertLatexToPlainMath(latex);
+    }).join('\n');
+
+    print('Final equations string: $equations');
+    return equations;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -225,7 +264,6 @@ Provide a clear, helpful explanation that builds on our previous conversation. R
               },
               tooltip: 'Start New Conversation',
             ),
-          // TO BE DELETED LATER - Add whiteboard toggle
           IconButton(
             icon: Icon(_showWhiteboard ? Icons.text_fields : Icons.draw),
             onPressed: () {
@@ -237,89 +275,69 @@ Provide a clear, helpful explanation that builds on our previous conversation. R
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            //     child: ListView.builder(
-            // controller: _scrollController,
-            // padding: const EdgeInsets.all(16),
-            // itemCount: _messages.length,
-            // itemBuilder: (context, index) {
-            //   final message = _messages[index];
-            //   return AiMessageBubble(
-            //     message: message['text'],
-            //     isUser: message['isUser'],
-            //     isError: message['isError'] ?? false,
-            //   );
-            // },
-            // ),
-            child: _showWhiteboard
-                ? InteractiveWhiteboardScreen(
-                    text: _testEquation,
-                    duration: const Duration(seconds: 5),
-                  )
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      final message = _messages[index];
-                      return AiMessageBubble(
-                        message: message['text'],
-                        isUser: message['isUser'],
-                        isError: message['isError'] ?? false,
-                      );
-                    },
-                  ),
-          ),
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Center(
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () {
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: Column(
+          children: [
+            Expanded(
+              child: _showWhiteboard && _messages.isNotEmpty
+                  ? InteractiveWhiteboardScreen(
+                      text: _extractEquationsForWhiteboard(
+                        _messages.last['text'] as String,
+                      ),
+                      duration: const Duration(seconds: 10),
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final message = _messages[index];
+                        return AiMessageBubble(
+                          message: message['text'],
+                          isUser: message['isUser'],
+                          isError: message['isError'] ?? false,
+                        );
+                      },
+                    ),
+            ),
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.all(8.0),
                 child: CircularProgressIndicator(),
               ),
-            ),
-          Container(
-            padding: const EdgeInsets.all(8.0),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              boxShadow: [
-                BoxShadow(
-                  offset: const Offset(0, -2),
-                  blurRadius: 4,
-                  color: Colors.black.withOpacity(0.1),
-                ),
-              ],
-            ),
-            child: SafeArea(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: InputDecoration(
-                        hintText: _userMessageCount >= _maxUserMessages
-                            ? 'Maximum messages reached. Tap send to start new conversation.'
-                            : 'Ask me about math...',
-                        border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16),
+            SafeArea(
+              minimum: const EdgeInsets.only(bottom: 8.0),
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _messageController,
+                        decoration: const InputDecoration(
+                          hintText: 'Ask a question...',
+                          border: OutlineInputBorder(),
+                        ),
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        textInputAction: TextInputAction.newline,
                       ),
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
-                      textInputAction: TextInputAction.newline,
-                      onSubmitted: (_) => _sendMessage(),
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.send),
-                    onPressed: _sendMessage,
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.send),
+                      onPressed: _isLoading ? null : _sendMessage,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
