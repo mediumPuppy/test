@@ -184,30 +184,60 @@ Provide a clear, helpful explanation that builds on our previous conversation. R
 
   String _convertLatexToPlainMath(String latex) {
     final conversions = <String, String Function(Match)?>{
-      r'\frac{(.*?)}{(.*?)}': (Match m) => '${m.group(1)}/${m.group(2)}',
-      r'\cdot': null,
-      r'\times': null,
-      r'\div': null,
-      r'\sqrt{(.*?)}': (Match m) => '√(${m.group(1)})',
-      r'\left\(': null,
-      r'\right\)': null,
-      r'\left\[': null,
-      r'\right\]': null,
-      r'\pi': null,
-      r'\infty': null,
+      // Fractions: handle nested expressions properly
+      r'\\frac{(.*?)}{(.*?)}': (Match m) {
+        var numerator = m.group(1)!;
+        var denominator = m.group(2)!;
+        // Add parentheses if the numerator/denominator has operators
+        if (numerator.contains('+') || numerator.contains('-')) {
+          numerator = '($numerator)';
+        }
+        if (denominator.contains('+') || denominator.contains('-')) {
+          denominator = '($denominator)';
+        }
+        return '$numerator/$denominator';
+      },
+      // Exponents: maintain proper order
+      r'([a-zA-Z0-9]+)\^([a-zA-Z0-9]+)': (Match m) =>
+          '${m.group(1)}^${m.group(2)}',
+      // Square roots
+      r'\\sqrt{(.*?)}': (Match m) => 'sqrt(${m.group(1)})',
+      // Multiplication symbols
+      r'\\cdot': (Match m) => '×',
+      r'\\times': (Match m) => '×',
+      // Division symbol
+      r'\\div': (Match m) => '÷',
+      // Remove LaTeX command markers
+      r'\\left': null,
+      r'\\right': null,
+      // Keep parentheses and brackets
+      r'[()[\]]': null,
+      // Special constants
+      r'\\pi': (Match m) => 'π',
+      r'\\infty': (Match m) => '∞',
     };
 
     String plainMath = latex;
+    print('Converting LaTeX: $latex');
 
     conversions.forEach((pattern, replacement) {
       if (replacement == null) {
-        plainMath = plainMath.replaceAll(RegExp(pattern), pattern.substring(1));
+        // Just remove the LaTeX command, keep the character
+        plainMath = plainMath.replaceAll(RegExp(pattern), '');
       } else {
         plainMath = plainMath.replaceAllMapped(RegExp(pattern), replacement);
       }
     });
 
-    return plainMath.replaceAll(RegExp(r'\s+'), '').trim();
+    // Clean up
+    plainMath = plainMath
+        .replaceAll(RegExp(r'\s+'), '') // Remove whitespace
+        .replaceAll(r'\{', '(') // Replace remaining braces
+        .replaceAll(r'\}', ')')
+        .trim();
+
+    print('Converted to: $plainMath');
+    return plainMath;
   }
 
   String _extractEquationsForWhiteboard(String message) {

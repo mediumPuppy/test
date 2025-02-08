@@ -33,6 +33,11 @@ class OpenAITextGenerationService implements ITextGenerationService {
 
     _model = ChatOpenAI(
       apiKey: _apiKey!,
+      defaultOptions: const ChatOpenAIOptions(
+        temperature: 0.7,
+        model: 'gpt-4o-mini',
+        maxTokens: 1000,
+      ),
     );
 
     _promptTemplate = ChatPromptTemplate.fromTemplates([
@@ -42,18 +47,18 @@ class OpenAITextGenerationService implements ITextGenerationService {
 
 IMPORTANT - Always format mathematical expressions using these LaTeX rules:
 1. Wrap ALL equations in \$\$ markers
-2. Use \\frac{numerator}{denominator} for fractions
+2. Use \\frac{{numerator}}{{denominator}} for fractions
 3. Use ^ for exponents (e.g., x^2)
-4. Use \\sqrt{x} for square roots
+4. Use \\sqrt{{x}} for square roots
 5. Use \\cdot or \\times for multiplication
 6. Use proper parentheses \\left( and \\right)
 
 Examples of correct formatting:
 - Simple equation: \$\$2x + 5 = 15\$\$
-- Fraction: \$\$\\frac{2x-4}{3} = y\$\$
+- Fraction: \$\$\\frac{{2x-4}}{{3}} = y\$\$
 - Exponents: \$\$x^2 + 2x + 1 = 0\$\$
-- Square root: \$\$\\sqrt{x+4} = 3\$\$
-- Mixed: \$\$\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}\$\$
+- Square root: \$\$\\sqrt{{x+4}} = 3\$\$
+- Mixed: \$\$\\frac{{-b \\pm \\sqrt{{b^2-4ac}}}}{{2a}}\$\$
 
 When explaining:
 1. Break down complex problems into simpler steps
