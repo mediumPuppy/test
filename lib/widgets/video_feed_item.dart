@@ -9,7 +9,6 @@ import '../services/topic_progress_service.dart';
 import 'action_bar.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart' show User;
-import '../screens/whiteboard_screen.dart';
 import '../screens/ai_explanation_screen.dart';
 
 class VideoFeedItem extends StatefulWidget {

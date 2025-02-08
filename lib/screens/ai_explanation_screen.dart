@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/ai_explanation_service.dart';
 import '../widgets/ai_message_bubble.dart';
+import '../screens/interactive_whiteboard_screen.dart';
 
 class AIExplanationScreen extends StatefulWidget {
   final String? videoContext;
@@ -24,10 +25,23 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
   static const int _maxUserMessages = 5;
   int _userMessageCount = 0;
 
+  // TO BE DELETED LATER - Test variables for whiteboard toggle
+  bool _showWhiteboard = false;
+  final String _testEquation = "2x + 5 = 15";
+
   @override
   void initState() {
     super.initState();
-    _initializeConversation();
+    // Comment out original initialization for testing
+    // _initializeConversation();
+
+    // TO BE DELETED LATER - Add test message
+    _messages.add({
+      'text':
+          'Here\'s the equation we\'ll solve: \$\$\\frac{2x-4}{3} = 2y^3\$\$\n\nLet\'s break this down step by step...',
+      'isUser': false,
+      'timestamp': DateTime.now(),
+    });
   }
 
   Future<void> _initializeConversation() async {
@@ -174,7 +188,9 @@ Provide a clear, helpful explanation that builds on our previous conversation. R
       appBar: AppBar(
         title: Row(
           children: [
-            const Text('AI Math Tutor'),
+            const Flexible(
+              child: Text('AI Math Tutor'),
+            ),
             if (_userMessageCount > 0) ...[
               const SizedBox(width: 8),
               Container(
@@ -209,24 +225,52 @@ Provide a clear, helpful explanation that builds on our previous conversation. R
               },
               tooltip: 'Start New Conversation',
             ),
+          // TO BE DELETED LATER - Add whiteboard toggle
+          IconButton(
+            icon: Icon(_showWhiteboard ? Icons.text_fields : Icons.draw),
+            onPressed: () {
+              setState(() {
+                _showWhiteboard = !_showWhiteboard;
+              });
+            },
+            tooltip: _showWhiteboard ? 'Show Text' : 'Show Whiteboard',
+          ),
         ],
       ),
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return AiMessageBubble(
-                  message: message['text'],
-                  isUser: message['isUser'],
-                  isError: message['isError'] ?? false,
-                );
-              },
-            ),
+            //     child: ListView.builder(
+            // controller: _scrollController,
+            // padding: const EdgeInsets.all(16),
+            // itemCount: _messages.length,
+            // itemBuilder: (context, index) {
+            //   final message = _messages[index];
+            //   return AiMessageBubble(
+            //     message: message['text'],
+            //     isUser: message['isUser'],
+            //     isError: message['isError'] ?? false,
+            //   );
+            // },
+            // ),
+            child: _showWhiteboard
+                ? InteractiveWhiteboardScreen(
+                    text: _testEquation,
+                    duration: const Duration(seconds: 5),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      final message = _messages[index];
+                      return AiMessageBubble(
+                        message: message['text'],
+                        isUser: message['isUser'],
+                        isError: message['isError'] ?? false,
+                      );
+                    },
+                  ),
           ),
           if (_isLoading)
             const Padding(
