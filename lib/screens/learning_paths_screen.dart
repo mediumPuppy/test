@@ -9,10 +9,11 @@ import '../screens/topics_screen.dart';
 import '../models/quiz_model.dart';
 import 'dart:async';
 
-// the quiz class is undefined below, do we need to import it here? 
-
+// the quiz class is undefined below, do we need to import it here?
 
 class LearningPathsScreen extends StatefulWidget {
+  const LearningPathsScreen({super.key});
+
   @override
   _LearningPathsScreenState createState() => _LearningPathsScreenState();
 }
@@ -44,7 +45,8 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
 
   void _startQuizCheck() {
     // Check for quiz triggers every 5 minutes
-    _quizCheckTimer = Timer.periodic(Duration(minutes: 5), (_) => _checkForQuiz());
+    _quizCheckTimer =
+        Timer.periodic(Duration(minutes: 5), (_) => _checkForQuiz());
   }
 
   Future<void> _checkForQuiz() async {
@@ -74,11 +76,11 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
   Future<List<String>> _getCurrentTopics() async {
     if (_selectedPathId == null) return [];
 
-    final pathDoc = await _firestoreService
-        .getLearningPathTopics(_selectedPathId!)
-        .first;
+    final pathDoc =
+        await _firestoreService.getLearningPathTopics(_selectedPathId!).first;
 
-    final topics = pathDoc.docs.map((doc) => doc.data()['name'] as String).toList();
+    final topics =
+        pathDoc.docs.map((doc) => doc.data()['name'] as String).toList();
     return topics;
   }
 
@@ -145,7 +147,7 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       // Initialize sample data first
       await FirestoreService().initializeSampleData();
@@ -165,9 +167,8 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
   void _loadCurrentPath() {
     final user = _auth.currentUser;
     if (user != null) {
-      _pathSubscription = _firestoreService
-          .getUserLearningPath(user.uid)
-          .listen((snapshot) {
+      _pathSubscription =
+          _firestoreService.getUserLearningPath(user.uid).listen((snapshot) {
         if (mounted) {
           setState(() {
             _selectedPathId = snapshot.data()?['currentPath'] as String?;
@@ -184,7 +185,7 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
     try {
       await _firestoreService.setCurrentLearningPath(user.uid, pathId);
       setState(() => _selectedPathId = pathId);
-      
+
       // Navigate to topics screen
       if (mounted) {
         Navigator.push(
@@ -208,12 +209,12 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
   Widget _buildPathCard(DocumentSnapshot<Map<String, dynamic>> doc) {
     final path = doc.data()!;
     final pathId = doc.id;
-    
+
     return FutureBuilder<int>(
       future: _firestoreService.getTopicCount(pathId),
       builder: (context, snapshot) {
         final topicCount = snapshot.data ?? 0;
-        
+
         return Card(
           margin: EdgeInsets.all(8.0),
           child: ListTile(

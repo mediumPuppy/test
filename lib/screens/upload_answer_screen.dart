@@ -24,12 +24,12 @@ class _UploadAnswerScreenState extends State<UploadAnswerScreen> {
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
       );
-      
+
       setState(() {
         _imageFile = pickedFile;
         _feedback = null;
       });
-      
+
       if (_imageFile != null) {
         await _uploadAndProcess(_imageFile!);
       }
@@ -50,13 +50,15 @@ class _UploadAnswerScreenState extends State<UploadAnswerScreen> {
     try {
       // Upload to Firebase Storage
       final storageRef = FirebaseStorage.instance.ref();
-      final imageRef = storageRef.child('answers/${DateTime.now().millisecondsSinceEpoch}.jpg');
-      
+      final imageRef = storageRef
+          .child('answers/${DateTime.now().millisecondsSinceEpoch}.jpg');
+
       await imageRef.putFile(File(file.path));
       final imageUrl = await imageRef.getDownloadURL();
-      
+
       // Call Cloud Function to process the image
-      final uri = Uri.parse('https://us-central1-reelmath-jl.cloudfunctions.net/processAnswer');
+      final uri = Uri.parse(
+          'https://us-central1-reelmath-jl.cloudfunctions.net/processAnswer');
       final response = await http.post(
         uri,
         body: {'imageUrl': imageUrl},
@@ -118,8 +120,8 @@ class _UploadAnswerScreenState extends State<UploadAnswerScreen> {
                     _feedback!,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: _feedback!.contains('Error') 
-                          ? Colors.red 
+                      color: _feedback!.contains('Error')
+                          ? Colors.red
                           : Colors.green,
                     ),
                   ),
@@ -130,4 +132,4 @@ class _UploadAnswerScreenState extends State<UploadAnswerScreen> {
       ),
     );
   }
-} 
+}

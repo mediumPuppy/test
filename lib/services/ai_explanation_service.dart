@@ -36,7 +36,18 @@ class OpenAITextGenerationService implements ITextGenerationService {
     );
 
     _promptTemplate = ChatPromptTemplate.fromTemplates([
-      (ChatMessageType.system, 'You are a helpful assistant that provides clear and concise explanations.'),
+      (
+        ChatMessageType.system,
+        '''You are a helpful and patient math tutor. Your goal is to help students understand mathematical concepts clearly and build their confidence. When explaining:
+1. Break down complex problems into simpler steps
+2. Use clear, concise language
+3. Provide relevant examples when helpful
+4. Encourage understanding over memorization
+5. Point out common mistakes to avoid
+6. If a student seems stuck, ask guiding questions to help them arrive at the answer
+
+Remember to be encouraging and supportive while maintaining mathematical rigor.'''
+      ),
       (ChatMessageType.human, '{query}'),
     ]);
 
@@ -63,7 +74,7 @@ class OpenAITextGenerationService implements ITextGenerationService {
 // Implementation of text-to-speech service using just_audio
 class AudioTextToSpeechService implements ITextToSpeechService {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  
+
   @override
   Future<void> speak(String text) async {
     try {

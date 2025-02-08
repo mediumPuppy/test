@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'whiteboard_screen.dart';
-import '../services/explanation_service.dart';
+import '../services/ai_explanation_service.dart';
+import '../models/drawing_command.dart';
 
 class InteractiveWhiteboardScreen extends StatefulWidget {
   final String? text;
@@ -19,10 +20,12 @@ class InteractiveWhiteboardScreen extends StatefulWidget {
   });
 
   @override
-  State<InteractiveWhiteboardScreen> createState() => _InteractiveWhiteboardScreenState();
+  State<InteractiveWhiteboardScreen> createState() =>
+      _InteractiveWhiteboardScreenState();
 }
 
-class _InteractiveWhiteboardScreenState extends State<InteractiveWhiteboardScreen> {
+class _InteractiveWhiteboardScreenState
+    extends State<InteractiveWhiteboardScreen> {
   // Add a key to force rebuild of WhiteboardScreen
   Key _whiteboardKey = UniqueKey();
 
@@ -61,7 +64,8 @@ class _InteractiveWhiteboardScreenState extends State<InteractiveWhiteboardScree
                   onPressed: () {
                     // TODO: Implement save functionality
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Save feature coming soon!')),
+                      const SnackBar(
+                          content: Text('Save feature coming soon!')),
                     );
                   },
                   tooltip: 'Save Whiteboard',

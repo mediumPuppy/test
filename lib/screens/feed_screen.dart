@@ -19,9 +19,8 @@ class _PathVideoFeed extends StatefulWidget {
   final String? selectedPath;
 
   const _PathVideoFeed({
-    Key? key,
     required this.selectedPath,
-  }) : super(key: key);
+  });
 
   @override
   State<_PathVideoFeed> createState() => _PathVideoFeedState();
@@ -32,7 +31,7 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
   final FirestoreService _firestoreService = FirestoreService();
   final _progressService = TopicProgressService();
   int _lastPage = 0;
-  int _lastVideoCount = 0;  // Track video count changes
+  int _lastVideoCount = 0; // Track video count changes
 
   @override
   void initState() {
@@ -90,14 +89,15 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
         }
-        
+
         // Only show loading if we're waiting for the first data
-        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         final videos = snapshot.data?.docs ?? [];
-        
+
         if (videos.isEmpty) {
           return Center(
             child: Column(
@@ -112,16 +112,16 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
                 Text(
                   'Congratulations!',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'You\'ve completed all topics in this learning path.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white,
-                  ),
+                        color: Colors.white,
+                      ),
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton.icon(
@@ -135,13 +135,13 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
             ),
           );
         }
-        
+
         // Only set total videos when path/topic changes, not during scrolling
         if (_lastVideoCount != videos.length) {
           _lastVideoCount = videos.length;
           _progressService.setTotalVideos(videos.length);
         }
-        
+
         return PageView.builder(
           controller: _pageController,
           scrollDirection: Axis.vertical,
@@ -155,7 +155,7 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
           itemBuilder: (context, index) {
             final videoData = videos[index].data() as Map<String, dynamic>;
             final videoId = videos[index].id;
-            
+
             try {
               final video = VideoFeed.fromFirestore(videoData, videoId);
               return VideoFeedItem(
@@ -163,7 +163,7 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
                 feed: video,
                 onShare: () {},
               );
-            } catch (e, stackTrace) {
+            } catch (e) {
               return const SizedBox.shrink(); // Skip invalid videos
             }
           },
@@ -173,13 +173,14 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
   }
 }
 
-class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateMixin {
+class _FeedScreenState extends State<FeedScreen>
+    with SingleTickerProviderStateMixin {
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   String? _selectedLearningPath;
   StreamSubscription? _pathSubscription;
   late AnimationController _animationController;
-  
+
   @override
   void initState() {
     super.initState();
@@ -193,7 +194,8 @@ class _FeedScreenState extends State<FeedScreen> with SingleTickerProviderStateM
   void _loadUserLearningPath() {
     final user = _auth.currentUser;
     if (user != null) {
-      _pathSubscription = _firestoreService.getUserLearningPath(user.uid).listen(
+      _pathSubscription =
+          _firestoreService.getUserLearningPath(user.uid).listen(
         (snapshot) {
           if (mounted) {
             final data = snapshot.data();

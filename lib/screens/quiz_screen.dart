@@ -28,7 +28,7 @@ class _QuizScreenState extends State<QuizScreen> {
   Timer? _timer;
   int _timeRemaining = 0;
   final TextEditingController _openEndedController = TextEditingController();
-  bool _showDebugInfo = true; // Add debug flag
+  final bool _showDebugInfo = true; // Add debug flag
 
   @override
   void initState() {
@@ -105,12 +105,15 @@ class _QuizScreenState extends State<QuizScreen> {
           leading: Radio<String>(
             value: option,
             groupValue: _answers[question.id],
-            onChanged: _showExplanation ? null : (value) {
-              setState(() {
-                _answers[question.id] = value!;
-                _isCorrect[question.id] = (value == question.correctAnswer);
-              });
-            },
+            onChanged: _showExplanation
+                ? null
+                : (value) {
+                    setState(() {
+                      _answers[question.id] = value!;
+                      _isCorrect[question.id] =
+                          (value == question.correctAnswer);
+                    });
+                  },
           ),
           tileColor: showCorrect
               ? (isCorrect ? Colors.green.withOpacity(0.2) : null)
@@ -132,25 +135,26 @@ class _QuizScreenState extends State<QuizScreen> {
       onChanged: (value) {
         _answers[question.id] = value;
         // For open-ended questions, we'll do a more flexible comparison
-        _isCorrect[question.id] = _compareAnswers(value, question.correctAnswer);
+        _isCorrect[question.id] =
+            _compareAnswers(value, question.correctAnswer);
       },
     );
   }
 
   bool _compareAnswers(String userAnswer, String correctAnswer) {
     final question = widget.quiz.questions[_currentQuestionIndex];
-  
+
     if (question.type == QuestionType.mathExpression) {
       return _mathExpressionService.areExpressionsEquivalent(
-        userAnswer,
-        correctAnswer,
-        question.expressionFormat!,
-        question.acceptableVariations
-      );
+          userAnswer,
+          correctAnswer,
+          question.expressionFormat!,
+          question.acceptableVariations);
     }
-  
+
     // Fall back to simple comparison for non-math questions
-    return userAnswer.trim().toLowerCase() == correctAnswer.trim().toLowerCase();
+    return userAnswer.trim().toLowerCase() ==
+        correctAnswer.trim().toLowerCase();
   }
 
   Widget _buildExplanation(QuizQuestion question) {
@@ -162,7 +166,9 @@ class _QuizScreenState extends State<QuizScreen> {
       margin: EdgeInsets.only(top: 16),
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isCorrect ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+        color: isCorrect
+            ? Colors.green.withOpacity(0.1)
+            : Colors.orange.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -197,7 +203,7 @@ class _QuizScreenState extends State<QuizScreen> {
   Future<void> _submitQuiz() async {
     _timer?.cancel();
     final timeSpent = Duration(seconds: (_timeRemaining ~/ 60).abs());
-    
+
     int score = _isCorrect.values.where((correct) => correct).length;
     await _quizService.recordQuizAttempt(
       userId: widget.userId,
@@ -216,9 +222,8 @@ class _QuizScreenState extends State<QuizScreen> {
       builder: (context) => AlertDialog(
         title: Text('Quiz Complete'),
         content: Text(
-          'You scored $score out of ${widget.quiz.questions.length}\n'
-          'Time taken: ${timeSpent.inMinutes}m ${timeSpent.inSeconds % 60}s'
-        ),
+            'You scored $score out of ${widget.quiz.questions.length}\n'
+            'Time taken: ${timeSpent.inMinutes}m ${timeSpent.inSeconds % 60}s'),
         actions: [
           TextButton(
             child: Text('Review Answers'),
@@ -271,7 +276,8 @@ class _QuizScreenState extends State<QuizScreen> {
             backgroundColor: Colors.grey[200],
           ),
           Expanded(
-            child: _buildQuestionCard(widget.quiz.questions[_currentQuestionIndex]),
+            child: _buildQuestionCard(
+                widget.quiz.questions[_currentQuestionIndex]),
           ),
           Padding(
             padding: EdgeInsets.all(16),
@@ -296,7 +302,9 @@ class _QuizScreenState extends State<QuizScreen> {
                 ),
                 if (_currentQuestionIndex < widget.quiz.questions.length - 1)
                   ElevatedButton(
-                    onPressed: _answers[widget.quiz.questions[_currentQuestionIndex].id] != null
+                    onPressed: _answers[widget
+                                .quiz.questions[_currentQuestionIndex].id] !=
+                            null
                         ? () {
                             setState(() {
                               _currentQuestionIndex++;
@@ -308,7 +316,9 @@ class _QuizScreenState extends State<QuizScreen> {
                   )
                 else
                   ElevatedButton(
-                    onPressed: _answers[widget.quiz.questions[_currentQuestionIndex].id] != null
+                    onPressed: _answers[widget
+                                .quiz.questions[_currentQuestionIndex].id] !=
+                            null
                         ? _submitQuiz
                         : null,
                     child: Text('Submit'),

@@ -18,11 +18,11 @@ class VideoFeedItem extends StatefulWidget {
   final VoidCallback onShare;
 
   const VideoFeedItem({
-    Key? key,
+    super.key,
     required this.index,
     required this.feed,
     required this.onShare,
-  }) : super(key: key);
+  });
 
   @override
   State<VideoFeedItem> createState() => _VideoFeedItemState();
@@ -52,7 +52,7 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
   }
 
   void _checkVideoCompletion() {
-    if (!_videoCompleted && 
+    if (!_videoCompleted &&
         _videoController.value.isInitialized &&
         _videoController.value.position >= _videoController.value.duration) {
       print('Video completed - showing transition');
@@ -70,13 +70,13 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
 
       await _videoController.initialize();
       print('Video initialized successfully');
-      
+
       if (mounted) {
         setState(() {
           _isInitialized = true;
         });
       }
-      
+
       _videoController.play();
     } catch (e) {
       print('Error initializing video: $e');
@@ -185,7 +185,9 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
                         color: Colors.transparent,
                         child: Center(
                           child: Icon(
-                            _videoController.value.isPlaying ? Icons.pause : Icons.play_arrow,
+                            _videoController.value.isPlaying
+                                ? Icons.pause
+                                : Icons.play_arrow,
                             size: 50.0,
                             color: Colors.white.withOpacity(0.7),
                           ),
@@ -209,7 +211,8 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
                 stream: firestoreService.getVideoLikesCount(widget.feed.id),
                 builder: (context, likesSnapshot) {
                   return StreamBuilder<int>(
-                    stream: firestoreService.getVideoCommentsCount(widget.feed.id),
+                    stream:
+                        firestoreService.getVideoCommentsCount(widget.feed.id),
                     builder: (context, commentsSnapshot) {
                       return ActionBar(
                         onLike: _handleLike,
@@ -304,7 +307,7 @@ class _CommentSheetState extends State<CommentSheet> {
   final _mentionedUsers = <String>{};
   String? _replyToId;
   List<CommentData> _comments = [];
-  bool _isLoadingMore = false;
+  final bool _isLoadingMore = false;
   DocumentSnapshot? _lastDocument;
   String _sortBy = 'timestamp';
   List<String> _mentionSuggestions = [];
@@ -351,7 +354,7 @@ class _CommentSheetState extends State<CommentSheet> {
     FocusScope.of(context).unfocus();
 
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-    
+
     // Create optimistic comment
     final optimisticData = {
       'userId': _firestoreService.userId,
@@ -378,7 +381,7 @@ class _CommentSheetState extends State<CommentSheet> {
         replyToId: _replyToId,
         mentionedUsers: _mentionedUsers.toList(),
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
       // Removed debug logging
       if (mounted) {
         setState(() {
@@ -430,13 +433,13 @@ class _CommentSheetState extends State<CommentSheet> {
     final text = _commentController.text;
     final lastAtIndex = text.lastIndexOf('@');
     final newText = '${text.substring(0, lastAtIndex)}@$username ';
-    
+
     setState(() {
       _mentionedUsers.add(username);
       _showMentionSuggestions = false;
       _mentionSuggestions = [];
     });
-    
+
     _commentController.value = TextEditingValue(
       text: newText,
       selection: TextSelection.collapsed(offset: newText.length),
@@ -463,7 +466,8 @@ class _CommentSheetState extends State<CommentSheet> {
 
   Widget _buildCommentItem(CommentData comment) {
     final data = comment.data;
-    final timestamp = (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
+    final timestamp =
+        (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now();
     final commentId = comment.id;
     final userName = data['userName'] as String? ?? 'Unknown';
     final commentText = data['comment'] as String? ?? '';
@@ -478,7 +482,8 @@ class _CommentSheetState extends State<CommentSheet> {
             leading: CircleAvatar(
               backgroundColor: Colors.blue.shade100,
               child: Text(
-                (AuthService().currentUser?.email ?? 'Anonymous')[0].toUpperCase(),
+                (AuthService().currentUser?.email ?? 'Anonymous')[0]
+                    .toUpperCase(),
                 style: TextStyle(
                   color: Colors.blue.shade900,
                   fontWeight: FontWeight.bold,
@@ -488,21 +493,21 @@ class _CommentSheetState extends State<CommentSheet> {
             title: Row(
               children: [
                 StreamBuilder<User?>(
-                  stream: AuthService().authStateChanges,
-                  builder: (context, snapshot) {
-                    return Text(
-                      '${(snapshot.data?.email ?? 'Anonymous').substring(0, 9)}...',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    );
-                  }
-                ),
+                    stream: AuthService().authStateChanges,
+                    builder: (context, snapshot) {
+                      return Text(
+                        '${(snapshot.data?.email ?? 'Anonymous').substring(0, 9)}...',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    }),
                 const SizedBox(width: 8),
-                if (!comment.isOptimistic) Text(
-                  timeago.format(timestamp),
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
+                if (!comment.isOptimistic)
+                  Text(
+                    timeago.format(timestamp),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
               ],
             ),
             subtitle: Column(
@@ -512,7 +517,8 @@ class _CommentSheetState extends State<CommentSheet> {
                 Text(
                   commentText,
                   maxLines: isLongComment ? 3 : null,
-                  overflow: isLongComment ? TextOverflow.ellipsis : TextOverflow.clip,
+                  overflow:
+                      isLongComment ? TextOverflow.ellipsis : TextOverflow.clip,
                 ),
                 if (isLongComment)
                   TextButton(
@@ -534,38 +540,38 @@ class _CommentSheetState extends State<CommentSheet> {
                       );
                     },
                   ),
-                if (!comment.isOptimistic) Row(
-                  children: [
-                    StreamBuilder<bool>(
-                      stream: _firestoreService.isCommentLiked(commentId),
-                      builder: (context, snapshot) {
-                        final isLiked = snapshot.data ?? false;
-                        return TextButton.icon(
-                          icon: Icon(
-                            isLiked ? Icons.favorite : Icons.favorite_border,
-                            size: 16,
-                            color: isLiked ? Colors.red : null,
-                          ),
-                          label: Text('${data['likes'] ?? 0}'),
-                          onPressed: () => _firestoreService.toggleCommentLike(commentId),
-                        );
-                      },
-                    ),
-                    if (data['replyToId'] == null)
-                      StreamBuilder<User?>(
-                        stream: AuthService().authStateChanges,
+                if (!comment.isOptimistic)
+                  Row(
+                    children: [
+                      StreamBuilder<bool>(
+                        stream: _firestoreService.isCommentLiked(commentId),
                         builder: (context, snapshot) {
-                          return TextButton(
-                            child: const Text('Reply'),
-                            onPressed: () => _setReplyTo(
-                              commentId, 
-                              snapshot.data?.email ?? 'Anonymous'
+                          final isLiked = snapshot.data ?? false;
+                          return TextButton.icon(
+                            icon: Icon(
+                              isLiked ? Icons.favorite : Icons.favorite_border,
+                              size: 16,
+                              color: isLiked ? Colors.red : null,
                             ),
+                            label: Text('${data['likes'] ?? 0}'),
+                            onPressed: () =>
+                                _firestoreService.toggleCommentLike(commentId),
                           );
                         },
                       ),
-                  ],
-                ),
+                      if (data['replyToId'] == null)
+                        StreamBuilder<User?>(
+                          stream: AuthService().authStateChanges,
+                          builder: (context, snapshot) {
+                            return TextButton(
+                              child: const Text('Reply'),
+                              onPressed: () => _setReplyTo(commentId,
+                                  snapshot.data?.email ?? 'Anonymous'),
+                            );
+                          },
+                        ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -577,10 +583,13 @@ class _CommentSheetState extends State<CommentSheet> {
                 stream: _firestoreService.getCommentReplies(commentId),
                 builder: (context, snapshot) {
                   if (!snapshot.hasData) return const SizedBox.shrink();
-                  
+
                   final replies = snapshot.data!.docs;
                   return Column(
-                    children: replies.map((reply) => _buildCommentItem(CommentData.fromSnapshot(reply))).toList(),
+                    children: replies
+                        .map((reply) =>
+                            _buildCommentItem(CommentData.fromSnapshot(reply)))
+                        .toList(),
                   );
                 },
               ),

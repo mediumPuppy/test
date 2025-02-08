@@ -11,7 +11,8 @@ class FirestoreService {
   final LearningProgressService _progressService = LearningProgressService();
 
   // User Methods
-  Future<void> createUserProfile(String userId, String email, {String? userName}) {
+  Future<void> createUserProfile(String userId, String email,
+      {String? userName}) {
     return _db.collection('users').doc(userId).set({
       'email': email,
       'userName': userName ?? email.split('@')[0],
@@ -25,15 +26,16 @@ class FirestoreService {
     try {
       final doc = await _db.collection('users').doc(userId).get();
       return doc.data()?['email'] as String?;
-    } catch (e, stackTrace) {
+    } catch (e) {
       return null;
     }
   }
 
   Future<List<String>> getMentionSuggestions(String prefix) async {
     if (prefix.isEmpty) return [];
-    
-    final userQuery = await _db.collection('users')
+
+    final userQuery = await _db
+        .collection('users')
         .where('userName', isGreaterThanOrEqualTo: prefix)
         .where('userName', isLessThan: '${prefix}z')
         .limit(5)
@@ -46,8 +48,10 @@ class FirestoreService {
   }
 
   // Learning Path Methods
-  Stream<DocumentSnapshot<Map<String, dynamic>>> getUserLearningPath(String userId) {
-    return _db.collection('users')
+  Stream<DocumentSnapshot<Map<String, dynamic>>> getUserLearningPath(
+      String userId) {
+    return _db
+        .collection('users')
         .doc(userId)
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data() ?? {},
@@ -57,7 +61,8 @@ class FirestoreService {
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getLearningPaths() {
-    return _db.collection('learning_paths')
+    return _db
+        .collection('learning_paths')
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data() ?? {},
           toFirestore: (data, _) => data,
@@ -65,8 +70,10 @@ class FirestoreService {
         .snapshots();
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getLearningPathTopics(String pathId) {
-    return _db.collection('learning_paths')
+  Stream<QuerySnapshot<Map<String, dynamic>>> getLearningPathTopics(
+      String pathId) {
+    return _db
+        .collection('learning_paths')
         .doc(pathId)
         .collection('topics')
         .withConverter<Map<String, dynamic>>(
@@ -102,21 +109,25 @@ class FirestoreService {
   }
 
   // Video Methods
-  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosForDifficulty(String difficulty) {
+  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosForDifficulty(
+      String difficulty) {
     var query = _db.collection('videos').orderBy('order');
-    
+
     if (difficulty != "All") {
       query = query.where('difficulty', isEqualTo: difficulty);
     }
 
-    return query.withConverter<Map<String, dynamic>>(
-      fromFirestore: (snapshot, _) => snapshot.data()!,
-      toFirestore: (data, _) => data,
-    ).snapshots();
+    return query
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) => snapshot.data()!,
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByTopic(String topicId) {
-    return _db.collection('videos')
+    return _db
+        .collection('videos')
         .where('topicId', isEqualTo: topicId)
         .orderBy('orderInPath')
         .withConverter<Map<String, dynamic>>(
@@ -126,10 +137,12 @@ class FirestoreService {
         .snapshots();
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByLearningPath(String learningPathId) async* {
+  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByLearningPath(
+      String learningPathId) async* {
     final userId = _auth.currentUser?.uid;
     if (userId == null) {
-      yield* _db.collection('videos')
+      yield* _db
+          .collection('videos')
           .where('learningPathId', isEqualTo: learningPathId)
           .limit(0)
           .snapshots();
@@ -139,19 +152,24 @@ class FirestoreService {
     // Get current progress
     final progressDoc = await _db.collection('user_progress').doc(userId).get();
     final progress = progressDoc.data() ?? {};
-    final completedTopics = (progress['topicsCompleted'] as Map<String, dynamic>? ?? {}).keys.toSet();
+    final completedTopics =
+        (progress['topicsCompleted'] as Map<String, dynamic>? ?? {})
+            .keys
+            .toSet();
 
     // Get learning path topics
-    final topicsQuery = await _db.collection('learning_paths')
+    final topicsQuery = await _db
+        .collection('learning_paths')
         .doc(learningPathId)
         .collection('topics')
         .orderBy('order')
         .get();
-    
+
     final topics = topicsQuery.docs;
-    
+
     if (topics.isEmpty) {
-      yield* _db.collection('videos')
+      yield* _db
+          .collection('videos')
           .where('learningPathId', isEqualTo: learningPathId)
           .limit(0)
           .snapshots();
@@ -164,7 +182,7 @@ class FirestoreService {
       final topicId = topic.id;
       final topicData = topic.data();
       final topicName = topicData['name'] as String? ?? 'Unnamed Topic';
-      
+
       if (!completedTopics.contains(topicId)) {
         currentTopicId = topicId;
         break;
@@ -172,24 +190,34 @@ class FirestoreService {
     }
 
     if (currentTopicId == null) {
-      yield* _db.collection('videos')
-          .where('learningPathId', isEqualTo: 'completed_${learningPathId}')
+      yield* _db
+          .collection('videos')
+          .where('learningPathId', isEqualTo: 'completed_$learningPathId')
           .snapshots();
       return;
     }
 
     // Listen to both progress changes and videos
-    yield* _db.collection('user_progress').doc(userId).snapshots().asyncExpand((progressSnapshot) async* {
+    yield* _db
+        .collection('user_progress')
+        .doc(userId)
+        .snapshots()
+        .asyncExpand((progressSnapshot) async* {
       final newProgress = progressSnapshot.data() ?? {};
-      final newCompletedTopics = (newProgress['topicsCompleted'] as Map<String, dynamic>? ?? {}).keys.toSet();
-      
+      final newCompletedTopics =
+          (newProgress['topicsCompleted'] as Map<String, dynamic>? ?? {})
+              .keys
+              .toSet();
+
       // If this topic is now complete, return empty to trigger completion UI
       if (newCompletedTopics.contains(currentTopicId)) {
-        yield* _db.collection('videos')
-            .where('learningPathId', isEqualTo: 'completed_${learningPathId}')
+        yield* _db
+            .collection('videos')
+            .where('learningPathId', isEqualTo: 'completed_$learningPathId')
             .snapshots();
       } else {
-        yield* _db.collection('videos')
+        yield* _db
+            .collection('videos')
             .where('topicId', isEqualTo: currentTopicId)
             .where('learningPathId', isEqualTo: learningPathId)
             .snapshots();
@@ -197,8 +225,10 @@ class FirestoreService {
     });
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosBySelectedTopic(String topicId) {
-    return _db.collection('videos')
+  Stream<QuerySnapshot<Map<String, dynamic>>> getVideosBySelectedTopic(
+      String topicId) {
+    return _db
+        .collection('videos')
         .where('topic', isEqualTo: topicId)
         .orderBy('orderInPath')
         .withConverter<Map<String, dynamic>>(
@@ -209,7 +239,8 @@ class FirestoreService {
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getRandomVideos() {
-    return _db.collection('videos')
+    return _db
+        .collection('videos')
         .limit(20)
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data()!,
@@ -219,14 +250,16 @@ class FirestoreService {
   }
 
   Stream<int> getVideoCommentsCount(String videoId) {
-    return _db.collection('videos')
+    return _db
+        .collection('videos')
         .doc(videoId)
         .snapshots()
         .map((snapshot) => snapshot.data()?['comments'] ?? 0);
   }
 
   Stream<int> getVideoLikesCount(String videoId) {
-    return _db.collection('videos')
+    return _db
+        .collection('videos')
         .doc(videoId)
         .snapshots()
         .map((snapshot) => snapshot.data()?['likes'] ?? 0);
@@ -239,7 +272,6 @@ class FirestoreService {
     String? replyToId,
     List<String> mentionedUsers = const [],
   }) async {
-    
     if (userId == null) {
       debugPrint('[ERROR] addVideoComment - User not signed in');
       throw Exception('User not signed in');
@@ -261,10 +293,12 @@ class FirestoreService {
         };
 
         try {
-          final commentRef = await _db.collection('video_comments').add(commentData);
-          await _db.collection('videos').doc(videoId).update({
-            'comments': FieldValue.increment(1)
-          });
+          final commentRef =
+              await _db.collection('video_comments').add(commentData);
+          await _db
+              .collection('videos')
+              .doc(videoId)
+              .update({'comments': FieldValue.increment(1)});
 
           if (mentionedUsers.isNotEmpty) {
             for (final mentionedUser in mentionedUsers) {
@@ -301,10 +335,12 @@ class FirestoreService {
     };
 
     try {
-      final commentRef = await _db.collection('video_comments').add(commentData);
-      await _db.collection('videos').doc(videoId).update({
-        'comments': FieldValue.increment(1)
-      });
+      final commentRef =
+          await _db.collection('video_comments').add(commentData);
+      await _db
+          .collection('videos')
+          .doc(videoId)
+          .update({'comments': FieldValue.increment(1)});
 
       if (mentionedUsers.isNotEmpty) {
         for (final mentionedUser in mentionedUsers) {
@@ -333,7 +369,8 @@ class FirestoreService {
     DocumentSnapshot? lastDocument,
     int limit = 10,
   }) {
-    var query = _db.collection('video_comments')
+    var query = _db
+        .collection('video_comments')
         .where('videoId', isEqualTo: videoId)
         .where('replyToId', isNull: true)
         .limit(limit);
@@ -348,16 +385,20 @@ class FirestoreService {
       query = query.startAfterDocument(lastDocument);
     }
 
-    return query.withConverter<Map<String, dynamic>>(
-      fromFirestore: (snapshot, _) {
-        return snapshot.data()!;
-      },
-      toFirestore: (data, _) => data,
-    ).snapshots();
+    return query
+        .withConverter<Map<String, dynamic>>(
+          fromFirestore: (snapshot, _) {
+            return snapshot.data()!;
+          },
+          toFirestore: (data, _) => data,
+        )
+        .snapshots();
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getCommentReplies(String commentId) {
-    return _db.collection('video_comments')
+  Stream<QuerySnapshot<Map<String, dynamic>>> getCommentReplies(
+      String commentId) {
+    return _db
+        .collection('video_comments')
         .where('replyToId', isEqualTo: commentId)
         .orderBy('timestamp', descending: false)
         .withConverter<Map<String, dynamic>>(
@@ -369,7 +410,8 @@ class FirestoreService {
 
   // Topic Methods
   Stream<QuerySnapshot<Map<String, dynamic>>> getTopics() {
-    return _db.collection('topics')
+    return _db
+        .collection('topics')
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data()!,
           toFirestore: (data, _) => data,
@@ -385,7 +427,8 @@ class FirestoreService {
   }
 
   Stream<String?> getUserSelectedTopic(String userId) {
-    return _db.collection('users')
+    return _db
+        .collection('users')
         .doc(userId)
         .snapshots()
         .map((snapshot) => snapshot.data()?['selectedTopic'] as String?);
@@ -396,9 +439,10 @@ class FirestoreService {
     await _db.collection('users').doc(userId).update({
       'completedTopics': FieldValue.arrayUnion([topicId])
     });
-    
+
     // Also store in the subcollection for more detailed tracking
-    await _db.collection('users')
+    await _db
+        .collection('users')
         .doc(userId)
         .collection('completedTopics')
         .doc(topicId)
@@ -412,17 +456,20 @@ class FirestoreService {
     await _db.collection('users').doc(userId).update({
       'completedTopics': FieldValue.arrayRemove([topicId])
     });
-    
+
     // Also remove from the subcollection
-    await _db.collection('users')
+    await _db
+        .collection('users')
         .doc(userId)
         .collection('completedTopics')
         .doc(topicId)
         .delete();
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> getCompletedTopics(String userId) {
-    return _db.collection('users')
+  Stream<QuerySnapshot<Map<String, dynamic>>> getCompletedTopics(
+      String userId) {
+    return _db
+        .collection('users')
         .doc(userId)
         .collection('completedTopics')
         .withConverter<Map<String, dynamic>>(
@@ -435,17 +482,17 @@ class FirestoreService {
   // Initialization Methods
   Future<void> initializeSampleData() async {
     debugPrint('Starting sample data initialization...');
-    
+
     // Clear existing data first
     debugPrint('Clearing existing data...');
     final batch = _db.batch();
-    
+
     // Clear videos
     final existingVideos = await _db.collection('videos').get();
     for (final doc in existingVideos.docs) {
       batch.delete(doc.reference);
     }
-    
+
     // Clear learning paths and their subcollections
     final existingPaths = await _db.collection('learning_paths').get();
     for (final pathDoc in existingPaths.docs) {
@@ -456,40 +503,38 @@ class FirestoreService {
       }
       batch.delete(pathDoc.reference);
     }
-    
+
     // Clear topics
     final existingTopics = await _db.collection('topics').get();
     for (final doc in existingTopics.docs) {
       batch.delete(doc.reference);
     }
-    
+
     await batch.commit();
     debugPrint('Existing data cleared');
-    
+
     // Initialize fresh data
     await initializeSampleLearningPaths();
     await initializeTopics();
 
     debugPrint('Initializing videos...');
-    
+
     // First, get all learning paths to map their IDs
     final learningPathsSnapshot = await _db.collection('learning_paths').get();
-    final learningPathMap = Map.fromEntries(
-      learningPathsSnapshot.docs.map((doc) => MapEntry(doc.data()['id'] as String, doc.id))
-    );
+    final learningPathMap = Map.fromEntries(learningPathsSnapshot.docs
+        .map((doc) => MapEntry(doc.data()['id'] as String, doc.id)));
     debugPrint('Learning path mapping: $learningPathMap');
-    
+
     // Then get all topics to map their IDs
     final topicsSnapshot = await _db.collection('topics').get();
-    final topicMap = Map.fromEntries(
-      topicsSnapshot.docs.map((doc) => MapEntry(doc.data()['id'] as String, doc.id))
-    );
+    final topicMap = Map.fromEntries(topicsSnapshot.docs
+        .map((doc) => MapEntry(doc.data()['id'] as String, doc.id)));
     debugPrint('Topic mapping: $topicMap');
-    
+
     // Add sample videos with mapped IDs
     for (var video in sampleVideos) {
       final videoData = Map<String, dynamic>.from(video);
-      
+
       // Map the old topic ID to the new one
       final oldTopicId = videoData['topicId'] as String;
       final newTopicId = topicMap[oldTopicId];
@@ -498,21 +543,24 @@ class FirestoreService {
         continue;
       }
       videoData['topicId'] = newTopicId;
-      
+
       // Map the old learning path ID to the new one
       final oldPathId = videoData['learningPathId'] as String;
       final newPathId = learningPathMap[oldPathId];
       if (newPathId == null) {
-        debugPrint('Warning: No mapping found for learning path ID: $oldPathId');
+        debugPrint(
+            'Warning: No mapping found for learning path ID: $oldPathId');
         continue;
       }
       videoData['learningPathId'] = newPathId;
-      
+
       // Convert DateTime to Timestamp for Firestore
-      videoData['createdAt'] = Timestamp.fromDate(videoData['createdAt'] as DateTime);
-      
+      videoData['createdAt'] =
+          Timestamp.fromDate(videoData['createdAt'] as DateTime);
+
       await _db.collection('videos').add(videoData);
-      debugPrint('Added video: ${videoData['title']} to path: ${videoData['learningPathId']} and topic: ${videoData['topicId']}');
+      debugPrint(
+          'Added video: ${videoData['title']} to path: ${videoData['learningPathId']} and topic: ${videoData['topicId']}');
     }
     debugPrint('Sample data initialization complete');
   }
@@ -520,7 +568,7 @@ class FirestoreService {
   Future<void> initializeSampleLearningPaths() async {
     // Check if learning paths already exist
     final existingPaths = await _db.collection('learning_paths').get();
-    if (!existingPaths.docs.isEmpty) {
+    if (existingPaths.docs.isNotEmpty) {
       debugPrint('Learning paths already initialized');
       return;
     }
@@ -601,19 +649,20 @@ class FirestoreService {
     for (final path in learningPaths) {
       final topics = List<Map<String, dynamic>>.from(path['topics'] as List);
       path.remove('topics');
-      
+
       final pathRef = await _db.collection('learning_paths').add(path);
       debugPrint('Created learning path: ${path['title']}');
-      
+
       for (final topic in topics) {
         final topicId = topic['id'] as String;
         await _db
             .collection('learning_paths')
             .doc(pathRef.id)
             .collection('topics')
-            .doc(topicId)  
+            .doc(topicId)
             .set(topic);
-        debugPrint('Added topic: ${topic['name']} with ID: $topicId to ${path['title']}');
+        debugPrint(
+            'Added topic: ${topic['name']} with ID: $topicId to ${path['title']}');
       }
     }
   }
@@ -621,14 +670,14 @@ class FirestoreService {
   Future<void> initializeTopics() async {
     // Check if topics already exist
     final topicsSnapshot = await _db.collection('topics').get();
-    if (!topicsSnapshot.docs.isEmpty) {
+    if (topicsSnapshot.docs.isNotEmpty) {
       debugPrint('Topics already initialized');
       return;
     }
 
     debugPrint('Initializing topics...');
     final batch = _db.batch();
-    
+
     final topics = [
       {
         'id': 'variables_expressions',
@@ -683,9 +732,9 @@ class FirestoreService {
 
   Future<void> temporaryUpdateLearningPaths() async {
     debugPrint('Starting temporary learning path update...');
-    
+
     final pathsSnapshot = await _db.collection('learning_paths').get();
-    
+
     for (final doc in pathsSnapshot.docs) {
       final data = doc.data();
       if (data['title'] == 'Algebra Basics') {
@@ -741,7 +790,7 @@ class FirestoreService {
   // Comment Methods
   Future<void> toggleCommentLike(String commentId) async {
     if (userId == null) return;
-    
+
     final likeRef = _db.collection('comment_likes').doc('${userId}_$commentId');
     final commentRef = _db.collection('video_comments').doc(commentId);
 
@@ -749,7 +798,7 @@ class FirestoreService {
       await _db.runTransaction((transaction) async {
         final likeDoc = await transaction.get(likeRef);
         final commentDoc = await transaction.get(commentRef);
-        
+
         if (!commentDoc.exists) {
           throw Exception('Comment not found');
         }
@@ -761,15 +810,11 @@ class FirestoreService {
             'commentId': commentId,
             'timestamp': FieldValue.serverTimestamp(),
           });
-          transaction.update(commentRef, {
-            'likes': FieldValue.increment(1)
-          });
+          transaction.update(commentRef, {'likes': FieldValue.increment(1)});
         } else {
           // Remove like
           transaction.delete(likeRef);
-          transaction.update(commentRef, {
-            'likes': FieldValue.increment(-1)
-          });
+          transaction.update(commentRef, {'likes': FieldValue.increment(-1)});
         }
       });
     } catch (e) {
@@ -779,8 +824,9 @@ class FirestoreService {
 
   Stream<bool> isCommentLiked(String commentId) {
     if (userId == null) return Stream.value(false);
-    
-    return _db.collection('comment_likes')
+
+    return _db
+        .collection('comment_likes')
         .doc('${userId}_$commentId')
         .snapshots()
         .map((snapshot) => snapshot.exists);
@@ -789,12 +835,9 @@ class FirestoreService {
   // Topic Methods
   Stream<List<String>> getUserCompletedTopics() {
     if (userId == null) return Stream.value([]);
-    
-    return _db.collection('users')
-        .doc(userId)
-        .snapshots()
-        .map((snapshot) => 
-            List<String>.from(snapshot.data()?['completedTopics'] ?? []));
+
+    return _db.collection('users').doc(userId).snapshots().map((snapshot) =>
+        List<String>.from(snapshot.data()?['completedTopics'] ?? []));
   }
 
   Future<bool> canAccessTopic(String topicId) async {
@@ -806,12 +849,13 @@ class FirestoreService {
 
     final topic = topicDoc.data() as Map<String, dynamic>;
     final prerequisites = List<String>.from(topic['prerequisites'] ?? []);
-    
+
     if (prerequisites.isEmpty) return true;
 
     // Get user's completed topics
     final userDoc = await _db.collection('users').doc(userId).get();
-    final completedTopics = List<String>.from(userDoc.data()?['completedTopics'] ?? []);
+    final completedTopics =
+        List<String>.from(userDoc.data()?['completedTopics'] ?? []);
 
     // Check if all prerequisites are completed
     return prerequisites.every((prereq) => completedTopics.contains(prereq));
@@ -821,8 +865,9 @@ class FirestoreService {
     if (userId == null) return 0.0;
 
     final userDoc = await _db.collection('users').doc(userId).get();
-    final progress = (userDoc.data()?['progress'] ?? {}) as Map<String, dynamic>;
-    
+    final progress =
+        (userDoc.data()?['progress'] ?? {}) as Map<String, dynamic>;
+
     return (progress[topicId] ?? 0.0) as double;
   }
 
@@ -842,7 +887,7 @@ class FirestoreService {
   // Video Likes Methods
   Future<void> toggleVideoLike(String videoId) async {
     if (userId == null) return;
-    
+
     final likeRef = _db.collection('video_likes').doc('${userId}_$videoId');
     final videoRef = _db.collection('videos').doc(videoId);
 
@@ -855,7 +900,7 @@ class FirestoreService {
 
       await _db.runTransaction((transaction) async {
         final likeDoc = await transaction.get(likeRef);
-        
+
         if (!likeDoc.exists) {
           // Add like
           transaction.set(likeRef, {
@@ -863,15 +908,11 @@ class FirestoreService {
             'videoId': videoId,
             'timestamp': FieldValue.serverTimestamp(),
           });
-          transaction.update(videoRef, {
-            'likes': FieldValue.increment(1)
-          });
+          transaction.update(videoRef, {'likes': FieldValue.increment(1)});
         } else {
           // Remove like
           transaction.delete(likeRef);
-          transaction.update(videoRef, {
-            'likes': FieldValue.increment(-1)
-          });
+          transaction.update(videoRef, {'likes': FieldValue.increment(-1)});
         }
       });
     } catch (e) {
@@ -881,8 +922,9 @@ class FirestoreService {
 
   Stream<bool> isVideoLiked(String videoId) {
     if (userId == null) return Stream.value(false);
-    
-    return _db.collection('video_likes')
+
+    return _db
+        .collection('video_likes')
         .doc('${userId}_$videoId')
         .snapshots()
         .map((snapshot) => snapshot.exists);

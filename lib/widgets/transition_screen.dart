@@ -8,17 +8,18 @@ class TransitionScreen extends StatefulWidget {
   final VoidCallback? onTransitionComplete;
 
   const TransitionScreen({
-    Key? key,
+    super.key,
     this.content,
     this.duration = const Duration(seconds: 3),
     this.onTransitionComplete,
-  }) : super(key: key);
+  });
 
   @override
   State<TransitionScreen> createState() => _TransitionScreenState();
 }
 
-class _TransitionScreenState extends State<TransitionScreen> with SingleTickerProviderStateMixin {
+class _TransitionScreenState extends State<TransitionScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -63,7 +64,7 @@ class _TransitionScreenState extends State<TransitionScreen> with SingleTickerPr
 
 /// Default whiteboard content widget that can be shown during transitions
 class WhiteboardContent extends StatelessWidget {
-  const WhiteboardContent({Key? key}) : super(key: key);
+  const WhiteboardContent({super.key});
 
   @override
   Widget build(BuildContext context) {
