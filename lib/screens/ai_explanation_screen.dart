@@ -20,18 +20,62 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
   final AIExplanationService _aiService = AIExplanationService();
   final List<Map<String, dynamic>> _messages = [];
   bool _isLoading = false;
+  String _conversationContext = '';
+  static const int _maxUserMessages = 5;
+  int _userMessageCount = 0;
 
   @override
   void initState() {
     super.initState();
+    _initializeConversation();
+  }
+
+  Future<void> _initializeConversation() async {
     if (widget.videoContext != null && widget.videoContext!.isNotEmpty) {
-      _messages.add({
-        'text':
-            'I see you\'re watching a video about: ${widget.videoContext}. How can I help you understand this topic better?',
-        'isUser': false,
-        'timestamp': DateTime.now(),
-      });
+      setState(() => _isLoading = true);
+
+      try {
+        final response = await _aiService.generateExplanation(
+            '''For a video about "${widget.videoContext}", respond with ONLY a list of 3-4 key concepts formatted exactly as:
+A) [concept 1]
+B) [concept 2]
+C) [concept 3]
+Do not add any other text before or after the options.''');
+
+        setState(() {
+          _messages.add({
+            'text': '''Hi! Which of these would you like me to explain?
+
+$response
+
+Or ask me anything else about ${widget.videoContext}!''',
+            'isUser': false,
+            'timestamp': DateTime.now(),
+          });
+          _isLoading = false;
+        });
+
+        _updateConversationContext();
+      } catch (e) {
+        setState(() {
+          _messages.add({
+            'text':
+                'I encountered an error while preparing your options. Please feel free to ask any question about ${widget.videoContext}.',
+            'isUser': false,
+            'timestamp': DateTime.now(),
+            'isError': true,
+          });
+          _isLoading = false;
+        });
+      }
     }
+  }
+
+  void _updateConversationContext() {
+    // Build context from the last few messages
+    _conversationContext = _messages.map((msg) {
+      return "${msg['isUser'] ? 'Student' : 'Tutor'}: ${msg['text']}";
+    }).join('\n\n');
   }
 
   @override
@@ -57,12 +101,30 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
     final message = _messageController.text.trim();
     if (message.isEmpty) return;
 
+    if (_userMessageCount >= _maxUserMessages) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'You\'ve reached the maximum number of messages. Starting a new conversation.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      setState(() {
+        _messages.clear();
+        _userMessageCount = 0;
+        _conversationContext = '';
+      });
+      await _initializeConversation();
+      return;
+    }
+
     setState(() {
       _messages.add({
         'text': message,
         'isUser': true,
         'timestamp': DateTime.now(),
       });
+      _userMessageCount++;
       _isLoading = true;
     });
 
@@ -70,7 +132,17 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
     _scrollToBottom();
 
     try {
-      final response = await _aiService.generateExplanation(message);
+      _updateConversationContext();
+      final prompt =
+          '''Context: This is a math tutoring session about "${widget.videoContext}".
+Previous conversation:
+$_conversationContext
+
+Student's question: $message
+
+Provide a clear, helpful explanation that builds on our previous conversation. Remember to be encouraging and break down complex concepts.''';
+
+      final response = await _aiService.generateExplanation(prompt);
       setState(() {
         _messages.add({
           'text': response,
@@ -79,6 +151,7 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
         });
         _isLoading = false;
       });
+      _updateConversationContext();
       _scrollToBottom();
     } catch (e) {
       setState(() {
@@ -99,8 +172,44 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Math Tutor'),
+        title: Row(
+          children: [
+            const Text('AI Math Tutor'),
+            if (_userMessageCount > 0) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${_maxUserMessages - _userMessageCount} questions left',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
         elevation: 1,
+        actions: [
+          if (_messages.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                setState(() {
+                  _messages.clear();
+                  _userMessageCount = 0;
+                  _conversationContext = '';
+                });
+                _initializeConversation();
+              },
+              tooltip: 'Start New Conversation',
+            ),
+        ],
       ),
       body: Column(
         children: [
@@ -144,10 +253,13 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
                   Expanded(
                     child: TextField(
                       controller: _messageController,
-                      decoration: const InputDecoration(
-                        hintText: 'Ask me about math...',
+                      decoration: InputDecoration(
+                        hintText: _userMessageCount >= _maxUserMessages
+                            ? 'Maximum messages reached. Tap send to start new conversation.'
+                            : 'Ask me about math...',
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16),
                       ),
                       maxLines: null,
                       keyboardType: TextInputType.multiline,
