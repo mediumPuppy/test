@@ -8,6 +8,7 @@ import 'screens/feed_screen.dart';
 import 'screens/learning_paths_screen.dart';
 import 'screens/upload_answer_screen.dart';
 import 'screens/quizzes_screen.dart';
+import 'screens/triangle_svg_screen.dart';
 import 'services/auth_service.dart';
 import 'services/quiz_service.dart';
 
@@ -46,7 +47,7 @@ class MyApp extends StatelessWidget {
             if (user == null) {
               return const LoginScreen();
             }
-            return const FeedScreen();
+            return const HomeScreen();
           }
           return const Scaffold(
             body: Center(
@@ -60,6 +61,46 @@ class MyApp extends StatelessWidget {
         '/upload_answer': (context) => const UploadAnswerScreen(),
         '/quizzes': (context) => QuizzesScreen(),
       },
+    );
+  }
+}
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Home'),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          children: <Widget>[
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.blue),
+              child: Text(
+                'Menu',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              title: const Text('Triangle SVG Screen'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const TriangleSvgScreen()),
+                );
+              },
+            ),
+            // Additional drawer items could be added here.
+          ],
+        ),
+      ),
+      body: const Center(
+        child: Text('Welcome to the SVG Math App!'),
+      ),
     );
   }
 }
