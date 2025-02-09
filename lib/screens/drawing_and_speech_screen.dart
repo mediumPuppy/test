@@ -45,7 +45,7 @@ class _DrawingAndSpeechScreenState extends State<DrawingAndSpeechScreen> {
             "name": "init_grid",
             "description": "Let's start by drawing a coordinate grid",
             "startTime": 0.0,
-            "endTime": 1.0,
+            "endTime": 0.6,
             "easingFunction": "easeInOut",
             "elements": [
               {
@@ -63,8 +63,8 @@ class _DrawingAndSpeechScreenState extends State<DrawingAndSpeechScreen> {
           {
             "name": "setup_axes",
             "description": "Now we'll add the x and y axes",
-            "startTime": 1.0,
-            "endTime": 2.0,
+            "startTime": 0.6,
+            "endTime": 1.2,
             "easingFunction": "easeInOut",
             "elements": [
               {
@@ -80,8 +80,8 @@ class _DrawingAndSpeechScreenState extends State<DrawingAndSpeechScreen> {
           {
             "name": "plot_line",
             "description": "Let's plot a line with slope 2",
-            "startTime": 2.0,
-            "endTime": 3.0,
+            "startTime": 1.2,
+            "endTime": 1.8,
             "easingFunction": "drawingnatural",
             "elements": [
               {
@@ -101,8 +101,8 @@ class _DrawingAndSpeechScreenState extends State<DrawingAndSpeechScreen> {
           {
             "name": "show_slope",
             "description": "The slope is the change in y divided by the change in x",
-            "startTime": 3.0,
-            "endTime": 4.0,
+            "startTime": 1.8,
+            "endTime": 2.4,
             "easingFunction": "easeInOut",
             "elements": [
               {
@@ -120,8 +120,8 @@ class _DrawingAndSpeechScreenState extends State<DrawingAndSpeechScreen> {
           {
             "name": "add_labels",
             "description": "The slope is 2, because for every 1 unit we move right, we go up 2 units",
-            "startTime": 4.0,
-            "endTime": 5.0,
+            "startTime": 2.4,
+            "endTime": 3.0,
             "easingFunction": "easeInOut",
             "elements": [
               {

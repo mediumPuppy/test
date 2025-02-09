@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../models/drawing_spec_models.dart';
 
@@ -21,13 +22,35 @@ class HumanLikeDrawingPainter extends CustomPainter {
     canvas.save();
     canvas.transform(transform.storage);
 
-    // Draw each stage's elements based on their progress
+    // Draw each stage's elements sequentially
     for (final stage in spec.stages) {
       final progress = getStageProgress(stage);
       if (progress <= 0) continue; // Skip stages that haven't started
 
-      for (final element in stage.elements) {
-        _drawElement(canvas, size, element, progress);
+      print(
+          '[${DateTime.now()}] Drawing stage: ${stage.name} (progress: ${progress.toStringAsFixed(3)})');
+
+      // Each element in a stage gets its own time slice
+      final elementCount = stage.elements.length;
+      final elementDuration = 1.0 / elementCount;
+
+      for (int i = 0; i < stage.elements.length; i++) {
+        // Calculate sequential timing for this element
+        final elementStart = i * elementDuration;
+        final elementEnd = (i + 1) * elementDuration;
+
+        // Map the overall stage progress to this element's time window
+        final elementProgress =
+            ((progress - elementStart) / (elementEnd - elementStart))
+                .clamp(0.0, 1.0);
+        if (elementProgress <= 0) continue;
+
+        print(
+            '[${DateTime.now()}] Drawing element ${i + 1}/${elementCount} of type ${stage.elements[i].type} (progress: ${elementProgress.toStringAsFixed(3)})');
+
+        // Add natural drawing variations
+        final naturalProgress = _naturalizeProgress(elementProgress);
+        _drawElement(canvas, size, stage.elements[i], naturalProgress);
       }
     }
 
@@ -139,6 +162,9 @@ class HumanLikeDrawingPainter extends CustomPainter {
 
   /// Draw a grid with dashed or solid lines
   void _drawGrid(Canvas canvas, GridElement grid, double progress) {
+    print(
+        '[${DateTime.now()}] Starting grid drawing with progress: ${progress.toStringAsFixed(3)}');
+
     final paint = Paint()
       ..color = grid.color.withOpacity(grid.opacity * progress)
       ..strokeWidth = grid.lineWidth
@@ -153,76 +179,80 @@ class HumanLikeDrawingPainter extends CustomPainter {
 
     // Draw vertical lines
     for (double x = xStart; x <= xEnd; x += grid.spacing) {
-      if (grid.isDashed) {
-        _drawDashedLine(
-          canvas,
-          paint,
-          Offset(x, bounds.top),
-          Offset(x, bounds.bottom),
-          progress,
-        );
-      } else {
-        canvas.drawLine(
-          Offset(x, bounds.top),
-          Offset(x, bounds.bottom * progress),
-          paint,
-        );
-      }
+      canvas.drawLine(
+        Offset(x, bounds.top),
+        Offset(x, bounds.bottom),
+        paint,
+      );
     }
 
     // Draw horizontal lines
     for (double y = yStart; y <= yEnd; y += grid.spacing) {
-      if (grid.isDashed) {
-        _drawDashedLine(
-          canvas,
-          paint,
-          Offset(bounds.left, y),
-          Offset(bounds.right, y),
-          progress,
-        );
-      } else {
-        canvas.drawLine(
-          Offset(bounds.left, y),
-          Offset(bounds.right * progress, y),
-          paint,
-        );
-      }
+      canvas.drawLine(
+        Offset(bounds.left, y),
+        Offset(bounds.right, y),
+        paint,
+      );
     }
+
+    print('[${DateTime.now()}] Completed grid drawing');
   }
 
   /// Draw coordinate axes with optional arrowheads
   void _drawAxes(Canvas canvas, AxesElement axes, double progress) {
+    print(
+        '[${DateTime.now()}] Drawing axes with progress: ${progress.toStringAsFixed(3)}');
+
     final paint = Paint()
-      ..color = axes.color
+      ..color = axes.color.withOpacity(progress)
       ..strokeWidth = axes.lineWidth
       ..style = PaintingStyle.stroke;
 
     final bounds = _getElementBounds(axes);
 
-    // Draw x-axis
-    canvas.drawLine(
-      Offset(bounds.left, 0),
-      Offset(bounds.right * progress, 0),
-      paint,
-    );
+    // Draw x-axis first (0 to 0.5 progress)
+    if (progress <= 0.5) {
+      final xProgress = progress * 2;
+      canvas.drawLine(
+        Offset(bounds.left, 0),
+        Offset(bounds.left + (bounds.right - bounds.left) * xProgress, 0),
+        paint,
+      );
+    } else {
+      // X-axis is complete
+      canvas.drawLine(
+        Offset(bounds.left, 0),
+        Offset(bounds.right, 0),
+        paint,
+      );
 
-    // Draw y-axis
-    canvas.drawLine(
-      Offset(0, bounds.bottom),
-      Offset(0, bounds.top * progress),
-      paint,
-    );
+      // Draw y-axis (0.5 to 1.0 progress)
+      final yProgress = (progress - 0.5) * 2;
+      canvas.drawLine(
+        Offset(0, bounds.bottom),
+        Offset(0, bounds.bottom + (bounds.top - bounds.bottom) * yProgress),
+        paint,
+      );
+    }
 
-    if (axes.showArrowheads && progress > 0.9) {
-      _drawArrowhead(canvas, paint, Offset(0, bounds.top), math.pi / 2);
-      _drawArrowhead(canvas, paint, Offset(bounds.right, 0), 0);
+    // Draw arrowheads when their respective axes are complete
+    if (axes.showArrowheads) {
+      if (progress > 0.45) {
+        _drawArrowhead(canvas, paint, Offset(bounds.right, 0), 0);
+      }
+      if (progress > 0.95) {
+        _drawArrowhead(canvas, paint, Offset(0, bounds.top), math.pi / 2);
+      }
     }
   }
 
   /// Draw a line connecting multiple points
   void _drawLine(Canvas canvas, LineElement line, double progress) {
+    print(
+        '[${DateTime.now()}] Drawing line with progress: ${progress.toStringAsFixed(3)}');
+
     final paint = Paint()
-      ..color = line.color
+      ..color = line.color.withOpacity(progress)
       ..strokeWidth = line.lineWidth
       ..style = PaintingStyle.stroke;
 
@@ -246,17 +276,16 @@ class HumanLikeDrawingPainter extends CustomPainter {
       path.moveTo(points.first.x, points.first.y);
 
       for (int i = 1; i < points.length; i++) {
-        path.lineTo(points[i].x, points[i].y);
+        final start = points[i - 1];
+        final end = points[i];
+        final currentEnd = Offset(
+          start.x + (end.x - start.x) * progress,
+          start.y + (end.y - start.y) * progress,
+        );
+        path.lineTo(currentEnd.dx, currentEnd.dy);
       }
 
-      final pathMetrics = path.computeMetrics().first;
-      final drawPath = Path();
-      drawPath.addPath(
-        pathMetrics.extractPath(0, pathMetrics.length * progress),
-        Offset.zero,
-      );
-
-      canvas.drawPath(drawPath, paint);
+      canvas.drawPath(path, paint);
     }
   }
 
@@ -266,25 +295,39 @@ class HumanLikeDrawingPainter extends CustomPainter {
     final start = slope.startPoint;
     final end = slope.endPoint;
 
-    // Draw rise arrow (vertical)
-    final risePaint = Paint()
-      ..color = slope.riseColor
-      ..strokeWidth = slope.lineWidth
-      ..style = PaintingStyle.stroke;
+    // Draw rise arrow first (0 to 0.5 progress)
+    if (progress <= 0.5) {
+      final riseProgress = progress * 2;
+      final risePaint = Paint()
+        ..color = slope.riseColor
+        ..strokeWidth = slope.lineWidth
+        ..style = PaintingStyle.stroke;
 
-    final riseStart = Offset(start.x, start.y);
-    final riseEnd = Offset(start.x, end.y);
-    _drawArrowLine(canvas, risePaint, riseStart, riseEnd, progress);
+      final riseStart = Offset(start.x, start.y);
+      final riseEnd = Offset(start.x, end.y);
+      _drawArrowLine(canvas, risePaint, riseStart, riseEnd, riseProgress);
+    } else {
+      // Rise arrow is complete
+      final risePaint = Paint()
+        ..color = slope.riseColor
+        ..strokeWidth = slope.lineWidth
+        ..style = PaintingStyle.stroke;
 
-    // Draw run arrow (horizontal)
-    final runPaint = Paint()
-      ..color = slope.runColor
-      ..strokeWidth = slope.lineWidth
-      ..style = PaintingStyle.stroke;
+      final riseStart = Offset(start.x, start.y);
+      final riseEnd = Offset(start.x, end.y);
+      _drawArrowLine(canvas, risePaint, riseStart, riseEnd, 1.0);
 
-    final runStart = Offset(start.x, end.y);
-    final runEnd = Offset(end.x, end.y);
-    _drawArrowLine(canvas, runPaint, runStart, runEnd, progress);
+      // Draw run arrow (0.5 to 1.0 progress)
+      final runProgress = (progress - 0.5) * 2;
+      final runPaint = Paint()
+        ..color = slope.runColor
+        ..strokeWidth = slope.lineWidth
+        ..style = PaintingStyle.stroke;
+
+      final runStart = Offset(start.x, end.y);
+      final runEnd = Offset(end.x, end.y);
+      _drawArrowLine(canvas, runPaint, runStart, runEnd, runProgress);
+    }
   }
 
   /// Draw text labels with fade-in animation
@@ -393,6 +436,18 @@ class HumanLikeDrawingPainter extends CustomPainter {
     if (progress > 0.9) {
       _drawArrowhead(canvas, paint, end, angle);
     }
+  }
+
+  /// Add natural variation to the progress
+  double _naturalizeProgress(double progress) {
+    // Add a slight ease-in-out curve with more pronounced start and end
+    final p = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - math.pow(-2 * progress + 2, 3) / 2;
+
+    // Add subtle speed variations that mimic human drawing
+    final variation = math.sin(progress * math.pi * 3) * 0.08 * (1 - progress);
+    return (p + variation).clamp(0.0, 1.0);
   }
 
   /// Draw debug information if enabled

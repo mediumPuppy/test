@@ -32,17 +32,11 @@ class DrawingCanvasState extends State<DrawingCanvas>
   void initState() {
     super.initState();
 
-    // Calculate total duration from the last stage's end time
-    final duration = widget.spec.stages.isEmpty
-        ? const Duration(seconds: 1)
-        : Duration(
-            milliseconds: (widget.spec.stages.last.endTime * 1000).round(),
-          );
-
-    // Initialize animation controller
+    // Use fixed duration like triangle implementation
     _controller = AnimationController(
       vsync: this,
-      duration: duration,
+      duration: const Duration(
+          seconds: 3), // Slightly longer than triangle for more elements
     );
 
     // Set up completion callback
@@ -65,16 +59,6 @@ class DrawingCanvasState extends State<DrawingCanvas>
   void didUpdateWidget(DrawingCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    // Update duration if spec changed
-    if (oldWidget.spec != widget.spec) {
-      final newDuration = widget.spec.stages.isEmpty
-          ? const Duration(seconds: 1)
-          : Duration(
-              milliseconds: (widget.spec.stages.last.endTime * 1000).round(),
-            );
-      _controller.duration = newDuration;
-    }
-
     // Update autoStart behavior
     if (!oldWidget.autoStart && widget.autoStart && !_isPlaying) {
       play();
@@ -96,6 +80,8 @@ class DrawingCanvasState extends State<DrawingCanvas>
 
   /// Start or resume the animation
   void play() {
+    print(
+        '[${DateTime.now()}] Starting animation - Duration: ${_controller.duration?.inMilliseconds}ms');
     setState(() {
       _isPlaying = true;
     });
@@ -121,18 +107,22 @@ class DrawingCanvasState extends State<DrawingCanvas>
 
   /// Calculate the progress of a specific stage
   double getStageProgress(DrawingStage stage) {
-    final currentTime =
-        _controller.value * _controller.duration!.inMilliseconds / 1000;
+    // Use the raw animation value directly
+    final animationValue =
+        _controller.value * 3.0; // Scale to match our 3-second total duration
 
-    // Before stage starts
-    if (currentTime < stage.startTime) return 0;
-    // After stage ends
-    if (currentTime > stage.endTime) return 1;
+    print('[${DateTime.now()}] Stage ${stage.name} timing - ' +
+        'Stage window: ${stage.startTime.toStringAsFixed(3)} to ${stage.endTime.toStringAsFixed(3)}, ' +
+        'Current time: ${animationValue.toStringAsFixed(3)}');
 
-    // During stage
-    final stageProgress =
-        (currentTime - stage.startTime) / (stage.endTime - stage.startTime);
-    return stageProgress.clamp(0.0, 1.0);
+    // Calculate progress for this stage
+    if (animationValue < stage.startTime) return 0.0;
+    if (animationValue >= stage.endTime) return 1.0;
+
+    // Calculate progress within stage's time window
+    return ((animationValue - stage.startTime) /
+            (stage.endTime - stage.startTime))
+        .clamp(0.0, 1.0);
   }
 
   @override
