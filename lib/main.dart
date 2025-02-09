@@ -9,6 +9,7 @@ import 'screens/learning_paths_screen.dart';
 import 'screens/upload_answer_screen.dart';
 import 'screens/quizzes_screen.dart';
 import 'screens/triangle_svg_screen.dart';
+import 'screens/drawing_and_speech_screen.dart';
 import 'services/auth_service.dart';
 import 'services/quiz_service.dart';
 
@@ -72,7 +73,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
+        title: const Text('ReelMath'),
       ),
       drawer: Drawer(
         child: ListView(
@@ -85,7 +86,34 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             ListTile(
-              title: const Text('Triangle SVG Screen'),
+              title: const Text('Feed'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FeedScreen()),
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('Learning Paths'),
+              onTap: () {
+                Navigator.pushNamed(context, '/learning_paths');
+              },
+            ),
+            ListTile(
+              title: const Text('Quizzes'),
+              onTap: () {
+                Navigator.pushNamed(context, '/quizzes');
+              },
+            ),
+            ListTile(
+              title: const Text('Upload Answer'),
+              onTap: () {
+                Navigator.pushNamed(context, '/upload_answer');
+              },
+            ),
+            ListTile(
+              title: const Text('Triangle SVG Demo'),
               onTap: () {
                 Navigator.push(
                   context,
@@ -94,13 +122,20 @@ class HomeScreen extends StatelessWidget {
                 );
               },
             ),
-            // Additional drawer items could be added here.
+            ListTile(
+              title: const Text('Khan Academy Style Drawing'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const DrawingAndSpeechScreen()),
+                );
+              },
+            ),
           ],
         ),
       ),
-      body: const Center(
-        child: Text('Welcome to the SVG Math App!'),
-      ),
+      body: const FeedScreen(),
     );
   }
 }

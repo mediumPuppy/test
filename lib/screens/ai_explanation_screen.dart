@@ -27,7 +27,6 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
 
   // TO BE DELETED LATER - Test variables for whiteboard toggle
   bool _showWhiteboard = false;
-  final String _testEquation = "2x + 5 = 15";
 
   @override
   void initState() {
