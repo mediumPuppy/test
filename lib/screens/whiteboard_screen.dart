@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import '../services/ai_explanation_service.dart';
 import '../models/drawing_command.dart';
 
 class WhiteboardScreen extends StatefulWidget {

@@ -12,6 +12,7 @@ import 'screens/triangle_svg_screen.dart';
 import 'screens/drawing_and_speech_screen.dart';
 import 'services/auth_service.dart';
 import 'services/quiz_service.dart';
+import 'widgets/app_drawer.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,6 +62,7 @@ class MyApp extends StatelessWidget {
         '/learning_paths': (context) => LearningPathsScreen(),
         '/upload_answer': (context) => const UploadAnswerScreen(),
         '/quizzes': (context) => QuizzesScreen(),
+        '/drawing_and_speech': (context) => const DrawingAndSpeechScreen(),
       },
     );
   }
@@ -75,66 +77,7 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('ReelMath'),
       ),
-      drawer: Drawer(
-        child: ListView(
-          children: <Widget>[
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue),
-              child: Text(
-                'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-            ),
-            ListTile(
-              title: const Text('Feed'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const FeedScreen()),
-                );
-              },
-            ),
-            ListTile(
-              title: const Text('Learning Paths'),
-              onTap: () {
-                Navigator.pushNamed(context, '/learning_paths');
-              },
-            ),
-            ListTile(
-              title: const Text('Quizzes'),
-              onTap: () {
-                Navigator.pushNamed(context, '/quizzes');
-              },
-            ),
-            ListTile(
-              title: const Text('Upload Answer'),
-              onTap: () {
-                Navigator.pushNamed(context, '/upload_answer');
-              },
-            ),
-            ListTile(
-              title: const Text('Triangle SVG Demo'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const TriangleSvgScreen()),
-                );
-              },
-            ),
-            ListTile(
-              title: const Text('Khan Academy Style Drawing'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const DrawingAndSpeechScreen()),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
+      drawer: const AppDrawer(),
       body: const FeedScreen(),
     );
   }

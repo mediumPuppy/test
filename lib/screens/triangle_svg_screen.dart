@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/animated_triangle_painter.dart';
 
 class TriangleSvgScreen extends StatefulWidget {
-  const TriangleSvgScreen({Key? key}) : super(key: key);
+  const TriangleSvgScreen({super.key});
 
   @override
   State<TriangleSvgScreen> createState() => _TriangleSvgScreenState();
@@ -46,7 +46,7 @@ class _TriangleSvgScreenState extends State<TriangleSvgScreen>
         title: const Text('Triangle Animation'),
       ),
       body: Center(
-        child: Container(
+        child: SizedBox(
           width: 300,
           height: 300,
           child: AnimatedBuilder(

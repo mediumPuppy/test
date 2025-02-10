@@ -41,7 +41,7 @@ class AiMessageBubble extends StatelessWidget {
               ? Colors.red.shade100
               : isUser
                   ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.surfaceVariant,
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
         ),
         child: _buildMessageContent(context),

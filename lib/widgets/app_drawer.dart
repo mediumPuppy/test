@@ -1,6 +1,7 @@
 import '../services/auth_service.dart';
 import '../screens/upload_answer_screen.dart';
 import '../screens/whiteboard_screen.dart';
+import '../screens/triangle_svg_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -28,23 +29,24 @@ class AppDrawer extends StatelessWidget {
             ),
           ),
           StreamBuilder<User?>(
-            stream: auth.authStateChanges,
-            builder: (context, snapshot) {
-              final user = snapshot.data;
-              return UserAccountsDrawerHeader(
-                accountName: Text(user?.displayName ?? 'Student'),  // Use display name from Firebase
-                accountEmail: Text(user?.email ?? 'student@example.com'),  // Use email from Firebase
-                currentAccountPicture: CircleAvatar(
-                  child: Icon(Icons.person),
-                ),
-              );
-            }
-          ),
+              stream: auth.authStateChanges,
+              builder: (context, snapshot) {
+                final user = snapshot.data;
+                return UserAccountsDrawerHeader(
+                  accountName: Text(user?.displayName ??
+                      'Student'), // Use display name from Firebase
+                  accountEmail: Text(user?.email ??
+                      'student@example.com'), // Use email from Firebase
+                  currentAccountPicture: CircleAvatar(
+                    child: Icon(Icons.person),
+                  ),
+                );
+              }),
           ListTile(
             leading: const Icon(Icons.home),
             title: const Text('Feed'),
             onTap: () {
-              Navigator.pop(context);  // Close drawer
+              Navigator.pop(context); // Close drawer
             },
           ),
           ListTile(
@@ -62,7 +64,8 @@ class AppDrawer extends StatelessWidget {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const UploadAnswerScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const UploadAnswerScreen()),
               );
             },
           ),
@@ -80,8 +83,29 @@ class AppDrawer extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const WhiteboardScreen()),
+                MaterialPageRoute(
+                    builder: (context) => const WhiteboardScreen()),
               );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.draw),
+            title: const Text('Triangle SVG Demo'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const TriangleSvgScreen()),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.mic),
+            title: const Text('Drawing & Speech Demo'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/drawing_and_speech');
             },
           ),
           const Divider(),

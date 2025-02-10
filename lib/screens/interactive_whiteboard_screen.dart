@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'whiteboard_screen.dart';
-import '../services/ai_explanation_service.dart';
 import '../models/drawing_command.dart';
 
 class InteractiveWhiteboardScreen extends StatefulWidget {
