@@ -2,6 +2,7 @@ import '../services/auth_service.dart';
 import '../screens/upload_answer_screen.dart';
 import '../screens/whiteboard_screen.dart';
 import '../screens/triangle_svg_screen.dart';
+import '../screens/drawing_spec_test_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -105,7 +106,12 @@ class AppDrawer extends StatelessWidget {
             title: const Text('Drawing & Speech Demo'),
             onTap: () {
               Navigator.pop(context);
-              Navigator.pushNamed(context, '/drawing_and_speech');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DrawingSpecTestScreen(),
+                ),
+              );
             },
           ),
           const Divider(),
