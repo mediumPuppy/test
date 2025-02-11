@@ -1,5 +1,7 @@
+// geometry_drawing_painter.dart
 import 'package:flutter/material.dart';
 import '../models/drawing_spec_models.dart';
+import '../services/geometry_path_parser.dart';
 
 class GeometryDrawingPainter extends CustomPainter {
   final double currentTime;
@@ -12,30 +14,48 @@ class GeometryDrawingPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Draw shapes
+    // Draw shapes with progressive stroke
     for (final shape in specification.shapes) {
-      final opacity = _calculateOpacity(currentTime, shape.fadeInRange);
-      if (opacity <= 0) continue;
+      final double start = shape.fadeInRange[0];
+      final double end = shape.fadeInRange[1];
+
+      // Compute fraction of the path to draw
+      double fraction;
+      if (currentTime < start) {
+        fraction = 0.0;
+      } else if (currentTime > end) {
+        fraction = 1.0;
+      } else {
+        fraction = (currentTime - start) / (end - start);
+      }
+
+      if (fraction <= 0) continue;
 
       final paint = Paint()
-        ..color = shape.color.withOpacity(opacity)
+        ..color = shape.color
         ..strokeWidth = shape.strokeWidth
         ..style =
             shape.style == 'stroke' ? PaintingStyle.stroke : PaintingStyle.fill;
 
-      _drawPath(canvas, shape.path, paint);
+      final fullPath = GeometryPathParser.parse(shape.path);
+
+      if (fraction >= 1) {
+        canvas.drawPath(fullPath, paint);
+        continue;
+      }
+
+      _drawPartialPath(canvas, fullPath, paint, fraction);
     }
 
-    // Draw labels
+    // Draw labels (keeping the instant appear for simplicity)
     for (final label in specification.labels) {
-      final opacity = _calculateOpacity(currentTime, label.fadeInRange);
-      if (opacity <= 0) continue;
+      if (currentTime < label.fadeInRange[0]) continue;
 
       final textPainter = TextPainter(
         text: TextSpan(
           text: label.text,
           style: TextStyle(
-            color: label.color.withOpacity(opacity),
+            color: label.color,
             fontSize: 16,
           ),
         ),
@@ -47,39 +67,39 @@ class GeometryDrawingPainter extends CustomPainter {
     }
   }
 
-  double _calculateOpacity(double currentTime, List<double> fadeInRange) {
-    if (currentTime < fadeInRange[0]) return 0;
-    if (currentTime > fadeInRange[1]) return 1;
+  void _drawPartialPath(
+      Canvas canvas, Path fullPath, Paint paint, double fraction) {
+    final metrics = fullPath.computeMetrics();
+    final totalLength = metrics.fold<double>(
+      0.0,
+      (sum, metric) => sum + metric.length,
+    );
 
-    return (currentTime - fadeInRange[0]) / (fadeInRange[1] - fadeInRange[0]);
-  }
+    final targetLength = totalLength * fraction;
+    final metrics2 = fullPath.computeMetrics();
+    double currentLength = 0.0;
+    final partialPath = Path();
 
-  void _drawPath(Canvas canvas, String pathData, Paint paint) {
-    final path = Path();
-    final commands = pathData.split(' ');
+    for (final metric in metrics2) {
+      final length = metric.length;
 
-    for (var i = 0; i < commands.length; i++) {
-      final cmd = commands[i];
-      if (cmd.startsWith('moveTo')) {
-        final coords = _parseCoordinates(cmd);
-        path.moveTo(coords[0], coords[1]);
-      } else if (cmd.startsWith('lineTo')) {
-        final coords = _parseCoordinates(cmd);
-        path.lineTo(coords[0], coords[1]);
+      if ((currentLength + length) < targetLength) {
+        partialPath.addPath(
+          metric.extractPath(0, length),
+          Offset.zero,
+        );
+        currentLength += length;
+      } else {
+        final remaining = targetLength - currentLength;
+        partialPath.addPath(
+          metric.extractPath(0, remaining),
+          Offset.zero,
+        );
+        break;
       }
     }
 
-    canvas.drawPath(path, paint);
-  }
-
-  List<double> _parseCoordinates(String cmd) {
-    final regex = RegExp(r'\(([^)]+)\)');
-    final match = regex.firstMatch(cmd);
-    if (match != null) {
-      final coords = match.group(1)!.split(',');
-      return coords.map((e) => double.parse(e.trim())).toList();
-    }
-    return [0, 0];
+    canvas.drawPath(partialPath, paint);
   }
 
   @override

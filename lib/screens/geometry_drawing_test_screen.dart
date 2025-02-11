@@ -1,8 +1,11 @@
+// geometry_drawing_test_screen.dart
+// Just make sure you've replaced references to the old path logic
+// with the new painter that uses GeometryPathParser.
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import '../data/geometry_drawing_spec.dart';
 import '../models/drawing_spec_models.dart';
 import '../widgets/geometry_drawing_painter.dart';
-import 'dart:convert';
 
 class GeometryDrawingTestScreen extends StatefulWidget {
   const GeometryDrawingTestScreen({super.key});
@@ -19,13 +22,14 @@ class _GeometryDrawingTestScreenState extends State<GeometryDrawingTestScreen>
   late List<DrawingStage> stages;
   late List<GeometryShape> shapes;
   late List<GeometryLabel> labels;
+  late Map<String, dynamic> instructionsMap;
 
   @override
   void initState() {
     super.initState();
     _parseSpecification();
 
-    // Calculate total duration from the last stage's endTime
+    // totalDuration = lastStage.endTime, etc.
     totalDuration = stages.isEmpty ? 10.0 : stages.last.endTime;
 
     _controller = AnimationController(
@@ -38,7 +42,7 @@ class _GeometryDrawingTestScreenState extends State<GeometryDrawingTestScreen>
 
   void _parseSpecification() {
     final jsonMap = json.decode(geometryDrawingSpec);
-    final instructionsMap = jsonMap['instructions'];
+    instructionsMap = jsonMap['instructions'];
 
     // Parse stages
     final List stagesJson = instructionsMap['timing'];
@@ -57,17 +61,20 @@ class _GeometryDrawingTestScreenState extends State<GeometryDrawingTestScreen>
     shapes = shapesJson
         .map((item) => GeometryShape(
               id: item['id'],
-              vertices: (item['vertices'] as List)
-                  .map((v) => Offset(
-                      (v['x'] as num).toDouble(), (v['y'] as num).toDouble()))
-                  .toList(),
+              vertices: item.containsKey('vertices')
+                  ? (item['vertices'] as List)
+                      .map((v) => Offset(
+                            (v['x'] as num).toDouble(),
+                            (v['y'] as num).toDouble(),
+                          ))
+                      .toList()
+                  : [],
               path: item['path'],
               style: item['style'],
               strokeWidth: (item['strokeWidth'] as num).toDouble(),
-              color: Color(int.parse(item['color'].substring(1, 7), radix: 16) +
-                  0xFF000000),
+              color: _hexToColor(item['color']),
               fadeInRange: (item['fadeInRange'] as List)
-                  .map((v) => (v as num).toDouble())
+                  .map<double>((v) => (v as num).toDouble())
                   .toList(),
             ))
         .toList();
@@ -82,13 +89,22 @@ class _GeometryDrawingTestScreenState extends State<GeometryDrawingTestScreen>
                 (item['position']['x'] as num).toDouble(),
                 (item['position']['y'] as num).toDouble(),
               ),
-              color: Color(int.parse(item['color'].substring(1, 7), radix: 16) +
-                  0xFF000000),
+              color: _hexToColor(item['color']),
               fadeInRange: (item['fadeInRange'] as List)
-                  .map((v) => (v as num).toDouble())
+                  .map<double>((v) => (v as num).toDouble())
                   .toList(),
             ))
         .toList();
+  }
+
+  Color _hexToColor(String hexColor) {
+    // e.g. "#000000" => 0xFF000000
+    final buffer = StringBuffer();
+    if (hexColor.length == 7) {
+      buffer.write('ff');
+      buffer.write(hexColor.replaceFirst('#', ''));
+    }
+    return Color(int.parse(buffer.toString(), radix: 16));
   }
 
   @override
@@ -115,15 +131,19 @@ class _GeometryDrawingTestScreenState extends State<GeometryDrawingTestScreen>
       body: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
+          final currentTime = _controller.value * totalDuration;
           return CustomPaint(
             painter: GeometryDrawingPainter(
-              currentTime: _controller.value * totalDuration,
+              currentTime: currentTime,
               specification: GeometryDrawingSpec(
                 stages: stages,
                 shapes: shapes,
                 labels: labels,
-                speechScript: "Let's explore geometry",
-                speechPacing: const {'initialDelay': 1.0},
+                speechScript: instructionsMap['speech']['script'] ?? '',
+                speechPacing: Map<String, double>.from(
+                  (instructionsMap['speech']['pacing'] ?? {}).map(
+                      (key, value) => MapEntry(key, (value as num).toDouble())),
+                ),
               ),
             ),
             size: Size.infinite,
