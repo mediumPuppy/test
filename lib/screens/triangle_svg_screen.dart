@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 // Model classes to represent our JSON drawing instructions
 class DrawingStage {

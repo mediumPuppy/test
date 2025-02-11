@@ -157,6 +157,8 @@ class DrawingSpecParser {
   }
 
   /// Helper method to convert a hex string to a Flutter Color
+
+  /// Helper method to convert a hex string to a Flutter Color
   static Color _hexToColor(String hexCode) {
     final buffer = StringBuffer();
     if (hexCode.length == 7) {

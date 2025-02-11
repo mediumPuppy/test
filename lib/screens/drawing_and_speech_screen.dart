@@ -9,10 +9,10 @@ class DrawingAndSpeechScreen extends StatefulWidget {
   final VoidCallback? onAnimationComplete;
 
   const DrawingAndSpeechScreen({
-    Key? key,
+    super.key,
     required this.specification,
     this.onAnimationComplete,
-  }) : super(key: key);
+  });
 
   @override
   _DrawingAndSpeechScreenState createState() => _DrawingAndSpeechScreenState();

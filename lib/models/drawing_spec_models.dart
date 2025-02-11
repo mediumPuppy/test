@@ -132,5 +132,57 @@ class DrawingSpecification {
   });
 }
 
+class GeometryShape {
+  final String id;
+  final List<Offset> vertices;
+  final String path;
+  final String style;
+  final double strokeWidth;
+  final Color color;
+  final List<double> fadeInRange;
+
+  GeometryShape({
+    required this.id,
+    required this.vertices,
+    required this.path,
+    required this.style,
+    required this.strokeWidth,
+    required this.color,
+    required this.fadeInRange,
+  });
+}
+
+class GeometryLabel {
+  final String id;
+  final String text;
+  final Offset position;
+  final Color color;
+  final List<double> fadeInRange;
+
+  GeometryLabel({
+    required this.id,
+    required this.text,
+    required this.position,
+    required this.color,
+    required this.fadeInRange,
+  });
+}
+
+class GeometryDrawingSpec {
+  final List<DrawingStage> stages;
+  final List<GeometryShape> shapes;
+  final List<GeometryLabel> labels;
+  final String speechScript;
+  final Map<String, double> speechPacing;
+
+  GeometryDrawingSpec({
+    required this.stages,
+    required this.shapes,
+    required this.labels,
+    required this.speechScript,
+    required this.speechPacing,
+  });
+}
+
 // More classes for RightAngleMarker, AngleArc, Label, etc.
 // ...

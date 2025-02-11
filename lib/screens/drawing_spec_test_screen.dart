@@ -3,7 +3,7 @@ import '../models/drawing_spec_models.dart';
 import 'drawing_and_speech_screen.dart';
 
 class DrawingSpecTestScreen extends StatelessWidget {
-  const DrawingSpecTestScreen({Key? key}) : super(key: key);
+  const DrawingSpecTestScreen({super.key});
 
   DrawingSpecification _createTestSpec() {
     // Create a right triangle with vertices at (100,300), (300,300), and (100,100)
