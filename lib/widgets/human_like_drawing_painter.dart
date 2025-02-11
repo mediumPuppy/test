@@ -96,19 +96,15 @@ class HumanLikeDrawingPainter extends CustomPainter {
     if (specification.drawing.rightAngle == null) return;
 
     final marker = specification.drawing.rightAngle!;
-    final paint = Paint()
-      ..color = marker.color
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-
     final path = Path();
     final vertex = marker.vertex;
     final size = marker.markerLength;
+    final offset = size * 0.4;
 
-    // Draw the right angle marker
-    path.moveTo(vertex.dx, vertex.dy + size);
-    path.lineTo(vertex.dx, vertex.dy);
-    path.lineTo(vertex.dx + size, vertex.dy);
+    // Adjust based on the actual right angle position (point A)
+    path.moveTo(vertex.dx, vertex.dy); // Start at vertex
+    path.lineTo(vertex.dx + size, vertex.dy); // Go right
+    path.lineTo(vertex.dx + size, vertex.dy - size); // Go up
 
     // Extract partial path based on progress
     final metrics = path.computeMetrics();
@@ -121,7 +117,12 @@ class HumanLikeDrawingPainter extends CustomPainter {
       );
     }
 
-    canvas.drawPath(partialPath, paint);
+    canvas.drawPath(
+        partialPath,
+        Paint()
+          ..color = marker.color
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke);
   }
 
   void _drawAngleArcs(Canvas canvas, double progress) {
@@ -130,26 +131,22 @@ class HumanLikeDrawingPainter extends CustomPainter {
       ..strokeWidth = 2;
 
     for (final arc in specification.drawing.angleArcs) {
-      paint.color = arc.color;
-
-      // Calculate the angle between the points
+      // Calculate start angle from reference point
       final dx1 = arc.referencePoint.dx - arc.vertex.dx;
       final dy1 = arc.referencePoint.dy - arc.vertex.dy;
       final startAngle = atan2(dy1, dx1);
 
-      // Draw the arc
-      final rect = Rect.fromCircle(
-        center: arc.vertex,
-        radius: arc.radius,
-      );
+      // Calculate end angle from next vertex
+      final dx2 = arc.vertex.dx - arc.referencePoint.dx;
+      final dy2 = arc.vertex.dy - arc.referencePoint.dy;
+      final endAngle = atan2(dy2, dx2);
 
-      // For simplicity, we're drawing a quarter circle (π/2 radians)
       canvas.drawArc(
-        rect,
+        Rect.fromCircle(center: arc.vertex, radius: arc.radius),
         startAngle,
-        progress * pi / 2,
+        (endAngle - startAngle) * progress,
         false,
-        paint,
+        paint..color = arc.color,
       );
     }
   }
