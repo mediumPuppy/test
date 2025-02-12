@@ -28,7 +28,6 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
   StreamSubscription? _pathSubscription;
   Timer? _quizCheckTimer;
   bool _isLoading = false;
-
   @override
   void initState() {
     super.initState();

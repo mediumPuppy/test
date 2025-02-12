@@ -60,9 +60,6 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
   void _initializeFromCommands() {
     if (widget.drawingCommands == null) return;
 
-    double x = 50;
-    double y = 200;
-
     for (final command in widget.drawingCommands!) {
       final path = Path();
 

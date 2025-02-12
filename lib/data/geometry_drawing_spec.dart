@@ -1,97 +1,97 @@
-const String geometryDrawingSpec = '''
-{
+const String geometryDrawingSpec = '''{
   "instructions": {
     "timing": [
       {
-        "stage": "draw_grid",
+        "stage": "first_set",
         "startTime": 0,
-        "endTime": 6,
-        "description": "Drawing a 3x4 grid of dots representing groups",
+        "endTime": 7,
+        "description": "Drawing 2 apples to represent the number 2.",
         "easing": "easeIn"
       },
       {
-        "stage": "highlight",
-        "startTime": 6,
-        "endTime": 12,
-        "description": "Highlighting one group to show one row equals 4",
+        "stage": "second_set",
+        "startTime": 7,
+        "endTime": 14,
+        "description": "Drawing 3 apples to represent the number 3.",
         "easing": "linear"
       },
       {
-        "stage": "equation",
-        "startTime": 12,
+        "stage": "total_equation",
+        "startTime": 14,
         "endTime": 20,
-        "description": "Displaying the multiplication equation 3 x 4 = 12",
+        "description": "Displaying the equation 2 + 3 = 5.",
         "easing": "easeOut"
       }
     ],
     "drawing": {
       "shapes": [
         {
-          "id": "draw_grid",
+          "id": "first_set",
           "vertices": [
-            { "x": 60, "y": 100 },
-            { "x": 210, "y": 200 }
+            { "x": 60, "y": 150 },
+            { "x": 110, "y": 150 }
           ],
-          "path": "moveTo(65,100) arcTo(60,100,10,10,0,6.28,true) close() moveTo(115,100) arcTo(110,100,10,10,0,6.28,true) close() moveTo(165,100) arcTo(160,100,10,10,0,6.28,true) close() moveTo(215,100) arcTo(210,100,10,10,0,6.28,true) close() moveTo(65,150) arcTo(60,150,10,10,0,6.28,true) close() moveTo(115,150) arcTo(110,150,10,10,0,6.28,true) close() moveTo(165,150) arcTo(160,150,10,10,0,6.28,true) close() moveTo(215,150) arcTo(210,150,10,10,0,6.28,true) close() moveTo(65,200) arcTo(60,200,10,10,0,6.28,true) close() moveTo(115,200) arcTo(110,200,10,10,0,6.28,true) close() moveTo(165,200) arcTo(160,200,10,10,0,6.28,true) close() moveTo(215,200) arcTo(210,200,10,10,0,6.28,true) close()",
+          "path": "moveTo(70,150) arcTo(50,140,20,20,0,6.28,true) close() moveTo(120,150) arcTo(100,140,20,20,0,6.28,true) close()",
           "style": "fill",
           "strokeWidth": 2,
-          "color": "#000000",
-          "fadeInRange": [0, 6]
-        },
-        {
-          "id": "highlight",
-          "vertices": [
-            { "x": 55, "y": 95 },
-            { "x": 215, "y": 105 }
-          ],
-          "path": "moveTo(55,95) lineTo(215,95) lineTo(215,105) lineTo(55,105) close()",
-          "style": "stroke",
-          "strokeWidth": 3,
           "color": "#FF0000",
-          "fadeInRange": [6, 12]
+          "fadeInRange": [0, 7]
         },
         {
-          "id": "equation",
+          "id": "second_set",
           "vertices": [
-            { "x": 100, "y": 300 },
-            { "x": 200, "y": 300 }
+            { "x": 60, "y": 250 },
+            { "x": 110, "y": 250 },
+            { "x": 160, "y": 250 }
           ],
-          "path": "moveTo(100,300) lineTo(200,300)",
+          "path": "moveTo(70,250) arcTo(50,240,20,20,0,6.28,true) close() moveTo(120,250) arcTo(100,240,20,20,0,6.28,true) close() moveTo(170,250) arcTo(150,240,20,20,0,6.28,true) close()",
+          "style": "fill",
+          "strokeWidth": 2,
+          "color": "#FF0000",
+          "fadeInRange": [7, 14]
+        },
+        {
+          "id": "total_equation",
+          "vertices": [
+            { "x": 60, "y": 350 },
+            { "x": 260, "y": 350 }
+          ],
+          "path": "moveTo(60,350) lineTo(260,350)",
           "style": "stroke",
           "strokeWidth": 2,
           "color": "#0000FF",
-          "fadeInRange": [12, 20]
+          "fadeInRange": [14, 20]
         }
       ],
       "labels": [
         {
-          "id": "draw_grid",
-          "text": "3 groups of 4",
-          "position": { "x": 80, "y": 70 },
+          "id": "first_set",
+          "text": "2 apples",
+          "position": { "x": 55, "y": 100 },
           "color": "#000000",
-          "fadeInRange": [0, 6],
+          "fadeInRange": [0, 7],
           "handwritten": true
         },
         {
-          "id": "highlight",
-          "text": "one group = 4",
-          "position": { "x": 220, "y": 100 },
-          "color": "#FF0000",
-          "fadeInRange": [6, 12],
+          "id": "second_set",
+          "text": "3 apples",
+          "position": { "x": 55, "y": 265 },
+          "color": "#000000",
+          "fadeInRange": [7, 14],
           "handwritten": true
         },
         {
-          "id": "equation",
-          "text": "3 x 4 = 12",
-          "position": { "x": 100, "y": 270 },
-          "color": "#0000FF",
-          "fadeInRange": [12, 20],
+          "id": "total_equation",
+          "text": "2 + 3 = 5",
+          "position": { "x": 120, "y": 310 },
+          "color": "#000000",
+          "fadeInRange": [14, 20],
           "handwritten": true
         }
       ]
     },
     "speech": {
-      "script": "Basic multiplication means repeated addition. Here we see three groups of four dots, which add up to twelve.",
+      "script": "Let's add some apples! Look, here are 2 apples. Now, we add 3 more apples. Count them all together: 2 plus 3 makes 5! Great job!",
       "pacing": {
         "initialDelay": 0,
         "betweenStages": 0,
@@ -99,6 +99,4 @@ const String geometryDrawingSpec = '''
       }
     }
   }
-}
-
-''';
+}''';

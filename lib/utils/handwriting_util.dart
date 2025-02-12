@@ -1,6 +1,5 @@
 // handwriting_util.dart
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 import '../models/drawing_command.dart';
 
 /// Generates drawing commands for a given equation text using the same
