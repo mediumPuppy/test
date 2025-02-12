@@ -3,93 +3,79 @@ const String geometryDrawingSpec = '''
   "instructions": {
     "timing": [
       {
-        "stage": "draw_triangle",
+        "stage": "draw_grid",
         "startTime": 0,
-        "endTime": 2,
-        "description": "Drawing the basic triangle."
-      },
-      {
-        "stage": "draw_angle_arc",
-        "startTime": 2,
         "endTime": 3,
-        "description": "Drawing the angle arc at vertex A."
+        "description": "Draw the multiplication grid",
+        "easing": "linear"
       },
       {
-        "stage": "label_vertices",
+        "stage": "draw_labels",
         "startTime": 3,
-        "endTime": 4,
-        "description": "Labeling the vertices A, B, and C."
+        "endTime": 6,
+        "description": "Label rows and columns",
+        "easing": "easeIn"
       },
       {
-        "stage": "label_angle",
-        "startTime": 4,
-        "endTime": 5,
-        "description": "Labeling the angle measure at vertex A."
+        "stage": "draw_result",
+        "startTime": 6,
+        "endTime": 9,
+        "description": "Show multiplication result",
+        "easing": "easeOut"
       }
     ],
     "drawing": {
       "shapes": [
         {
-          "id": "draw_triangle",
-          "path": "moveTo(80,300) lineTo(240,300) lineTo(160,150) close()",
+          "id": "draw_grid",
+          "vertices": [
+            { "x": 80, "y": 150 },
+            { "x": 240, "y": 150 },
+            { "x": 240, "y": 270 },
+            { "x": 80, "y": 270 }
+          ],
+          "path": "moveTo(80,150) lineTo(240,150) lineTo(240,270) lineTo(80,270) close() moveTo(120,150) lineTo(120,270) moveTo(160,150) lineTo(160,270) moveTo(200,150) lineTo(200,270) moveTo(80,190) lineTo(240,190) moveTo(80,230) lineTo(240,230)",
           "style": "stroke",
+          "strokeWidth": 2,
           "color": "#000000",
-          "strokeWidth": 2.0,
-          "fadeInRange": [0, 2]
-        },
-        {
-          "id": "draw_angle_arc",
-          "path": "moveTo(80,300) arcTo(50,270,60,60,0,1.0,false)",
-          "style": "stroke",
-          "color": "#FF0000",
-          "strokeWidth": 2.0,
-          "fadeInRange": [2, 3]
+          "fadeInRange": [0, 3]
         }
       ],
       "labels": [
         {
-          "id": "label_A",
-          "text": "a",
-          "position": {"x": 60, "y": 280},
-          "color": "#0000FF",
-          "fadeInRange": [3, 4],
+          "id": "draw_labels_rows",
+          "text": "3 rows",
+          "position": { "x": 50, "y": 210 },
+          "color": "#ff0000",
+          "fadeInRange": [3, 6],
           "handwritten": true
         },
         {
-          "id": "label_B",
-          "text": "b",
-          "position": {"x": 250, "y": 310},
-          "color": "#0000FF",
-          "fadeInRange": [3, 4],
+          "id": "draw_labels_cols",
+          "text": "4 columns",
+          "position": { "x": 160, "y": 130 },
+          "color": "#ff0000",
+          "fadeInRange": [3, 6],
           "handwritten": true
         },
         {
-          "id": "label_C",
-          "text": "c",
-          "position": {"x": 150, "y": 140},
-          "color": "#0000FF",
-          "fadeInRange": [3, 4],
-          "handwritten": true
-        },
-        {
-          "id": "label_angle",
-          "text": "here is a short",
-          "position": {"x": 45, "y": 350},
-          "color": "#008000",
-          "fadeInRange": [4, 5],
+          "id": "draw_result",
+          "text": "3 x 4 = 1 2",
+          "position": { "x": 160, "y": 300 },
+          "color": "#0000ff",
+          "fadeInRange": [6, 9],
           "handwritten": true
         }
       ]
     },
     "speech": {
-      "script": "We are examining a basic triangle with vertices A, B, and C. The red arc illustrates the angle at vertex A, which measures approximately 60 degrees.",
+      "script": "Multiplication is repeated addition. Here, 3 rows of 4 make 12. See how grouping helps simplify math.",
       "pacing": {
-        "initialDelay": 1.0,
-        "betweenStages": 1.0,
-        "finalDelay": 1.0
+        "initialDelay": 0.5,
+        "betweenStages": 0.5,
+        "finalDelay": 1
       }
     }
   }
 }
-
 ''';

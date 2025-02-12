@@ -44,7 +44,7 @@ List<DrawingCommand> generateHandwrittenCommands(
           x = startOffset.dx;
           break;
         default:
-          x += 18;
+          x += 20;
       }
     }
   }
@@ -410,33 +410,36 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
     case 'e':
       // Start at the right side of the top curve
       commands.add(DrawingCommand(
-          type: 'moveTo', params: {'x': x + 18.0, 'y': y + 10.0}));
+          type: 'moveTo',
+          params: {'x': x + 18.0, 'y': y + 8.0})); // Up from y + 10.0
 
       // Draw top half of 'e' - curves from right to left
       commands.add(DrawingCommand(type: 'cubicTo', params: {
-        'controlX1': x + 18.0, // First control point X - starts at right edge
-        'controlY1': y + 1.0, // First control point Y - near the top
-        'controlX2': x + 3.0, // Second control point X - at left edge
-        'controlY2': y + 1.0, // Second control point Y - also near the top
-        'endX': x + 3.0, // End point X - finishes at left edge
-        'endY': y + 10.0, // End point Y - at middle height
+        'controlX1': x + 18.0,
+        'controlY1': y - 1.0, // Up from y + 1.0
+        'controlX2': x + 3.0,
+        'controlY2': y - 1.0, // Up from y + 1.0
+        'endX': x + 3.0,
+        'endY': y + 8.0, // Up from y + 10.0
       }));
 
       // Draw bottom half of 'e' - curves back from left to right
       commands.add(DrawingCommand(type: 'cubicTo', params: {
-        'controlX1': x + 3.0, // First control point X - starts at left edge
-        'controlY1': y + 19.0, // First control point Y - pulls curve down
-        'controlX2': x + 18.0, // Second control point X - at right edge
-        'controlY2': y + 19.0, // Second control point Y - pulls curve down
-        'endX': x + 17.0, // End point X - finishes at right edge
-        'endY': y + 13.0, // End point Y - connects back to middle height
+        'controlX1': x + 3.0,
+        'controlY1': y + 17.0, // Up from y + 19.0
+        'controlX2': x + 18.0,
+        'controlY2': y + 17.0, // Up from y + 19.0
+        'endX': x + 17.0,
+        'endY': y + 11.0, // Up from y + 13.0
       }));
 
       // Add the middle horizontal line that characterizes the 'e'
       commands.add(DrawingCommand(
-          type: 'moveTo', params: {'x': x + 3.0, 'y': y + 10.0}));
+          type: 'moveTo',
+          params: {'x': x + 3.0, 'y': y + 8.0})); // Up from y + 10.0
       commands.add(DrawingCommand(
-          type: 'lineTo', params: {'x': x + 18.0, 'y': y + 10.0}));
+          type: 'lineTo',
+          params: {'x': x + 18.0, 'y': y + 8.0})); // Up from y + 10.0
       break;
     case 'f':
       // Draw the top curve starting from left edge
