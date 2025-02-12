@@ -6,11 +6,9 @@ import '../services/quiz_service.dart';
 class ActionBar extends StatelessWidget {
   final VoidCallback onLike;
   final VoidCallback onShare;
-  final VoidCallback onComment;
   final VoidCallback onExplain;
   final int likes;
   final int shares;
-  final int comments;
   final bool isLiked;
   final List<String> currentTopics;
 
@@ -18,11 +16,9 @@ class ActionBar extends StatelessWidget {
     super.key,
     required this.onLike,
     required this.onShare,
-    required this.onComment,
     required this.onExplain,
     required this.likes,
     required this.shares,
-    required this.comments,
     required this.isLiked,
     required this.currentTopics,
   });
@@ -42,13 +38,15 @@ class ActionBar extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => QuizScreen(quiz: quizzes[0], userId: user.uid),
+            builder: (context) =>
+                QuizScreen(quiz: quizzes[0], userId: user.uid),
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('No quiz available at the moment. Complete more topics first!'),
+            content: Text(
+                'No quiz available at the moment. Complete more topics first!'),
           ),
         );
       }
@@ -69,12 +67,6 @@ class ActionBar extends StatelessWidget {
           label: likes.toString(),
           onTap: onLike,
           color: isLiked ? Colors.red : Colors.white,
-        ),
-        const SizedBox(height: 16),
-        _buildActionButton(
-          icon: Icons.comment,
-          label: comments.toString(),
-          onTap: onComment,
         ),
         const SizedBox(height: 16),
         _buildActionButton(
@@ -113,15 +105,11 @@ class ActionBar extends StatelessWidget {
         IconButton(
           icon: Icon(icon),
           color: color,
-          onPressed: () {
-            onTap();
-          },
+          onPressed: onTap,
         ),
         Text(
           showCount ? label : '',
-          style: const TextStyle(
-            color: Colors.white,
-          ),
+          style: const TextStyle(color: Colors.white),
         ),
       ],
     );
