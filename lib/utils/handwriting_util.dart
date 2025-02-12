@@ -684,38 +684,44 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
     case 's':
       // Draw the top curve
       commands
-          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 15.0, 'y': y}));
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 13.0, 'y': y}));
       commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
-        'controlX': x + 15.0,
-        'controlY': y - 5.0,
+        'controlX': x + 13.0,
+        'controlY': y - 3.0,
         'endX': x + 8.0,
-        'endY': y - 5.0
+        'endY': y - 3.0
       }));
       commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
-        'controlX': x + 2.0,
-        'controlY': y - 5.0,
-        'endX': x + 2.0,
+        'controlX': x + 4.0,
+        'controlY': y - 3.0,
+        'endX': x + 4.0,
         'endY': y + 2.0
       }));
       // Draw the middle connecting curve
       commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
-        'controlX': x + 2.0,
+        'controlX': x + 4.0,
         'controlY': y + 7.0,
         'endX': x + 8.0,
         'endY': y + 7.0
       }));
-      // Draw the bottom curve
+      // Draw the bottom curve with matching curvature to top
       commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
-        'controlX': x + 15.0,
+        'controlX': x + 13.0,
         'controlY': y + 7.0,
-        'endX': x + 15.0,
+        'endX': x + 13.0,
         'endY': y + 12.0
       }));
       commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
-        'controlX': x + 15.0,
+        'controlX': x + 13.0,
         'controlY': y + 15.0,
-        'endX': x + 2.0,
+        'endX': x + 8.0,
         'endY': y + 15.0
+      }));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 4.0,
+        'controlY': y + 15.0,
+        'endX': x + 4.0,
+        'endY': y + 12.0
       }));
       break;
 
