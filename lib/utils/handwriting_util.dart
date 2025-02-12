@@ -441,29 +441,27 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
     case 'f':
       // Draw the top curve starting from left edge
       commands.add(
-          DrawingCommand(type: 'moveTo', params: {'x': x + 3.0, 'y': y - 5.0}));
+          DrawingCommand(type: 'moveTo', params: {'x': x + 8.0, 'y': y - 4.0}));
       commands.add(DrawingCommand(type: 'cubicTo', params: {
-        'controlX1': x + 3.0, // First control point X - starts at left edge
-        'controlY1': y - 14.0, // First control point Y - near the top (+5)
-        'controlX2': x + 18.0, // Second control point X - at right edge
-        'controlY2':
-            y - 14.0, // Second control point Y - also near the top (+5)
-        'endX': x + 18.0, // End point X - finishes at right edge
-        'endY': y - 5.0, // End point Y - at middle height (+5)
+        'controlX1': x + 8.0,
+        'controlY1': y - 10.0,
+        'controlX2': x + 17.0,
+        'controlY2': y - 12.0,
+        'endX': x + 17.0,
+        'endY': y - 4.0,
       }));
 
-      // Draw the vertical stem (shifted down)
+      // Draw the vertical stem
       commands.add(
-          DrawingCommand(type: 'moveTo', params: {'x': x + 8.0, 'y': y - 5.0}));
+          DrawingCommand(type: 'moveTo', params: {'x': x + 8.0, 'y': y - 4.0}));
       commands.add(DrawingCommand(
-          type: 'lineTo',
-          params: {'x': x + 8.0, 'y': y + 20.0})); // Extended down
+          type: 'lineTo', params: {'x': x + 8.0, 'y': y + 16.0}));
 
-      // Draw the crossbar (shifted down)
+      // Draw the crossbar
       commands.add(
-          DrawingCommand(type: 'moveTo', params: {'x': x + 2.0, 'y': y + 5.0}));
+          DrawingCommand(type: 'moveTo', params: {'x': x + 2.0, 'y': y + 3.0}));
       commands.add(DrawingCommand(
-          type: 'lineTo', params: {'x': x + 14.0, 'y': y + 5.0}));
+          type: 'lineTo', params: {'x': x + 14.0, 'y': y + 3.0}));
       break;
     case 'g':
       // Draw the circular bowl
