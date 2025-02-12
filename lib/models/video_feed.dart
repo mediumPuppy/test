@@ -18,6 +18,7 @@ class VideoFeed {
   final List<String> topics;
   double progress;
   bool isCompleted;
+  final Map<String, dynamic> videoJson;
 
   VideoFeed({
     required this.id,
@@ -37,6 +38,7 @@ class VideoFeed {
     List<String>? topics,
     this.progress = 0.0,
     this.isCompleted = false,
+    required this.videoJson,
   }) : topics = topics ?? [topic];
 
   factory VideoFeed.fromFirestore(Map<String, dynamic> data, String id) {
@@ -66,6 +68,7 @@ class VideoFeed {
       topics: topics,
       progress: data['progress'] ?? 0.0,
       isCompleted: data['isCompleted'] ?? false,
+      videoJson: data['videoJson'] ?? {},
     );
   }
 }
