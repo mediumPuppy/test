@@ -171,10 +171,15 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
       }));
       break;
     case '6':
-      final width = 20.0;
-      final height = 30.0;
+      // Calculate relative dimensions for the 6
+      final width = 20.0; // Base width for the number
+      final height = 30.0; // Base height for the number
+
+      // Top curve of 6 - extends further and curves down more
       commands.add(DrawingCommand(
-          type: 'moveTo', params: {'x': x + width / 1.2, 'y': y - height / 2}));
+        type: 'moveTo',
+        params: {'x': x + width / 1.2, 'y': y - height / 2},
+      ));
       commands.add(DrawingCommand(type: 'cubicBezierTo', params: {
         'control1X': x + width / 2 + 12,
         'control1Y': y - height / 2 - 5,
@@ -191,6 +196,7 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
         'startAngle': math.pi,
         'sweepAngle': 2 * math.pi
       }));
+      x += width;
       break;
     case '7':
       commands

@@ -32,7 +32,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
   void initState() {
     super.initState();
     _text = widget.text ??
-        "abcdefghijk\n"
+        "6abcdefghijk\n"
             "lmnopqrstuvwxyz";
 
     _controller = AnimationController(
@@ -658,12 +658,30 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
 
         // New case for lowercase 's'
         case 's':
-          // Drawing for lowercase 's' with a perfect circle
-          path.addOval(Rect.fromCenter(
-            center: Offset(x + 10, y + 8),
-            width: 16,
-            height: 16,
-          ));
+          // A simpler continuous curve for 's':
+          //
+          // We'll start near the top-right of the letter, curve down/left (top bowl),
+          // then curve up/right (bottom bowl). Adjust as needed for visual consistency.
+          path.moveTo(x + 14, y); // start near top-right
+          path.cubicTo(
+              x + 14,
+              y - 6, // control point 1
+              x,
+              y - 6, // control point 2
+              x,
+              y // end of first curve
+              );
+
+          path.cubicTo(
+              x,
+              y + 8, // control point 1 for second curve
+              x + 15,
+              y + 8, // control point 2
+              x + 15,
+              y + 16 // end of second curve
+              );
+
+          // Move x so the next character won't collide
           x += 20;
           break;
 
@@ -671,11 +689,11 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
         case 't':
           // Drawing for lowercase 't' with vertical stem and crossbar
           // Draw the vertical stem
-          path.moveTo(x + 10, y - 15);
+          path.moveTo(x + 10, y - 10); // Reduced height to match 'l'
           path.lineTo(x + 10, y + 15);
-          // Draw the crossbar
-          path.moveTo(x + 4, y);
-          path.lineTo(x + 16, y);
+          // Draw the crossbar lower
+          path.moveTo(x + 4, y + 2); // Moved down from y to y + 2
+          path.lineTo(x + 16, y + 2); // Moved down from y to y + 2
           x += 20;
           break;
 
@@ -683,55 +701,57 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
         case 'u':
           // Drawing for lowercase 'u' with two stems and connecting curve
           // Left stem
-          path.moveTo(x + 5, y - 3);
-          path.lineTo(x + 5, y + 10);
+          path.moveTo(x + 5, y); // Changed from y - 3 to y
+          path.lineTo(x + 5, y + 12); // Changed from y + 10 to y + 12
           // Curved bottom
           path.quadraticBezierTo(
-            x + 10, y + 15, // Control point
-            x + 15, y + 10, // End point
+            x + 10, y + 17, // Changed from y + 15 to y + 17
+            x + 15, y + 12, // Changed from y + 10 to y + 12
           );
           // Right stem
-          path.lineTo(x + 15, y - 3);
+          path.lineTo(x + 15, y); // Changed from y - 3 to y
           x += 20;
           break;
 
         // New case for lowercase 'v'
         case 'v':
           // Drawing for lowercase 'v' with two angled lines
-          path.moveTo(x + 5, y - 3);
+          path.moveTo(x + 5, y); // Changed from y - 3 to y
           path.lineTo(x + 10, y + 15);
-          path.lineTo(x + 15, y - 3);
+          path.lineTo(x + 15, y); // Changed from y - 3 to y
           x += 20;
           break;
 
         // New case for lowercase 'w'
         case 'w':
           // Drawing for lowercase 'w' with four angled lines
-          path.moveTo(x + 3, y - 3);
+          path.moveTo(x + 3, y); // Changed from y - 3 to y
           path.lineTo(x + 8, y + 15);
-          path.lineTo(x + 13, y - 3);
+          path.lineTo(x + 13, y); // Changed from y - 3 to y
           path.lineTo(x + 18, y + 15);
-          path.lineTo(x + 23, y - 3);
+          path.lineTo(x + 23, y); // Changed from y - 3 to y
           x += 25;
           break;
 
         // New case for lowercase 'y'
         case 'y':
           // Drawing for lowercase 'y' with two lines, one descending
-          path.moveTo(x + 5, y - 3);
-          path.lineTo(x + 10, y + 15);
-          path.moveTo(x + 15, y - 3);
-          path.lineTo(x + 5, y + 25);
+          path.moveTo(x + 5, y);
+          path.lineTo(x + 10, y + 12);
+          path.moveTo(x + 13, y); // Changed from x + 15 to x + 13
+          path.lineTo(x + 5, y + 20);
           x += 20;
           break;
 
         // New case for lowercase 'z'
         case 'z':
           // Drawing for lowercase 'z' with top line, diagonal, and bottom line
-          path.moveTo(x + 5, y - 3);
-          path.lineTo(x + 15, y - 3);
-          path.lineTo(x + 5, y + 15);
-          path.lineTo(x + 15, y + 15);
+          path.moveTo(x + 5, y); // Changed from y - 3 to y
+          path.lineTo(x + 15, y); // Changed from y - 3 to y
+          path.lineTo(
+              x + 5, y + 14); // Changed from y + 15 to y + 14 to match 'x'
+          path.lineTo(
+              x + 15, y + 14); // Changed from y + 15 to y + 14 to match 'x'
           x += 20;
           break;
 

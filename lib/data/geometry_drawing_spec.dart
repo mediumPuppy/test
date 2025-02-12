@@ -73,7 +73,7 @@ const String geometryDrawingSpec = '''
         },
         {
           "id": "label_angle",
-          "text": "a",
+          "text": "x= 6 0 6",
           "position": {"x": 45, "y": 260},
           "color": "#008000",
           "fadeInRange": [4, 5],
