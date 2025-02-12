@@ -245,14 +245,15 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
       }));
       break;
     case 'x':
+      // Drawing for lowercase 'x' with two crossing lines at x-height
       commands
-          .add(DrawingCommand(type: 'moveTo', params: {'x': x, 'y': y - 15.0}));
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y}));
       commands.add(DrawingCommand(
-          type: 'lineTo', params: {'x': x + 15.0, 'y': y + 15.0}));
+          type: 'lineTo', params: {'x': x + 15.0, 'y': y + 14.0}));
       commands
-          .add(DrawingCommand(type: 'moveTo', params: {'x': x, 'y': y + 15.0}));
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 15.0, 'y': y}));
       commands.add(DrawingCommand(
-          type: 'lineTo', params: {'x': x + 15.0, 'y': y - 15.0}));
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 14.0}));
       break;
     case '-':
       commands.add(DrawingCommand(type: 'moveTo', params: {'x': x, 'y': y}));
@@ -354,6 +355,320 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
         'endX': x + 18.0,
         'endY': y + 10.0,
       }));
+      break;
+    case 'b':
+      // Draw the vertical stem of the 'b'
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 5.0, 'y': y - 15.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 15.0}));
+      // Draw the bowl on the right side
+      commands.add(DrawingCommand(type: 'addOval', params: {
+        'centerX': x + 12.0,
+        'centerY': y + 8.0,
+        'width': 14.0,
+        'height': 14.0,
+      }));
+      break;
+    case 'c':
+      // Custom drawing for lowercase 'c' with more pronounced end curves
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 18.0, 'y': y + 1.0}));
+      // Top curve with more pronounced hook
+      commands.add(DrawingCommand(type: 'cubicTo', params: {
+        'controlX1': x + 12.0,
+        'controlY1': y + 1.0,
+        'controlX2': x + 5.0,
+        'controlY2': y + 1.0,
+        'endX': x + 5.0,
+        'endY': y + 8.0,
+      }));
+      // Bottom curve with more pronounced hook
+      commands.add(DrawingCommand(type: 'cubicTo', params: {
+        'controlX1': x + 5.0,
+        'controlY1': y + 15.0,
+        'controlX2': x + 12.0,
+        'controlY2': y + 15.0,
+        'endX': x + 18.0,
+        'endY': y + 15.0,
+      }));
+      break;
+    case 'd':
+      // Draw the bowl for the 'd' on the left side
+      commands.add(DrawingCommand(type: 'addOval', params: {
+        'centerX': x + 13.0,
+        'centerY': y + 8.0,
+        'width': 14.0,
+        'height': 14.0,
+      }));
+      // Draw the vertical stem on the right side
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 20.0, 'y': y - 15.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 20.0, 'y': y + 15.0}));
+      break;
+    case 'g':
+      // Draw the circular bowl
+      commands.add(DrawingCommand(type: 'addOval', params: {
+        'centerX': x + 10.0,
+        'centerY': y + 8.0,
+        'width': 13.0,
+        'height': 13.0
+      }));
+      // Draw the descender tail
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 17.0, 'y': y + 8.0}));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 20.0,
+        'controlY': y + 30.0,
+        'endX': x + 5.0,
+        'endY': y + 25.0
+      }));
+      break;
+
+    case 'h':
+      // Draw the vertical stem
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 5.0, 'y': y - 15.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 15.0}));
+      // Draw the arch
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y}));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 16.0,
+        'controlY': y,
+        'endX': x + 15.0,
+        'endY': y + 15.0
+      }));
+      break;
+
+    case 'i':
+      // Draw the vertical stroke
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 10.0, 'y': y - 3.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 10.0, 'y': y + 15.0}));
+      // Draw the dot
+      commands.add(DrawingCommand(type: 'addOval', params: {
+        'centerX': x + 10.0,
+        'centerY': y - 10.0,
+        'width': 4.0,
+        'height': 4.0
+      }));
+      break;
+
+    case 'k':
+      // Draw the vertical stem
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 5.0, 'y': y - 15.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 15.0}));
+      // Draw the upper angled arm
+      commands.add(
+          DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y + 4.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 12.0, 'y': y - 5.0}));
+      // Draw the lower angled arm
+      commands.add(
+          DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y + 4.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 15.0, 'y': y + 15.0}));
+      break;
+
+    case 'l':
+      // Simple vertical stroke
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 10.0, 'y': y - 10.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 10.0, 'y': y + 15.0}));
+      break;
+
+    case 'm':
+      // Draw the vertical stem
+      commands.add(
+          DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y - 3.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 15.0}));
+      // Draw first hump
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y}));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 10.0,
+        'controlY': y,
+        'endX': x + 12.0,
+        'endY': y + 3.0
+      }));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 14.0,
+        'controlY': y + 6.0,
+        'endX': x + 15.0,
+        'endY': y + 15.0
+      }));
+      // Draw second hump
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 12.0, 'y': y + 3.0}));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 17.0,
+        'controlY': y,
+        'endX': x + 19.0,
+        'endY': y + 3.0
+      }));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 21.0,
+        'controlY': y + 6.0,
+        'endX': x + 22.0,
+        'endY': y + 15.0
+      }));
+      break;
+
+    case 'n':
+      // Draw the vertical stem
+      commands.add(
+          DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y - 3.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 15.0}));
+      // Draw the arch
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y}));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 16.0,
+        'controlY': y,
+        'endX': x + 15.0,
+        'endY': y + 15.0
+      }));
+      break;
+
+    case 'o':
+      // Perfect circle
+      commands.add(DrawingCommand(type: 'addOval', params: {
+        'centerX': x + 10.0,
+        'centerY': y + 8.0,
+        'width': 16.0,
+        'height': 16.0
+      }));
+      break;
+
+    case 'p':
+      // Draw the vertical stem
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 25.0}));
+      // Draw the bowl
+      commands.add(DrawingCommand(type: 'addOval', params: {
+        'centerX': x + 12.0,
+        'centerY': y + 8.0,
+        'width': 14.0,
+        'height': 14.0
+      }));
+      break;
+
+    case 'q':
+      // Draw the bowl
+      commands.add(DrawingCommand(type: 'addOval', params: {
+        'centerX': x + 8.0,
+        'centerY': y + 8.0,
+        'width': 14.0,
+        'height': 14.0
+      }));
+      // Draw the vertical stem
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 15.0, 'y': y}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 15.0, 'y': y + 25.0}));
+      break;
+
+    case 't':
+      // Draw the vertical stem
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 10.0, 'y': y - 10.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 10.0, 'y': y + 15.0}));
+      // Draw the crossbar
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y}));
+      commands
+          .add(DrawingCommand(type: 'lineTo', params: {'x': x + 15.0, 'y': y}));
+      break;
+
+    case 'u':
+      // Draw the left stem
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 12.0}));
+      // Draw the curved bottom
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 10.0,
+        'controlY': y + 17.0,
+        'endX': x + 15.0,
+        'endY': y + 12.0
+      }));
+      // Draw the right stem
+      commands
+          .add(DrawingCommand(type: 'lineTo', params: {'x': x + 15.0, 'y': y}));
+      break;
+
+    case 'v':
+      // Simple angled strokes, slightly shorter
+      commands.add(DrawingCommand(
+          type: 'moveTo',
+          params: {'x': x + 5.0, 'y': y})); // Raised from y - 3.0
+      commands.add(DrawingCommand(
+          type: 'lineTo',
+          params: {'x': x + 10.0, 'y': y + 12.0})); // Reduced from y + 15.0
+      commands.add(DrawingCommand(
+          type: 'lineTo',
+          params: {'x': x + 15.0, 'y': y})); // Raised from y - 3.0
+      break;
+
+    case 'w':
+      // First V shape, slightly shorter
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 3.0, 'y': y}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 8.0, 'y': y + 12.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 13.0, 'y': y + 3.0}));
+      // Second V shape
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 18.0, 'y': y + 12.0}));
+      commands
+          .add(DrawingCommand(type: 'lineTo', params: {'x': x + 23.0, 'y': y}));
+      break;
+
+    case 'y':
+      // Draw the right stem and tail
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 15.0, 'y': y - 3.0}));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 15.0,
+        'controlY': y + 20.0,
+        'endX': x + 5.0,
+        'endY': y + 25.0
+      }));
+      // Draw the left stem, connecting to the right stem
+      commands.add(
+          DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y - 3.0}));
+      commands.add(DrawingCommand(type: 'lineTo', params: {
+        'x': x + 15.0,
+        'y': y + 10.0
+      })); // Changed from x + 10.0 to x + 15.0 to connect with right stem
+      break;
+
+    case 'z':
+      // Top horizontal
+      commands.add(
+          DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y - 3.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 15.0, 'y': y - 3.0}));
+      // Diagonal
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 15.0}));
+      // Bottom horizontal
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 15.0, 'y': y + 15.0}));
       break;
   }
 
