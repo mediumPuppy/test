@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:timeago/timeago.dart' as timeago;
 import 'dart:async';
 import '../models/video_feed.dart';
 import '../services/firestore_service.dart';
@@ -117,6 +116,7 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: SingleChildScrollView(
+                          physics: const NeverScrollableScrollPhysics(),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [

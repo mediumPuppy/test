@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:test/data/sample_videos.dart';
 import './learning_progress_service.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'dart:convert';
+import '../data/geometry_drawing_spec.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -553,6 +555,9 @@ class FirestoreService {
         continue;
       }
       videoData['learningPathId'] = newPathId;
+
+      // Insert the geometry drawing spec JSON into this video record
+      videoData['videoJson'] = jsonDecode(geometryDrawingSpec);
 
       // Convert DateTime to Timestamp for Firestore
       videoData['createdAt'] =
