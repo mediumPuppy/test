@@ -43,6 +43,40 @@ List<DrawingCommand> generateHandwrittenCommands(
           y += 50;
           x = startOffset.dx;
           break;
+        case '1':
+          x += 22.5;
+          break;
+        case 'w':
+          x += 22.5;
+          break;
+        case 'l':
+          x += 12;
+          break;
+        case 'u':
+          x += 15;
+          break;
+        case 'n':
+          x += 15;
+          break;
+        case 'r':
+          x += 13;
+          break;
+        case 'o':
+          x += 16;
+          break;
+        case 's':
+          x += 12.5;
+          break;
+        case 't':
+          x += 13;
+          break;
+        case 'i':
+          x += 12;
+          break;
+        case 'p':
+          x += 15;
+          break;
+
         default:
           x += 20;
       }
@@ -63,33 +97,41 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
 
   switch (char) {
     case '1':
-      // … existing digit commands …
+      // Start from top-left, slightly lower
       commands.add(DrawingCommand(
           type: 'moveTo', params: {'x': x + 2.0, 'y': y - 13.0}));
+      // Angle up to top of stem
       commands.add(DrawingCommand(
           type: 'lineTo', params: {'x': x + 10.0, 'y': y - 15.0}));
-      // vertical stroke
+      // Vertical line straight down
       commands.add(DrawingCommand(
           type: 'lineTo', params: {'x': x + 10.0, 'y': y + 15.0}));
-      // base stroke
+      // Base left
+      commands
+          .add(DrawingCommand(type: 'lineTo', params: {'x': x, 'y': y + 15.0}));
+      // Base right
       commands.add(DrawingCommand(
           type: 'lineTo', params: {'x': x + 20.0, 'y': y + 15.0}));
       break;
     case '2':
+      // Start more left
       commands.add(DrawingCommand(
           type: 'moveTo', params: {'x': x + 3.0, 'y': y - 15.0}));
+      // Top curve (peaks left)
       commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
         'controlX': x + 20.0,
         'controlY': y - 15.0,
         'endX': x + 15.0,
         'endY': y
       }));
+      // Bottom curve (more open in middle)
       commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
         'controlX': x + 12.0,
         'controlY': y + 10.0,
         'endX': x,
         'endY': y + 15.0
       }));
+      // Bottom line (aligned with "1")
       commands.add(DrawingCommand(
           type: 'lineTo', params: {'x': x + 17.0, 'y': y + 15.0}));
       break;
@@ -126,6 +168,7 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
           type: 'moveTo', params: {'x': x + 10.0, 'y': y - 10.0}));
       commands.add(DrawingCommand(
           type: 'lineTo', params: {'x': x + 10.0, 'y': y + 10.0}));
+      commands.add(DrawingCommand(type: 'moveTo', params: {'x': x, 'y': y}));
       commands
           .add(DrawingCommand(type: 'lineTo', params: {'x': x + 20.0, 'y': y}));
       break;
@@ -135,7 +178,7 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
       commands.add(DrawingCommand(
           type: 'lineTo', params: {'x': x + 20.0, 'y': y - 3.0}));
       commands
-          .add(DrawingCommand(type: 'lineTo', params: {'x': x, 'y': y + 3.0}));
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x, 'y': y + 3.0}));
       commands.add(DrawingCommand(
           type: 'lineTo', params: {'x': x + 20.0, 'y': y + 3.0}));
       break;
@@ -189,16 +232,12 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
         'endY': y + height / 6 // End point, much higher to cut off more bottom
       }));
 
-      // Bottom circle of 6
-      commands.add(DrawingCommand(type: 'addArc', params: {
-        'rect': {
-          'centerX': x + width / 2 + 2,
-          'centerY': y + height / 6,
-          'width': width / 1.2,
-          'height': width / 1.2
-        },
-        'startAngle': math.pi,
-        'sweepAngle': 2 * math.pi
+      // Bottom circle of 6 using addOval like other circular numbers
+      commands.add(DrawingCommand(type: 'addOval', params: {
+        'centerX': x + width / 2 + 2,
+        'centerY': y + height / 6,
+        'width': width / 1.2,
+        'height': width / 1.2
       }));
       break;
     case '7':
