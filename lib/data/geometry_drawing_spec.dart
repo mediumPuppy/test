@@ -49,7 +49,7 @@ const String geometryDrawingSpec = '''
       "labels": [
         {
           "id": "label_A",
-          "text": "A",
+          "text": "a",
           "position": {"x": 60, "y": 280},
           "color": "#0000FF",
           "fadeInRange": [3, 4],
@@ -57,24 +57,24 @@ const String geometryDrawingSpec = '''
         },
         {
           "id": "label_B",
-          "text": "B",
+          "text": "b",
           "position": {"x": 250, "y": 310},
           "color": "#0000FF",
           "fadeInRange": [3, 4],
-          "handwritten": false
+          "handwritten": true
         },
         {
           "id": "label_C",
-          "text": "C",
+          "text": "c",
           "position": {"x": 150, "y": 140},
           "color": "#0000FF",
           "fadeInRange": [3, 4],
-          "handwritten": false
+          "handwritten": true
         },
         {
           "id": "label_angle",
-          "text": "x=zabcdefghijklm",
-          "position": {"x": 45, "y": 260},
+          "text": "here is a short",
+          "position": {"x": 45, "y": 350},
           "color": "#008000",
           "fadeInRange": [4, 5],
           "handwritten": true

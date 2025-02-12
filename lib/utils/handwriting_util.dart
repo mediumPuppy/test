@@ -44,7 +44,7 @@ List<DrawingCommand> generateHandwrittenCommands(
           x = startOffset.dx;
           break;
         default:
-          x += 25;
+          x += 18;
       }
     }
   }
@@ -339,21 +339,21 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
       }));
       break;
     case 'a':
-      // Draw the circular part of the lowercase 'a'
+      // Draw the circular part of the lowercase 'a' (smaller and lower)
       commands.add(DrawingCommand(type: 'addOval', params: {
         'centerX': x + 10.0,
-        'centerY': y + 5.0,
-        'width': 16.0,
-        'height': 16.0,
+        'centerY': y + 9.0,
+        'width': 14.0,
+        'height': 14.0,
       }));
       // Draw the tail
       commands.add(DrawingCommand(
-          type: 'moveTo', params: {'x': x + 18.0, 'y': y + 5.0}));
+          type: 'moveTo', params: {'x': x + 17.0, 'y': y + 8.0}));
       commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
-        'controlX': x + 20.0,
-        'controlY': y + 25.0,
-        'endX': x + 18.0,
-        'endY': y + 10.0,
+        'controlX': x + 19.0,
+        'controlY': y + 24.0,
+        'endX': x + 17.0,
+        'endY': y + 11.0,
       }));
       break;
     case 'b':
@@ -514,6 +514,32 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
       }));
       break;
 
+    case 'j':
+      // Draw the vertical stem (starting lower)
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 10.0, 'y': y}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 10.0, 'y': y + 15.0}));
+
+      // Draw the bottom curve (similar to 'e' curve but inverted)
+      commands.add(DrawingCommand(type: 'cubicTo', params: {
+        'controlX1': x + 10.0, // First control point X - starts at stem
+        'controlY1': y + 19.0, // First control point Y - pulls curve down
+        'controlX2': x + 2.0, // Second control point X - pulls left
+        'controlY2': y + 19.0, // Second control point Y - keeps curve smooth
+        'endX': x + 2.0, // End point X - ends at left
+        'endY': y + 15.0, // End point Y - curves back up slightly
+      }));
+
+      // Draw the dot
+      commands.add(DrawingCommand(type: 'addOval', params: {
+        'centerX': x + 10.0,
+        'centerY': y - 7.0,
+        'width': 4.0,
+        'height': 4.0
+      }));
+      break;
+
     case 'k':
       // Draw the vertical stem
       commands.add(DrawingCommand(
@@ -596,12 +622,12 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
       break;
 
     case 'o':
-      // Perfect circle
+      // Perfect circle (matching 'a' dimensions)
       commands.add(DrawingCommand(type: 'addOval', params: {
         'centerX': x + 10.0,
-        'centerY': y + 8.0,
-        'width': 16.0,
-        'height': 16.0
+        'centerY': y + 9.0, // Matched to 'a' circle position
+        'width': 14.0, // Matched to 'a' circle width
+        'height': 14.0, // Matched to 'a' circle height
       }));
       break;
 
