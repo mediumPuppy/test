@@ -6,6 +6,8 @@ import 'dart:convert';
 import '../data/geometry_drawing_spec.dart';
 import '../models/drawing_spec_models.dart';
 import '../widgets/geometry_drawing_painter.dart';
+import '../models/drawing_command.dart';
+import '../utils/handwriting_util.dart';
 
 class GeometryDrawingTestScreen extends StatefulWidget {
   const GeometryDrawingTestScreen({super.key});
@@ -79,22 +81,38 @@ class _GeometryDrawingTestScreenState extends State<GeometryDrawingTestScreen>
             ))
         .toList();
 
-    // Parse labels
+    // Replace the existing label parsing with the new _parseLabels method
+    _parseLabels();
+  }
+
+  void _parseLabels() {
     final List labelsJson = instructionsMap['drawing']['labels'];
-    labels = labelsJson
-        .map((item) => GeometryLabel(
-              id: item['id'],
-              text: item['text'],
-              position: Offset(
-                (item['position']['x'] as num).toDouble(),
-                (item['position']['y'] as num).toDouble(),
-              ),
-              color: _hexToColor(item['color']),
-              fadeInRange: (item['fadeInRange'] as List)
-                  .map<double>((v) => (v as num).toDouble())
-                  .toList(),
-            ))
-        .toList();
+    labels = labelsJson.map((item) {
+      final double xPos = (item['position']['x'] as num).toDouble();
+      final double yPos = (item['position']['y'] as num).toDouble();
+      final bool isHandwritten = item['handwritten'] == true;
+
+      // If 'handwritten' is true, convert text into a list of drawing commands:
+      List<DrawingCommand>? handwritingCommands;
+      if (isHandwritten) {
+        handwritingCommands = generateHandwrittenCommands(
+          item['text'],
+          Offset(xPos, yPos),
+        );
+      }
+
+      return GeometryLabel(
+        id: item['id'],
+        text: item['text'],
+        position: Offset(xPos, yPos),
+        color: _hexToColor(item['color']),
+        fadeInRange: (item['fadeInRange'] as List)
+            .map<double>((v) => (v as num).toDouble())
+            .toList(),
+        // Store the drawing commands if this label is handwritten:
+        drawingCommands: handwritingCommands,
+      );
+    }).toList();
   }
 
   Color _hexToColor(String hexColor) {

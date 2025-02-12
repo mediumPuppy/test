@@ -1,8 +1,6 @@
 import '../services/auth_service.dart';
 import '../screens/upload_answer_screen.dart';
 import '../screens/whiteboard_screen.dart';
-import '../screens/triangle_svg_screen.dart';
-import '../screens/drawing_spec_test_screen.dart';
 import '../screens/geometry_drawing_test_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -91,18 +89,6 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.draw),
-            title: const Text('Triangle SVG Demo'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const TriangleSvgScreen()),
-              );
-            },
-          ),
-          ListTile(
             leading: const Icon(Icons.architecture),
             title: const Text('Geometry Drawing Demo'),
             onTap: () {
@@ -111,19 +97,6 @@ class AppDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                     builder: (context) => const GeometryDrawingTestScreen()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.mic),
-            title: const Text('Drawing & Speech Demo'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const DrawingSpecTestScreen(),
-                ),
               );
             },
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'drawing_command.dart'; // <-- Add this import to use DrawingCommand
 
 // Models for the whiteboard drawing and speech system
 
@@ -93,12 +94,14 @@ class Label {
   final Offset position;
   final Color color;
   final FadeInRange? fadeInRange;
+  final List<DrawingCommand>? drawingCommands;
 
   Label({
     required this.text,
     required this.position,
     required this.color,
     this.fadeInRange,
+    this.drawingCommands,
   });
 }
 
@@ -159,12 +162,16 @@ class GeometryLabel {
   final Color color;
   final List<double> fadeInRange;
 
+  // Add this new optional field:
+  final List<DrawingCommand>? drawingCommands;
+
   GeometryLabel({
     required this.id,
     required this.text,
     required this.position,
     required this.color,
     required this.fadeInRange,
+    this.drawingCommands,
   });
 }
 

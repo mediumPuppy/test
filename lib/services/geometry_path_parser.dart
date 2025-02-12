@@ -46,7 +46,6 @@ class GeometryPathParser {
         }
       } else if (cmdString.startsWith('arcTo')) {
         final coords = _parseCoordinates(cmdString);
-        print('  → arcTo(${coords.join(', ')})');
         if (coords.length >= 7) {
           final arcRect = Rect.fromLTWH(
               coords[0] - coords[2] / 2, // Left = centerX - width/2

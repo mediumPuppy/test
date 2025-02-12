@@ -12,7 +12,7 @@ class WhiteboardScreen extends StatefulWidget {
     super.key,
     this.drawingCommands,
     this.text,
-    this.duration = const Duration(seconds: 10),
+    this.duration = const Duration(seconds: 2),
     this.onAnimationComplete,
   });
 
@@ -32,11 +32,8 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
   void initState() {
     super.initState();
     _text = widget.text ??
-        "123 + 456 = 579\n"
-            "(8 × 9) ÷ 3 = 24\n"
-            "42 - 7 = 35\n"
-            "99 ÷ (3 + 3) = 16\n"
-            "888 × 2 = 1776";
+        "abcdefghijk"
+            "lmnopqrstuvwyz";
 
     _controller = AnimationController(
       vsync: this,
@@ -331,6 +328,183 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
               );
           x += 30;
           break;
+
+        // New case for lowercase 'a'
+        case 'a':
+          // Custom drawing for lowercase 'a'
+          // Draw the circular part of the lowercase 'a' at the same vertical level as 'b' and 'd'
+          path.addOval(Rect.fromCenter(
+            center: Offset(x + 10,
+                y + 5), // Center is now aligned with the bowls of 'b' and 'd'
+            width: 16,
+            height: 16,
+          ));
+          // Draw a shortened tail for the 'a'
+          path.moveTo(x + 18, y + 5);
+          path.quadraticBezierTo(
+            x + 20, y + 25, // Control point for the tail curve (shorter)
+            x + 18, y + 10, // End point for the tail curve (shorter)
+          );
+          x += 25;
+          break;
+
+        // New case for lowercase 'b'
+        case 'b':
+          // Custom drawing for lowercase 'b'
+          // Draw the vertical stem of the 'b'
+          path.moveTo(x + 5, y - 15);
+          path.lineTo(x + 5, y + 15);
+          // Draw the bowl on the right side, now merged with the stem and lowered a tad
+          // Setting center x to 12 ensures the bowl's left edge meets the stem (5 + 7 = 12)
+          path.addOval(Rect.fromCenter(
+            center: Offset(x + 12, y + 8), // Lowered compared to before
+            width: 14,
+            height: 14,
+          ));
+          x += 25;
+          break;
+
+        // New case for lowercase 'c'
+        case 'c':
+          // Custom drawing for lowercase 'c'
+          // Draw an open curve resembling the lowercase 'c', lowered to align with 'b' and 'd'
+          path.moveTo(x + 18, y - 5); // shifted down by 5
+          path.quadraticBezierTo(
+            x + 5,
+            y - 5, // Control point for the top curve, shifted down
+            x + 5,
+            y + 5, // Midpoint of the arc, shifted down
+          );
+          path.quadraticBezierTo(
+            x + 5,
+            y + 15, // Control point for the bottom curve, now at y+15
+            x + 18,
+            y + 15, // End point forming the bottom of the curve, aligning with 'b' and 'd'
+          );
+          x += 25;
+          break;
+
+        // New case for lowercase 'd'
+        case 'd':
+          // Custom drawing for lowercase 'd'
+          // Draw the bowl for the 'd' on the left side, now merged with the stem and lowered a tad
+          // Setting center x to 13 ensures the bowl's right edge meets the stem (13 + 7 = 20)
+          path.addOval(Rect.fromCenter(
+            center: Offset(x + 13, y + 8), // Lowered compared to before
+            width: 14,
+            height: 14,
+          ));
+          // Draw the vertical stem on the right side, mirroring the 'b' stroke
+          path.moveTo(x + 20, y - 15);
+          path.lineTo(x + 20, y + 15);
+          x += 25;
+          break;
+
+        // New case for lowercase 'e'
+        case 'e':
+          // Drawing for lowercase 'e' as an actual letter using an arc to form its round shape with an opening on the right,
+          // and a horizontal crossbar near its middle.
+          Rect rect = Rect.fromCenter(
+              center: Offset(x + 10, y + 5), width: 16, height: 20);
+          // Draw the arc from 45° (pi/4) clockwise 270° (3*pi/2), leaving a gap on the right.
+          path.addArc(rect, math.pi / 4, 3 * math.pi / 2);
+          // Add the horizontal crossbar of the 'e'
+          path.moveTo(x + 4, y + 5);
+          path.lineTo(x + 12, y + 5);
+          x += 25;
+          break;
+
+        // New case for lowercase 'f'
+        case 'f':
+          // Drawing for lowercase 'f' with a vertical stem and upper crossbar
+          path.moveTo(x + 12, y - 15);
+          path.lineTo(x + 12, y + 15);
+          // Draw the crossbar near the top of the 'f'
+          path.moveTo(x + 5, y - 10);
+          path.lineTo(x + 19, y - 10);
+          x += 25;
+          break;
+
+        // New case for lowercase 'g'
+        case 'g':
+          // Drawing for lowercase 'g' featuring a circular bowl and a descender tail.
+          path.addOval(Rect.fromCenter(
+            center: Offset(x + 10, y + 5),
+            width: 16,
+            height: 16,
+          ));
+          // Draw a tail that descends below the baseline to give 'g' its characteristic shape.
+          path.moveTo(x + 18, y + 5);
+          path.quadraticBezierTo(
+            x + 20, y + 30, // Control point deepening the descender
+            x + 10, y + 25, // End point which sits below the normal bottom line
+          );
+          x += 25;
+          break;
+
+        // New case for lowercase 'h'
+        case 'h':
+          // Drawing for lowercase 'h' with a vertical stem and a gentle curved arch.
+          // Draw the vertical stem on the left.
+          path.moveTo(x + 5, y - 15);
+          path.lineTo(x + 5, y + 15);
+          // Draw an arch from the mid-line curving out to the right before joining the bottom.
+          path.moveTo(x + 5, y);
+          path.quadraticBezierTo(
+            x + 15, y, // Control point creating the arch
+            x + 15, y + 15, // Ends at the bottom right of the letter
+          );
+          x += 25;
+          break;
+
+        // New case for lowercase 'i'
+        case 'i':
+          // Drawing for lowercase 'i' with a vertical stroke and a dot above.
+          // Draw the vertical stroke centered horizontally.
+          path.moveTo(x + 10, y - 10);
+          path.lineTo(x + 10, y + 10);
+          // Draw the dot above the stroke.
+          path.addOval(Rect.fromCircle(
+            center: Offset(x + 10, y - 15),
+            radius: 2,
+          ));
+          x += 25;
+          break;
+
+        // New case for lowercase 'j'
+        case 'j':
+          // Drawing for lowercase 'j' with a vertical stroke, a dot above, and a descender tail.
+          path.moveTo(x + 10, y - 10);
+          path.lineTo(x + 10, y + 10);
+          // Draw the dot above the stroke.
+          path.addOval(Rect.fromCircle(
+            center: Offset(x + 10, y - 15),
+            radius: 2,
+          ));
+          // Draw the descender tail curving to the left.
+          path.moveTo(x + 10, y + 10);
+          path.quadraticBezierTo(
+            x + 5, y + 20, // Control point to create a gentle curve
+            x + 12, y + 20, // End point of the tail
+          );
+          x += 25;
+          break;
+
+        // New case for lowercase 'k'
+        case 'k':
+          // Drawing for lowercase 'k' with a vertical stem and two angled arms.
+          // Draw the vertical stem on the left.
+          path.moveTo(x + 5, y - 15);
+          path.lineTo(x + 5, y + 15);
+          // Draw the upper angled arm.
+          path.moveTo(x + 5, y);
+          path.lineTo(x + 15, y - 10);
+          // Draw the lower angled arm.
+          path.moveTo(x + 5, y);
+          path.lineTo(x + 15, y + 10);
+          x += 25;
+          break;
+
         case '\n':
           y += 50;
           x = 50;
