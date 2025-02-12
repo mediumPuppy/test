@@ -32,8 +32,8 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
   void initState() {
     super.initState();
     _text = widget.text ??
-        "abcdefghijk"
-            "lmnopqrstuvwyz";
+        "abcdefghijk\n"
+            "lmnopqrstuvwxyz";
 
     _controller = AnimationController(
       vsync: this,
@@ -109,7 +109,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
           path.lineTo(x + 10, y + 15); // Vertical line straight down
           path.lineTo(x, y + 15); // Base left
           path.lineTo(x + 20, y + 15); // Base right
-          x += 25;
+          x += 20;
           break;
         case '2':
           path.moveTo(x + 3, y - 15); // Start more left
@@ -118,7 +118,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
           path.quadraticBezierTo(
               x + 12, y + 10, x, y + 15); // Bottom curve (more open in middle)
           path.lineTo(x + 17, y + 15); // Bottom line (aligned with "1")
-          x += 25;
+          x += 20;
           break;
         case '3':
           path.moveTo(x + 2, y - 15); // Start top left
@@ -130,14 +130,14 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
               x + 14, y + 2, x + 16, y + 8); // Start of bottom bowl
           path.quadraticBezierTo(
               x + 18, y + 15, x + 2, y + 15); // Bottom bowl curves back left
-          x += 25;
+          x += 20;
           break;
         case '4':
           path.moveTo(x + 15, y + 15); // Bottom of vertical
           path.lineTo(x + 15, y - 15); // Up vertical
           path.lineTo(x + 3, y + 5); // Diagonal to left (moved in from x)
           path.lineTo(x + 20, y + 5); // Horizontal line
-          x += 25;
+          x += 20;
           break;
         case '5':
           path.moveTo(x + 16, y - 15); // Top right (back to original)
@@ -146,7 +146,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
           path.quadraticBezierTo(
               x + 15, y, x + 15, y + 5); // Bottom curve start
           path.quadraticBezierTo(x + 15, y + 15, x, y + 15); // Bottom curve end
-          x += 25;
+          x += 20;
           break;
         case '6':
           // Calculate relative dimensions for the 6
@@ -179,7 +179,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
           path.moveTo(x, y - 15); // Start top left
           path.lineTo(x + 20, y - 15); // Top horizontal
           path.lineTo(x + 10, y + 15); // Angled stem aligned with other numbers
-          x += 25;
+          x += 20;
           break;
         case '8':
           // Top loop (smaller)
@@ -195,7 +195,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
             width: 16,
             height: 14, // Made taller
           ));
-          x += 25;
+          x += 20;
           break;
         case '9':
           // Top circle - slightly oval
@@ -208,7 +208,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
           // Straight stem
           path.moveTo(x + 18, y - 8); // Start from medium height on the circle
           path.lineTo(x + 18, y + 15); // Straight down to baseline
-          x += 25;
+          x += 20;
           break;
         case '0':
           path.addOval(Rect.fromCenter(
@@ -216,33 +216,34 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
             width: 20,
             height: 30,
           ));
-          x += 25;
+          x += 20;
           break;
         case 'x':
-          path.moveTo(x, y - 15);
-          path.lineTo(x + 15, y + 15);
-          path.moveTo(x, y + 15);
-          path.lineTo(x + 15, y - 15);
-          x += 25;
+          // Drawing for lowercase 'x' with two crossing lines at x-height
+          path.moveTo(x + 5, y);
+          path.lineTo(x + 15, y + 14); // Reduced height difference
+          path.moveTo(x + 15, y);
+          path.lineTo(x + 5, y + 14); // Reduced height difference
+          x += 20;
           break;
         case '+':
           path.moveTo(x + 10, y - 10);
           path.lineTo(x + 10, y + 10);
           path.moveTo(x, y);
           path.lineTo(x + 20, y);
-          x += 25;
+          x += 20;
           break;
         case '-':
           path.moveTo(x, y);
           path.lineTo(x + 15, y); // Made less wide
-          x += 25;
+          x += 20;
           break;
         case '=':
           path.moveTo(x, y - 3); // Top line, closer to middle
           path.lineTo(x + 20, y - 3);
           path.moveTo(x, y + 3); // Bottom line, closer to middle
           path.lineTo(x + 20, y + 3);
-          x += 25;
+          x += 20;
           break;
         case '×':
           // First diagonal (top-left to bottom-right)
@@ -251,7 +252,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
           // Second diagonal (top-right to bottom-left)
           path.moveTo(x + 15, y - 5);
           path.lineTo(x + 5, y + 5);
-          x += 25;
+          x += 20;
           break;
         case '÷':
           path.moveTo(x, y);
@@ -268,7 +269,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
             width: 3,
             height: 3,
           ));
-          x += 25;
+          x += 20;
           break;
         case '^':
           path.moveTo(x, y);
@@ -345,7 +346,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
             x + 20, y + 25, // Control point for the tail curve (shorter)
             x + 18, y + 10, // End point for the tail curve (shorter)
           );
-          x += 25;
+          x += 20;
           break;
 
         // New case for lowercase 'b'
@@ -361,27 +362,26 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
             width: 14,
             height: 14,
           ));
-          x += 25;
+          x += 20;
           break;
 
-        // New case for lowercase 'c'
+        // New case for lowercase 'c' with more pronounced end curves
         case 'c':
-          // Custom drawing for lowercase 'c'
-          // Draw an open curve resembling the lowercase 'c', lowered to align with 'b' and 'd'
-          path.moveTo(x + 18, y - 5); // shifted down by 5
-          path.quadraticBezierTo(
-            x + 5,
-            y - 5, // Control point for the top curve, shifted down
-            x + 5,
-            y + 5, // Midpoint of the arc, shifted down
+          // Custom drawing for lowercase 'c' with more pronounced end curves
+          path.moveTo(x + 18, y + 1); // shifted down by 3 from y-2
+          // Top curve with more pronounced hook
+          path.cubicTo(
+            x + 12, y + 1, // First control point - shifted down
+            x + 5, y + 1, // Second control point - shifted down
+            x + 5, y + 8, // End point - shifted down
           );
-          path.quadraticBezierTo(
-            x + 5,
-            y + 15, // Control point for the bottom curve, now at y+15
-            x + 18,
-            y + 15, // End point forming the bottom of the curve, aligning with 'b' and 'd'
+          // Bottom curve with more pronounced hook
+          path.cubicTo(
+            x + 5, y + 15, // First control point - shifted down
+            x + 12, y + 15, // Second control point - shifted down
+            x + 18, y + 15, // End point - shifted down
           );
-          x += 25;
+          x += 20;
           break;
 
         // New case for lowercase 'd'
@@ -397,47 +397,88 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
           // Draw the vertical stem on the right side, mirroring the 'b' stroke
           path.moveTo(x + 20, y - 15);
           path.lineTo(x + 20, y + 15);
-          x += 25;
+          x += 30;
           break;
 
-        // New case for lowercase 'e'
         case 'e':
-          // Drawing for lowercase 'e' as an actual letter using an arc to form its round shape with an opening on the right,
-          // and a horizontal crossbar near its middle.
-          Rect rect = Rect.fromCenter(
-              center: Offset(x + 10, y + 5), width: 16, height: 20);
-          // Draw the arc from 45° (pi/4) clockwise 270° (3*pi/2), leaving a gap on the right.
-          path.addArc(rect, math.pi / 4, 3 * math.pi / 2);
-          // Add the horizontal crossbar of the 'e'
-          path.moveTo(x + 4, y + 5);
-          path.lineTo(x + 12, y + 5);
-          x += 25;
+          // For easy adjustments, define a radius (r).
+          // Adjust as needed to match your other letters in size/position.
+          final double r = 7.5;
+
+          // We'll define two bounding boxes:
+          //  - one for the top half-circle
+          //  - one for the bottom (partial) circle
+          // Each box is 2*r wide/high, starting at (x, y) for the top and
+          // (x, y + 2*r) for the bottom so they stack vertically.
+
+          Rect topBox = Rect.fromLTWH(x, y, 2 * r, 2 * r);
+          Rect bottomBox = Rect.fromLTWH(x, y, 2 * r, 2 * r);
+
+          // 1) Draw the TOP half circle.
+          //
+          //    We'll start at π (180°) and sweep +π (180°) to get a clockwise top arch
+          //    from left to right. If you want the arc reversed, flip signs or angles:
+          //
+          //    - Start angle: math.pi means "left side" of the circle
+          //    - Sweep angle: math.pi (positive) means 180° in the clockwise direction
+          //
+          //    NOTE: addArc jumps to the start-angle automatically.
+          path.addArc(topBox, math.pi, math.pi);
+
+          // 2) Draw the HORIZONTAL LINE (the crossbar).
+          //
+          //    After the top arc, our path is at the circle's right edge (x + 2*r, y + r).
+          //    We move further to the right for a short crossbar.
+          path.lineTo(x - 1.6 * r + 16, y + r);
+
+          // 3) Draw the BOTTOM partial circle, but only ~150 degrees so it's "cut off" on the right.
+          //
+          //    - Start angle: math.pi means start on the left side of bottomBox
+          //    - Sweep angle: 5*math.pi/6 is ~150° (in radians)
+          //
+          //    This will not complete the full half-circle, ending short on the right side.
+          path.addArc(bottomBox, math.pi, (-1) * 5 * math.pi / 6);
+
+          // Move 'pen' so the next character won't overlap.
+          x += 20;
           break;
 
         // New case for lowercase 'f'
         case 'f':
-          // Drawing for lowercase 'f' with a vertical stem and upper crossbar
+          // Drawing for lowercase 'f' with a curved top and vertical stem
+          path.moveTo(x + 12, y - 15);
+          // Add the curved top arc
+          path.addArc(
+            Rect.fromCenter(
+              center: Offset(x + 17, y - 15),
+              width: 10,
+              height: 10,
+            ),
+            math.pi,
+            math.pi,
+          );
+          // Continue with the vertical stem
           path.moveTo(x + 12, y - 15);
           path.lineTo(x + 12, y + 15);
-          // Draw the crossbar near the top of the 'f'
-          path.moveTo(x + 5, y - 10);
-          path.lineTo(x + 19, y - 10);
-          x += 25;
+          // Draw the crossbar
+          path.moveTo(x + 5, y - 5);
+          path.lineTo(x + 19, y - 5);
+          x += 20;
           break;
 
         // New case for lowercase 'g'
         case 'g':
           // Drawing for lowercase 'g' featuring a circular bowl and a descender tail.
           path.addOval(Rect.fromCenter(
-            center: Offset(x + 10, y + 5),
-            width: 16,
-            height: 16,
+            center: Offset(x + 10, y + 8),
+            width: 13,
+            height: 13,
           ));
           // Draw a tail that descends below the baseline to give 'g' its characteristic shape.
-          path.moveTo(x + 18, y + 5);
+          path.moveTo(x + 17, y + 8);
           path.quadraticBezierTo(
             x + 20, y + 30, // Control point deepening the descender
-            x + 10, y + 25, // End point which sits below the normal bottom line
+            x + 5, y + 25, // End point which sits below the normal bottom line
           );
           x += 25;
           break;
@@ -451,43 +492,47 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
           // Draw an arch from the mid-line curving out to the right before joining the bottom.
           path.moveTo(x + 5, y);
           path.quadraticBezierTo(
-            x + 15, y, // Control point creating the arch
+            x + 16, y, // Control point creating the arch
             x + 15, y + 15, // Ends at the bottom right of the letter
           );
-          x += 25;
+          x += 20;
           break;
 
         // New case for lowercase 'i'
         case 'i':
           // Drawing for lowercase 'i' with a vertical stroke and a dot above.
           // Draw the vertical stroke centered horizontally.
-          path.moveTo(x + 10, y - 10);
-          path.lineTo(x + 10, y + 10);
+          path.moveTo(x + 10, y - 3);
+          path.lineTo(x + 10, y + 15);
           // Draw the dot above the stroke.
           path.addOval(Rect.fromCircle(
-            center: Offset(x + 10, y - 15),
+            center: Offset(x + 10, y - 10),
             radius: 2,
           ));
-          x += 25;
+          x += 20;
           break;
 
         // New case for lowercase 'j'
         case 'j':
           // Drawing for lowercase 'j' with a vertical stroke, a dot above, and a descender tail.
-          path.moveTo(x + 10, y - 10);
-          path.lineTo(x + 10, y + 10);
-          // Draw the dot above the stroke.
+          path.moveTo(x + 10, y - 3); // Match 'i' stem start
+          path.lineTo(x + 10, y + 15); // Match 'i' stem end
+          // Draw the dot above the stroke, matching 'i' dot position
           path.addOval(Rect.fromCircle(
-            center: Offset(x + 10, y - 15),
+            center: Offset(x + 10, y - 10), // Match 'i' dot position
             radius: 2,
           ));
-          // Draw the descender tail curving to the left.
-          path.moveTo(x + 10, y + 10);
-          path.quadraticBezierTo(
-            x + 5, y + 20, // Control point to create a gentle curve
-            x + 12, y + 20, // End point of the tail
+          // Draw the bottom arc similar to 'f' top arc but inverted
+          path.addArc(
+            Rect.fromCenter(
+              center: Offset(x + 5, y + 15),
+              width: 10,
+              height: 10,
+            ),
+            0,
+            math.pi,
           );
-          x += 25;
+          x += 20;
           break;
 
         // New case for lowercase 'k'
@@ -497,12 +542,197 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
           path.moveTo(x + 5, y - 15);
           path.lineTo(x + 5, y + 15);
           // Draw the upper angled arm.
-          path.moveTo(x + 5, y);
-          path.lineTo(x + 15, y - 10);
+          path.moveTo(x + 5, y + 4);
+          path.lineTo(x + 12, y - 5);
           // Draw the lower angled arm.
+          path.moveTo(x + 5, y + 4);
+          path.lineTo(x + 15, y + 15);
+          x += 15;
+          break;
+        case 'l':
+          // Drawing for lowercase 'l' with a simple vertical stroke
+          path.moveTo(x + 10, y - 10); // Reduced height from -15
+          path.lineTo(x + 10, y + 15);
+          x += 12;
+          break;
+
+        // New case for lowercase 'm'
+        case 'm':
+          // Drawing for lowercase 'm' with vertical stem and two connected humps
+          // Draw the vertical stem on the left
+          path.moveTo(x + 5, y - 3);
+          path.lineTo(x + 5, y + 15);
+          // Draw first hump, starting from the stem
           path.moveTo(x + 5, y);
-          path.lineTo(x + 15, y + 10);
+          path.quadraticBezierTo(
+            x + 10, y, // Control point for first rise
+            x + 12, y + 3, // Peak of first hump
+          );
+          path.quadraticBezierTo(
+            x + 14, y + 6, // Control point for first descent
+            x + 15, y + 15, // Bottom of first hump
+          );
+          // Draw second hump, continuing from the first
+          path.moveTo(x + 12, y + 3); // Start from peak of first hump
+          path.quadraticBezierTo(
+            x + 17, y, // Control point for second rise
+            x + 19, y + 3, // Peak of second hump
+          );
+          path.quadraticBezierTo(
+            x + 21, y + 6, // Control point for second descent
+            x + 22, y + 15, // Bottom of second hump
+          );
           x += 25;
+          break;
+
+        // New case for lowercase 'n'
+        case 'n':
+          // Drawing for lowercase 'n' with vertical stem and one arch
+          // Draw the vertical stem on the left
+          path.moveTo(x + 5, y - 3);
+          path.lineTo(x + 5, y + 15);
+          // Draw the arch
+          path.moveTo(x + 5, y);
+          path.quadraticBezierTo(
+            x + 16, y, // Control point creating the arch
+            x + 15, y + 15, // Ends at the bottom right of the letter
+          );
+          x += 20;
+          break;
+
+        // New case for lowercase 'o'
+        case 'o':
+          // Drawing for lowercase 'o' with a perfect circle
+          path.addOval(Rect.fromCenter(
+            center: Offset(x + 10, y + 8),
+            width: 16,
+            height: 16,
+          ));
+          x += 20;
+          break;
+
+        // New case for lowercase 'p'
+        case 'p':
+          // Drawing for lowercase 'p' with stem and bowl, descending below baseline
+          // Draw the vertical stem, starting slightly lower
+          path.moveTo(x + 5, y); // Changed from y - 3 to y
+          path.lineTo(x + 5, y + 25);
+          // Draw the bowl on the right side
+          path.addOval(Rect.fromCenter(
+            center: Offset(x + 12, y + 8),
+            width: 14,
+            height: 14,
+          ));
+          x += 25;
+          break;
+
+        // New case for lowercase 'q'
+        case 'q':
+          // Drawing for lowercase 'q', mirroring 'p' but with tail on right
+          // Draw the bowl on the left side
+          path.addOval(Rect.fromCenter(
+            center: Offset(x + 8, y + 8),
+            width: 14,
+            height: 14,
+          ));
+          // Draw the vertical stem on the right, starting slightly lower
+          path.moveTo(x + 15, y); // Changed from y - 3 to y
+          path.lineTo(x + 15, y + 25);
+          x += 20;
+          break;
+
+        // New case for lowercase 'r'
+        case 'r':
+          // Drawing for lowercase 'r' with stem and small arch
+          // Draw the vertical stem
+          path.moveTo(x + 5, y - 3);
+          path.lineTo(x + 5, y + 15);
+          // Draw the small arch
+          path.moveTo(x + 5, y);
+          path.quadraticBezierTo(
+            x + 12, y, // Control point for arch
+            x + 15, y + 5, // End point curves up slightly
+          );
+          x += 20;
+          break;
+
+        // New case for lowercase 's'
+        case 's':
+          // Drawing for lowercase 's' with a perfect circle
+          path.addOval(Rect.fromCenter(
+            center: Offset(x + 10, y + 8),
+            width: 16,
+            height: 16,
+          ));
+          x += 20;
+          break;
+
+        // New case for lowercase 't'
+        case 't':
+          // Drawing for lowercase 't' with vertical stem and crossbar
+          // Draw the vertical stem
+          path.moveTo(x + 10, y - 15);
+          path.lineTo(x + 10, y + 15);
+          // Draw the crossbar
+          path.moveTo(x + 4, y);
+          path.lineTo(x + 16, y);
+          x += 20;
+          break;
+
+        // New case for lowercase 'u'
+        case 'u':
+          // Drawing for lowercase 'u' with two stems and connecting curve
+          // Left stem
+          path.moveTo(x + 5, y - 3);
+          path.lineTo(x + 5, y + 10);
+          // Curved bottom
+          path.quadraticBezierTo(
+            x + 10, y + 15, // Control point
+            x + 15, y + 10, // End point
+          );
+          // Right stem
+          path.lineTo(x + 15, y - 3);
+          x += 20;
+          break;
+
+        // New case for lowercase 'v'
+        case 'v':
+          // Drawing for lowercase 'v' with two angled lines
+          path.moveTo(x + 5, y - 3);
+          path.lineTo(x + 10, y + 15);
+          path.lineTo(x + 15, y - 3);
+          x += 20;
+          break;
+
+        // New case for lowercase 'w'
+        case 'w':
+          // Drawing for lowercase 'w' with four angled lines
+          path.moveTo(x + 3, y - 3);
+          path.lineTo(x + 8, y + 15);
+          path.lineTo(x + 13, y - 3);
+          path.lineTo(x + 18, y + 15);
+          path.lineTo(x + 23, y - 3);
+          x += 25;
+          break;
+
+        // New case for lowercase 'y'
+        case 'y':
+          // Drawing for lowercase 'y' with two lines, one descending
+          path.moveTo(x + 5, y - 3);
+          path.lineTo(x + 10, y + 15);
+          path.moveTo(x + 15, y - 3);
+          path.lineTo(x + 5, y + 25);
+          x += 20;
+          break;
+
+        // New case for lowercase 'z'
+        case 'z':
+          // Drawing for lowercase 'z' with top line, diagonal, and bottom line
+          path.moveTo(x + 5, y - 3);
+          path.lineTo(x + 15, y - 3);
+          path.lineTo(x + 5, y + 15);
+          path.lineTo(x + 15, y + 15);
+          x += 20;
           break;
 
         case '\n':
@@ -722,7 +952,7 @@ class _WhiteboardScreenState extends State<WhiteboardScreen>
               _pathLengths
                   .add(60); // Increased path length for more complex numbers
               _totalLength += 60;
-              x += 25;
+              x += 20;
             }
           }
       }
