@@ -399,13 +399,19 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
         'centerX': x + 13.0,
         'centerY': y + 8.0,
         'width': 14.0,
-        'height': 14.0,
+        'height': 14.0
       }));
       // Draw the vertical stem on the right side
       commands.add(DrawingCommand(
           type: 'moveTo', params: {'x': x + 20.0, 'y': y - 15.0}));
       commands.add(DrawingCommand(
           type: 'lineTo', params: {'x': x + 20.0, 'y': y + 15.0}));
+      break;
+    case 'e':
+      // ... ...
+      break;
+    case 'f':
+      // ... ...
       break;
     case 'g':
       // Draw the circular bowl
@@ -565,18 +571,73 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
       break;
 
     case 'q':
-      // Draw the bowl
+      // Draw the bowl on the left side
       commands.add(DrawingCommand(type: 'addOval', params: {
         'centerX': x + 8.0,
         'centerY': y + 8.0,
         'width': 14.0,
         'height': 14.0
       }));
-      // Draw the vertical stem
+      // Draw the vertical stem on the right, starting slightly lower
       commands
           .add(DrawingCommand(type: 'moveTo', params: {'x': x + 15.0, 'y': y}));
       commands.add(DrawingCommand(
           type: 'lineTo', params: {'x': x + 15.0, 'y': y + 25.0}));
+      break;
+
+    case 'r':
+      // Draw the vertical stem
+      commands.add(
+          DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y - 3.0}));
+      commands.add(DrawingCommand(
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 15.0}));
+      // Draw the small arch
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y}));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 12.0,
+        'controlY': y,
+        'endX': x + 15.0,
+        'endY': y + 5.0
+      }));
+      break;
+
+    case 's':
+      // Draw the top curve
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 15.0, 'y': y}));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 15.0,
+        'controlY': y - 5.0,
+        'endX': x + 8.0,
+        'endY': y - 5.0
+      }));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 2.0,
+        'controlY': y - 5.0,
+        'endX': x + 2.0,
+        'endY': y + 2.0
+      }));
+      // Draw the middle connecting curve
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 2.0,
+        'controlY': y + 7.0,
+        'endX': x + 8.0,
+        'endY': y + 7.0
+      }));
+      // Draw the bottom curve
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 15.0,
+        'controlY': y + 7.0,
+        'endX': x + 15.0,
+        'endY': y + 12.0
+      }));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 15.0,
+        'controlY': y + 15.0,
+        'endX': x + 2.0,
+        'endY': y + 15.0
+      }));
       break;
 
     case 't':
@@ -639,36 +700,40 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
       break;
 
     case 'y':
-      // Draw the right stem and tail
+      // Draw the right stem and tail (shorter)
       commands.add(DrawingCommand(
-          type: 'moveTo', params: {'x': x + 15.0, 'y': y - 3.0}));
+          type: 'moveTo',
+          params: {'x': x + 15.0, 'y': y})); // Raised from y - 3.0
       commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
         'controlX': x + 15.0,
-        'controlY': y + 20.0,
+        'controlY': y + 18.0, // Reduced from y + 20.0
         'endX': x + 5.0,
-        'endY': y + 25.0
+        'endY': y + 22.0 // Reduced from y + 25.0
       }));
-      // Draw the left stem, connecting to the right stem
-      commands.add(
-          DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y - 3.0}));
-      commands.add(DrawingCommand(type: 'lineTo', params: {
-        'x': x + 15.0,
-        'y': y + 10.0
-      })); // Changed from x + 10.0 to x + 15.0 to connect with right stem
+      // Draw the left stem with curved connection (shorter)
+      commands.add(DrawingCommand(
+          type: 'moveTo',
+          params: {'x': x + 5.0, 'y': y})); // Raised from y - 3.0
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 10.0,
+        'controlY': y + 10.0, // Reduced from y + 12.0
+        'endX': x + 15.0,
+        'endY': y + 10.0 // Reduced from y + 12.0
+      }));
       break;
 
     case 'z':
-      // Top horizontal
-      commands.add(
-          DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y - 3.0}));
+      // Top horizontal line
+      commands
+          .add(DrawingCommand(type: 'moveTo', params: {'x': x + 5.0, 'y': y}));
+      commands
+          .add(DrawingCommand(type: 'lineTo', params: {'x': x + 15.0, 'y': y}));
+      // Diagonal line
       commands.add(DrawingCommand(
-          type: 'lineTo', params: {'x': x + 15.0, 'y': y - 3.0}));
-      // Diagonal
+          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 14.0}));
+      // Bottom horizontal line
       commands.add(DrawingCommand(
-          type: 'lineTo', params: {'x': x + 5.0, 'y': y + 15.0}));
-      // Bottom horizontal
-      commands.add(DrawingCommand(
-          type: 'lineTo', params: {'x': x + 15.0, 'y': y + 15.0}));
+          type: 'lineTo', params: {'x': x + 15.0, 'y': y + 14.0}));
       break;
   }
 
