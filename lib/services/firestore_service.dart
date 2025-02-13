@@ -5,6 +5,7 @@ import './learning_progress_service.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'dart:convert';
 import '../data/geometry_drawing_spec.dart';
+import '../models/video_feed.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -933,5 +934,30 @@ class FirestoreService {
         .doc('${userId}_$videoId')
         .snapshots()
         .map((snapshot) => snapshot.exists);
+  }
+
+  Future<void> createVideo(VideoFeed video) async {
+    await _db.collection('videos').doc(video.id).set({
+      'id': video.id,
+      'videoUrl': video.videoUrl,
+      'creatorId': video.creatorId,
+      'description': video.description,
+      'likes': video.likes,
+      'shares': video.shares,
+      'createdAt': video.createdAt,
+      'learningPathId': video.learningPathId,
+      'orderInPath': video.orderInPath,
+      'title': video.title,
+      'topicId': video.topicId,
+      'subject': video.subject,
+      'skillLevel': video.skillLevel,
+      'prerequisites': video.prerequisites,
+      'topics': video.topics,
+      'estimatedMinutes': video.estimatedMinutes,
+      'hasQuiz': video.hasQuiz,
+      'progress': video.progress,
+      'isCompleted': video.isCompleted,
+      'videoJson': video.videoJson,
+    });
   }
 }

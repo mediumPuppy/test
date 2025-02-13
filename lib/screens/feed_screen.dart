@@ -7,6 +7,9 @@ import '../widgets/app_drawer.dart';
 import '../services/firestore_service.dart';
 import '../services/topic_progress_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
+import '../services/gpt_service.dart';
+import 'package:uuid/uuid.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -158,11 +161,28 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
 
             try {
               final video = VideoFeed.fromFirestore(videoData, videoId);
-              return VideoFeedItem(
-                index: index,
-                feed: video,
-                onShare: () {},
-                pageController: _pageController,
+              return Stack(
+                children: [
+                  VideoFeedItem(
+                    index: index,
+                    feed: video,
+                    onShare: () {},
+                    pageController: _pageController,
+                  ),
+                  // Detect last video by comparing index with total count
+                  if (index == videos.length - 1)
+                    Positioned(
+                      bottom: 16,
+                      left: 16,
+                      right: 16,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Handle button tap to create a new video.
+                        },
+                        child: const Text('Create new video?'),
+                      ),
+                    ),
+                ],
               );
             } catch (e) {
               return const SizedBox.shrink(); // Skip invalid videos
@@ -181,6 +201,9 @@ class _FeedScreenState extends State<FeedScreen>
   String? _selectedLearningPath;
   StreamSubscription? _pathSubscription;
   late AnimationController _animationController;
+  final _uuid = const Uuid();
+
+  String generateUniqueId() => _uuid.v4();
 
   @override
   void initState() {
@@ -206,13 +229,69 @@ class _FeedScreenState extends State<FeedScreen>
           }
         },
         onError: (error, stackTrace) {
-          print('Error loading learning path:');
-          print('Error: $error');
-          print('Stack trace: $stackTrace');
+          print('Error loading learning path: $error');
         },
       );
     } else {
       print('No user logged in');
+    }
+  }
+
+  Future<void> _handleCreateNewVideo() async {
+    // Capture current topic
+    final String? topic = _selectedLearningPath;
+    if (topic == null) return;
+
+    // Compose the prompt (instructions should ideally be loaded from instructions.md)
+    const String instructions = "REPLACE WITH CONTENTS OF instructions.md";
+    final String prompt = "your topic is: $topic\n\n"
+        "create a 15-25 second video explaining this concept\n\n"
+        "$instructions";
+
+    try {
+      // Call the GPT-4O Mini API (assumes GptService.sendPrompt exists)
+      final String response = await GptService.sendPrompt(prompt);
+
+      // Extract JSON substring (from the first '{' to the last '}')
+      final int start = response.indexOf('{');
+      final int end = response.lastIndexOf('}') + 1;
+      if (start == -1 || end == -1 || start >= end) {
+        throw Exception("Invalid response format");
+      }
+      final String jsonStr = response.substring(start, end);
+      final Map<String, dynamic> videoJson = json.decode(jsonStr);
+
+      // Create a new video entry using default values (similar to sampleVideos)
+      final newVideo = VideoFeed(
+        id: generateUniqueId(),
+        title: "New AI Generated Video",
+        topicId: topic,
+        subject: "algebra",
+        skillLevel: "beginner",
+        prerequisites: [],
+        description: "AI generated video for topic $topic",
+        learningPathId: topic,
+        orderInPath: 0,
+        estimatedMinutes: 5,
+        hasQuiz: false,
+        videoUrl: "",
+        videoJson: videoJson,
+        creatorId: "teacher1",
+        likes: 0,
+        shares: 0,
+        createdAt: DateTime.now(),
+      );
+
+      // Use FirestoreService to store the new video
+      await _firestoreService.createVideo(newVideo);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("New video created successfully!")),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to create new video: $e")),
+      );
     }
   }
 

@@ -11,11 +11,13 @@ class VideoFeed {
   final String learningPathId;
   final int orderInPath;
   final String title;
-  final String topic;
+  final String topicId;
   final String subject;
   final String skillLevel;
   final List<String> prerequisites;
   final List<String> topics;
+  final int estimatedMinutes;
+  final bool hasQuiz;
   double progress;
   bool isCompleted;
   final Map<String, dynamic> videoJson;
@@ -31,23 +33,25 @@ class VideoFeed {
     required this.learningPathId,
     required this.orderInPath,
     required this.title,
-    required this.topic,
+    required this.topicId,
     required this.subject,
     required this.skillLevel,
     required this.prerequisites,
+    required this.estimatedMinutes,
+    required this.hasQuiz,
     List<String>? topics,
     this.progress = 0.0,
     this.isCompleted = false,
     required this.videoJson,
-  }) : topics = topics ?? [topic];
+  }) : topics = topics ?? [topicId];
 
   factory VideoFeed.fromFirestore(Map<String, dynamic> data, String id) {
     final List<String> topics = List<String>.from(data['topics'] ?? []);
-    final String topic = data['topicId'] ?? data['topic'] ?? '';
+    final String topicId = data['topicId'] ?? '';
 
     // If no topics are specified, use the single topic field
-    if (topics.isEmpty && topic.isNotEmpty) {
-      topics.add(topic);
+    if (topics.isEmpty && topicId.isNotEmpty) {
+      topics.add(topicId);
     }
 
     return VideoFeed(
@@ -61,10 +65,12 @@ class VideoFeed {
       learningPathId: data['learningPathId'] ?? '',
       orderInPath: data['orderInPath'] ?? 0,
       title: data['title'] ?? '',
-      topic: topic,
+      topicId: topicId,
       subject: data['subject'] ?? '',
       skillLevel: data['skillLevel'] ?? '',
       prerequisites: List<String>.from(data['prerequisites'] ?? []),
+      estimatedMinutes: data['estimatedMinutes'] ?? 5,
+      hasQuiz: data['hasQuiz'] ?? false,
       topics: topics,
       progress: data['progress'] ?? 0.0,
       isCompleted: data['isCompleted'] ?? false,
