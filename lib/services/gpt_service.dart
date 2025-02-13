@@ -1,47 +1,73 @@
 import 'dart:convert'; // Needed for JSON parsing
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:langchain/langchain.dart';
-import 'package:langchain_openai/langchain_openai.dart';
+import 'package:dart_openai/dart_openai.dart';
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:http/http.dart' as http; // Added for Gemini REST calls
+
+// Simple model to handle chat responses
+class ChatResponse {
+  final String content;
+  final List<dynamic> toolCalls;
+
+  ChatResponse({required this.content, this.toolCalls = const []});
+
+  factory ChatResponse.fromJson(Map<String, dynamic> json) {
+    return ChatResponse(
+      content: json['content'] as String? ?? '',
+      toolCalls: json['toolCalls'] as List<dynamic>? ?? [],
+    );
+  }
+}
 
 class GptService {
   static final GptService _instance = GptService._internal();
   factory GptService() => _instance;
 
-  late final ChatOpenAI _model;
-  late final ChatPromptTemplate _promptTemplate;
-  late final JsonOutputParser _outputParser;
-  late final LLMChain _chain;
+  late final String _provider;
+  late final String _geminiApiKey;
+  late final String _geminiEndpoint;
 
   GptService._internal() {
+    // Choose provider based on environment variable; default is 'gemini'
+    _provider = dotenv.env['AI_PROVIDER'] ?? 'gemini';
     _initialize();
   }
 
   void _initialize() {
     debugPrint('[GPTService] Initializing service...');
-    final apiKey = dotenv.env['OPENAI_API_KEY'];
-    if (apiKey == null) {
+    if (_provider == 'openai') {
+      final apiKey = dotenv.env['OPENAI_API_KEY'];
+      if (apiKey == null) {
+        debugPrint(
+            '[GPTService] ERROR: OpenAI API key not found in environment variables');
+        throw Exception('OpenAI API key not found in environment variables');
+      }
+
+      debugPrint('[GPTService] Setting up OpenAI configuration...');
+      OpenAI.apiKey = apiKey;
+      debugPrint('[GPTService] OpenAI configured');
+    } else if (_provider == 'gemini') {
+      final geminiKey = dotenv.env['GEMINI_API_KEY'];
+      if (geminiKey == null) {
+        debugPrint(
+            '[GPTService] ERROR: Gemini API key not found in environment variables');
+        throw Exception('Gemini API key not found in environment variables');
+      }
+      _geminiApiKey = geminiKey;
+      _geminiEndpoint = dotenv.env['GEMINI_ENDPOINT'] ??
+          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'; // Gemini API endpoint
       debugPrint(
-          '[GPTService] ERROR: OpenAI API key not found in environment variables');
-      throw Exception('OpenAI API key not found in environment variables');
+          '[GPTService] Gemini configured with endpoint $_geminiEndpoint');
     }
+  }
 
-    debugPrint('[GPTService] Setting up OpenAI model...');
-    _model = ChatOpenAI(
-      apiKey: apiKey,
-      defaultOptions: const ChatOpenAIOptions(
-        temperature: 0.7,
-        model: 'o3-mini', // Updated to use o3-mini as instructed
-        maxTokens: 1000,
-      ),
-    );
-    debugPrint('[GPTService] OpenAI model configured');
+  Future<Map<String, dynamic>> sendPrompt(String topic) async {
+    debugPrint('[GPTService] Sending prompt for topic: $topic');
+    try {
+      // DO NOT MODIFY THE PROMPT BELOW
+      final prompt = '''Your topic is $topic
 
-    debugPrint('[GPTService] Setting up prompt template...');
-    _promptTemplate = ChatPromptTemplate.fromTemplates([
-      (
-        ChatMessageType.system,
-        '''You are an AI that generates perfect JSON output (with no additional text or explanations) to instruct Flutter's CustomPainter on how to draw and label mathematical concepts in a context-aware manner. Follow these rules precisely:
+You are an AI that generates perfect JSON output (with no additional text or explanations) to instruct Flutter's CustomPainter on how to draw and label mathematical concepts in a context-aware manner. Follow these rules precisely:
 1. JSON-Only Output Your response must be a single, valid JSON object. It must contain no extra text, commentary, or Markdown formatting. Do not wrap it in triple backticks, do not provide any explanation—only the JSON.
 2. Context-Aware of a 320×568 Grid
     * Assume a coordinate system sized for an iPhone SE (1st gen) screen, 320 points wide by 568 points high.
@@ -62,7 +88,7 @@ class GptService {
 5. Drawing Elements Inside "drawing", include two arrays: "shapes" and "labels".
     * shapes
         * "id": Must match a stage in the "timing".
-        * "vertices": List of {{ "x": _, "y": _ }} points (optional but encouraged for clarity).
+        * "vertices": List of { "x": _, "y": _ } points (optional but encouraged for clarity).
         * "path": The hand-drawn path instructions. For example: "moveTo(50, 20) lineTo(20, 80) lineTo(80, 80) lineTo(50, 20)", arcTo(centerX, centerY, width, height, startAngle, sweepAngle, forceMoveTo) (centerX, centerY: center point of arc, width, height: dimensions of bounding box, startAngle: start angle in radians (0 = right), sweepAngle: angle to draw (6.28 = full circle), ForceMoveTo: true to prevent connecting line)
         * "style": "stroke" or "fill".
         * "strokeWidth": A reasonable line thickness (e.g., 2–5).
@@ -71,7 +97,7 @@ class GptService {
     * labels
         * "id": Must match a stage in the "timing" (e.g., "label_rectangle").
         * "text": The text content (for math, LaTeX in \\\$...\\\$ is allowed).
-        * "position": {{ "x":..., "y":... }}
+        * "position": { "x":..., "y":... }
         * "color": The label color (hex).
         * "fadeInRange": [start, end] for label fade-in.
         * "handwritten": true makes it write out handwritten chars instead of plaintext. Helpful for learning, but bigger size. (35 x 20, h x w)
@@ -84,9 +110,9 @@ class GptService {
         * Place rectangle labels near edges or corners but offset so it's not overlapped by lines.
 6. Speech Under "speech", include:
     * "script": A concise narration explaining the concept.
-    * "pacing": {{ "initialDelay": ..., "betweenStages": ..., "finalDelay": ... }}
+    * "pacing": { "initialDelay": ..., "betweenStages": ..., "finalDelay": ... }
 7. Topic-Specific
-    * The final JSON must illustrate a particular topic (replace "YOUR_TOPIC_HERE" with something else). For example, "basics of geometry," "pythagorean theorem," "circle theorems," etc.
+    * The final JSON must illustrate a particular topic. For example, "basics of geometry," "pythagorean theorem," "circle theorems," etc.
     * The shapes, labels, and text must be thematically relevant (e.g., lines, angles, polygons for geometry basics).
 8. No Additional Text
     * Output only the JSON object described.
@@ -96,23 +122,23 @@ You are an AI that outputs a single JSON object with instructions for Flutter's 
 
 ===IMPORTANT REQUIREMENTS===
 1) The JSON must have this structure:
-{{
-  "instructions": {{
+{
+  "instructions": {
     "timing": [...],
-    "drawing": {{
+    "drawing": {
       "shapes": [...],
       "labels": [...]
-    }},
-    "speech": {{
+    },
+    "speech": {
       "script": "...",
-      "pacing": {{
+      "pacing": {
         "initialDelay": ...,
         "betweenStages": ...,
         "finalDelay": ...
-      }}
-    }}
-  }}
-}}
+      }
+    }
+  }
+}
 
 2) Under "timing", produce drawing stages that do NOT overlap and are logically ordered, each with "stage", "startTime", "endTime", "description", and optional "easing".
 
@@ -128,7 +154,7 @@ You are an AI that outputs a single JSON object with instructions for Flutter's 
 4) Under "drawing.labels", each label has:
    - "id" (matching a stage if relevant)
    - "text"
-   - "position" {{ "x":..., "y":... }}
+   - "position" { "x":..., "y":... }
    - "color" (hex)
    - "fadeInRange" [start, end]
    - "handwritten" true
@@ -138,7 +164,7 @@ You are an AI that outputs a single JSON object with instructions for Flutter's 
    - Arrange shapes so they do not overlap unless intended.
    - Place labels near the shape but avoid crossing lines.
    - Don't place anything off-screen (x < 0 or x > 320 or y < 0 or y > 568).
-- Be aware that each letter is about 35px high and 20 px wide. Take this into consideration when calculating vertical and horizontal space.
+   - Be aware that each letter is about 35px high and 20 px wide. Take this into consideration when calculating vertical and horizontal space.
 
 6) Provide a "speech" object with:
    - "script" explaining the concept
@@ -157,38 +183,88 @@ You are an AI that outputs a single JSON object with instructions for Flutter's 
 
 ===END OF REQUIREMENTS===
 
-Now produce the JSON instructions that depict the concept of YOUR_TOPIC_HERE in a hand-drawn style, ensuring each shape is drawn progressively, labeled clearly, and fully visible on the 320x568 grid.'''
-      ),
-      (
-        ChatMessageType.human,
-        'your topic is: {topic}\n\ncreate a 15-25 second video explaining this concept'
-      ),
-    ]);
-    debugPrint('[GPTService] Prompt template configured');
+Now produce the JSON instructions that depict the concept of YOUR_TOPIC_HERE in a hand-drawn style, ensuring each shape is drawn progressively, labeled clearly, and fully visible on the 320x568 grid.''';
 
-    // Updated output parser to use structured outputs (JSON)
-    _outputParser = const JsonOutputParser();
-    debugPrint('[GPTService] Output parser configured');
+      debugPrint('[GPTService] Running chat completion...');
+      if (_provider == 'openai') {
+        final response = await OpenAI.instance.chat.create(
+          model: 'gpt-4o-mini',
+          messages: [
+            OpenAIChatCompletionChoiceMessageModel(
+              role: OpenAIChatMessageRole.system,
+              content: [
+                OpenAIChatCompletionChoiceMessageContentItemModel.text(
+                  prompt,
+                ),
+              ],
+            ),
+          ],
+          temperature: 1,
+          maxTokens: 2000,
+        );
+        final jsonStr =
+            response.choices.first.message.content?.firstOrNull?.text?.trim() ??
+                '{}';
+        debugPrint('[GPTService] Extracted JSON: ```\n$jsonStr\n```');
+        return jsonDecode(jsonStr) as Map<String, dynamic>;
+      } else if (_provider == 'gemini') {
+        debugPrint('[GPTService] Using Gemini provider');
+        // Build the payload as expected by Gemini (using "contents" and "parts")
+        final payload = {
+          "contents": [
+            {
+              "parts": [
+                {"text": prompt}
+              ]
+            }
+          ]
+        };
 
-    _chain = LLMChain(
-      prompt: _promptTemplate,
-      llm: _model,
-    );
-    debugPrint('[GPTService] LLM chain configured');
-    debugPrint('[GPTService] Initialization complete');
-  }
+        // Append the GEMINI_API_KEY as a query parameter "key" to the URL, and remove the Authorization header.
+        final uri = Uri.parse(_geminiEndpoint)
+            .replace(queryParameters: {"key": _geminiApiKey});
 
-  Future<Map<String, dynamic>> sendPrompt(String topic) async {
-    debugPrint('[GPTService] Sending prompt for topic: $topic');
-    try {
-      debugPrint('[GPTService] Running LLM chain...');
-      final response = await _chain.run({'topic': topic});
-      debugPrint('[GPTService] Successfully received response');
-      debugPrint(
-          '[GPTService] Response length: ${response.toString().length} characters');
+        final geminiResponse = await http.post(
+          uri,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: jsonEncode(payload),
+        );
 
-      // Parse the response into a Map
-      return JsonOutputParser().parse(response);
+        debugPrint(
+            '[GPTService] Gemini raw response: ```\n${geminiResponse.body}\n```');
+        if (geminiResponse.statusCode != 200) {
+          debugPrint(
+              '[GPTService] Gemini API call failed with status: ${geminiResponse.statusCode}');
+          throw Exception(
+              'Gemini API call failed with status: ${geminiResponse.statusCode}');
+        }
+
+        Map<String, dynamic> respJson = jsonDecode(geminiResponse.body);
+        var extractedContent = '{}';
+        try {
+          // Get the raw text content
+          var rawText = respJson['candidates'][0]['content']['parts'][0]['text']
+                  ?.toString()
+                  .trim() ??
+              '{}';
+
+          // Clean up markdown formatting and code blocks
+          rawText =
+              rawText.replaceAll('```json', '').replaceAll('```', '').trim();
+
+          extractedContent = rawText;
+        } catch (e) {
+          debugPrint(
+              '[GPTService] Could not extract message content: $e. Using raw response.');
+          extractedContent = geminiResponse.body;
+        }
+        debugPrint('[GPTService] Extracted JSON: ```\n$extractedContent\n```');
+        return jsonDecode(extractedContent) as Map<String, dynamic>;
+      } else {
+        throw Exception('Unsupported AI provider: $_provider');
+      }
     } catch (e, stackTrace) {
       debugPrint('[GPTService] ERROR: Failed to generate response');
       debugPrint('[GPTService] Error details: $e');

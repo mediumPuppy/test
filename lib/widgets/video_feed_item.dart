@@ -51,13 +51,15 @@ class _VideoFeedItemState extends State<VideoFeedItem>
     super.initState();
     print(
         'VideoFeedItem: Initializing JSON video controller for video id: ${widget.feed.id}');
+    _jsonController = JsonVideoController(videoJson: widget.feed.videoJson);
     _initializeJsonVideo();
     _innerScrollController = ScrollController();
     _animationController = AnimationController(
       vsync: this,
       duration: Duration(
-          seconds:
-              widget.feed.videoJson['instructions']['timing'].last['endTime']),
+          seconds: (widget.feed.videoJson['instructions']['timing']
+                  .last['endTime'] as num)
+              .round()),
     );
 
     // Add delay before starting animation
@@ -78,14 +80,14 @@ class _VideoFeedItemState extends State<VideoFeedItem>
   }
 
   Future<void> _initializeJsonVideo() async {
-    _jsonController = JsonVideoController(videoJson: widget.feed.videoJson);
     await _jsonController.initialize();
-    _jsonController.play();
-    if (mounted) {
-      setState(() {
-        _isInitialized = _jsonController.isInitialized;
-      });
-    }
+
+    // Only do further work if the widget is still mounted.
+    if (!mounted) return;
+
+    setState(() {
+      _isInitialized = _jsonController.isInitialized;
+    });
   }
 
   void _showTransitionScreen() {

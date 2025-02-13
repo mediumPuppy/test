@@ -249,22 +249,28 @@ class _FeedScreenState extends State<FeedScreen>
   Future<void> _handleCreateNewVideo() async {
     print('[CreateVideo] Starting video creation process');
 
+    if (_selectedLearningPath == null) {
+      print('[CreateVideo] ERROR: No learning path selected');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a learning path first")),
+      );
+      return;
+    }
+
     // Capture current topic
-    final String? topic = _selectedLearningPath;
+    final String? topic = "basic multiplication";
     if (topic == null) {
       print('[CreateVideo] ERROR: No topic selected');
       return;
     }
     print('[CreateVideo] Creating video for topic: $topic');
 
-    // Compose the prompt (instructions should ideally be loaded from instructions.md)
-    const String instructions = "REPLACE WITH CONTENTS OF instructions.md";
-    final String prompt = "your topic is: $topic\n\n"
-        "create a 15-25 second video explaining this concept\n\n"
-        "$instructions";
-    print('[CreateVideo] Generated prompt for GPT service');
-
     try {
+      // Show loading indicator
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Creating new video...")),
+      );
+
       print('[CreateVideo] Calling GPT service...');
       final Map<String, dynamic> videoJson =
           await _gptService.sendPrompt(topic);
@@ -281,13 +287,13 @@ class _FeedScreenState extends State<FeedScreen>
         skillLevel: "beginner",
         prerequisites: [],
         description: "AI generated video for topic $topic",
-        learningPathId: topic,
+        learningPathId: _selectedLearningPath!,
         orderInPath: 0,
         estimatedMinutes: 5,
         hasQuiz: false,
         videoUrl: "",
         videoJson: videoJson,
-        creatorId: "teacher1",
+        creatorId: _auth.currentUser?.uid ?? "system",
         likes: 0,
         shares: 0,
         createdAt: DateTime.now(),
@@ -299,16 +305,23 @@ class _FeedScreenState extends State<FeedScreen>
       await _firestoreService.createVideo(newVideo);
       print('[CreateVideo] Successfully stored video in Firestore');
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("New video created successfully!")),
-      );
+      // Delay slightly to allow Firestore to update
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("New video created successfully!")),
+        );
+      }
     } catch (e, stackTrace) {
       print('[CreateVideo] ERROR: Failed to create video');
       print('[CreateVideo] Error details: $e');
       print('[CreateVideo] Stack trace: $stackTrace');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to create new video: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to create new video: $e")),
+        );
+      }
     }
   }
 

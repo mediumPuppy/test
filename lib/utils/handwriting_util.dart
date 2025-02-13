@@ -858,6 +858,40 @@ List<DrawingCommand> _generateDigitCommands(String char, double x, double y,
       commands.add(DrawingCommand(
           type: 'lineTo', params: {'x': x + 15.0, 'y': y + 14.0}));
       break;
+
+    case '?':
+      // Draw the top curve
+      commands.add(DrawingCommand(
+          type: 'moveTo', params: {'x': x + 5.0, 'y': y - 15.0}));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 5.0,
+        'controlY': y - 20.0,
+        'endX': x + 10.0,
+        'endY': y - 20.0
+      }));
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 15.0,
+        'controlY': y - 20.0,
+        'endX': x + 15.0,
+        'endY': y - 15.0
+      }));
+
+      // Draw the curved stem
+      commands.add(DrawingCommand(type: 'quadraticBezierTo', params: {
+        'controlX': x + 15.0,
+        'controlY': y - 10.0,
+        'endX': x + 10.0,
+        'endY': y - 5.0
+      }));
+
+      // Draw the dot
+      commands.add(DrawingCommand(type: 'addOval', params: {
+        'centerX': x + 10.0,
+        'centerY': y + 10.0,
+        'width': 4.0,
+        'height': 4.0
+      }));
+      break;
   }
 
   return commands;

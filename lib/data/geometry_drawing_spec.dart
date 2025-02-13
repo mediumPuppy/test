@@ -4,21 +4,21 @@ const String geometryDrawingSpec = '''{
       {
         "stage": "first_set",
         "startTime": 0,
-        "endTime": 7,
+        "endTime": 3,
         "description": "Drawing 2 apples to represent the number 2.",
         "easing": "easeIn"
       },
       {
         "stage": "second_set",
-        "startTime": 7,
-        "endTime": 14,
+        "startTime": 3,
+        "endTime": 6,
         "description": "Drawing 3 apples to represent the number 3.",
         "easing": "linear"
       },
       {
         "stage": "total_equation",
-        "startTime": 14,
-        "endTime": 20,
+        "startTime": 6,
+        "endTime": 9,
         "description": "Displaying the equation 2 + 3 = 5.",
         "easing": "easeOut"
       }
@@ -35,7 +35,7 @@ const String geometryDrawingSpec = '''{
           "style": "fill",
           "strokeWidth": 2,
           "color": "#FF0000",
-          "fadeInRange": [0, 7]
+          "fadeInRange": [0, 3]
         },
         {
           "id": "second_set",
@@ -48,7 +48,7 @@ const String geometryDrawingSpec = '''{
           "style": "fill",
           "strokeWidth": 2,
           "color": "#FF0000",
-          "fadeInRange": [7, 14]
+          "fadeInRange": [3, 6]
         },
         {
           "id": "total_equation",
@@ -60,7 +60,7 @@ const String geometryDrawingSpec = '''{
           "style": "stroke",
           "strokeWidth": 2,
           "color": "#0000FF",
-          "fadeInRange": [14, 20]
+          "fadeInRange": [6, 9]
         }
       ],
       "labels": [
@@ -69,15 +69,15 @@ const String geometryDrawingSpec = '''{
           "text": "2 apples",
           "position": { "x": 55, "y": 100 },
           "color": "#000000",
-          "fadeInRange": [0, 7],
+          "fadeInRange": [0, 3],
           "handwritten": true
         },
         {
           "id": "second_set",
-          "text": "3 apples",
+          "text": "3 apples ?",
           "position": { "x": 55, "y": 265 },
           "color": "#000000",
-          "fadeInRange": [7, 14],
+          "fadeInRange": [3, 6],
           "handwritten": true
         },
         {
@@ -85,7 +85,7 @@ const String geometryDrawingSpec = '''{
           "text": "2 + 3 = 5",
           "position": { "x": 120, "y": 310 },
           "color": "#000000",
-          "fadeInRange": [14, 20],
+          "fadeInRange": [6, 9],
           "handwritten": true
         }
       ]

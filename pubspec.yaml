@@ -19,6 +19,8 @@ dependencies:
   just_audio: ^0.9.36
   langchain: ^0.7.7
   langchain_openai: ^0.7.3
+  dart_openai: ^5.1.0
+
   image_picker: ^1.1.2
   timeago: ^3.7.0
   math_expressions: ^2.6.0

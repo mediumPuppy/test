@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 /// A custom video controller that "plays" video content defined by a JSON object.
 /// In a real implementation, this controller would drive animations, speech synthesis,
@@ -16,6 +17,8 @@ class JsonVideoController extends ChangeNotifier {
 
   Timer? _timer;
 
+  bool _isDisposed = false;
+
   JsonVideoController({required this.videoJson}) {
     // Get duration from the last stage's endTime
     final List timingStages = videoJson['instructions']['timing'] ?? [];
@@ -30,7 +33,9 @@ class JsonVideoController extends ChangeNotifier {
     // Add any JSON parsing or asset preloading here.
     await Future.delayed(const Duration(seconds: 1));
     _isInitialized = true;
-    notifyListeners();
+    if (!_isDisposed) {
+      notifyListeners();
+    }
   }
 
   /// Simulate playing the "video" by gradually updating the position.
@@ -53,6 +58,7 @@ class JsonVideoController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _timer?.cancel();
     super.dispose();
   }
