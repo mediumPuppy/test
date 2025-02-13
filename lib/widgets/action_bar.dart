@@ -65,28 +65,25 @@ class ActionBar extends StatelessWidget {
         _buildActionButton(
           icon: isLiked ? Icons.favorite : Icons.favorite_border,
           label: likes.toString(),
+          labelStyle: const TextStyle(color: Colors.black),
           onTap: onLike,
-          color: isLiked ? Colors.red : Colors.white,
+          color: isLiked ? Colors.red : Colors.black,
         ),
         const SizedBox(height: 16),
         _buildActionButton(
-          icon: Icons.share,
-          label: shares.toString(),
-          onTap: onShare,
-        ),
-        const SizedBox(height: 16),
-        _buildActionButton(
-          icon: Icons.quiz,
+          icon: Icons.quiz_outlined,
           label: 'Quiz',
           onTap: () => _triggerQuiz(context),
           showCount: false,
+          color: Colors.black,
         ),
         const SizedBox(height: 16),
         _buildActionButton(
-          icon: Icons.lightbulb,
+          icon: Icons.lightbulb_outlined,
           label: 'Explain',
           onTap: onExplain,
           showCount: false,
+          color: Colors.black,
         ),
         const SizedBox(height: 16),
       ],
@@ -99,6 +96,7 @@ class ActionBar extends StatelessWidget {
     required VoidCallback onTap,
     Color color = Colors.white,
     bool showCount = true,
+    TextStyle? labelStyle,
   }) {
     return Column(
       children: [
@@ -109,7 +107,7 @@ class ActionBar extends StatelessWidget {
         ),
         Text(
           showCount ? label : '',
-          style: const TextStyle(color: Colors.white),
+          style: labelStyle,
         ),
       ],
     );

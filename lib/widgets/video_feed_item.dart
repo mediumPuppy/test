@@ -5,11 +5,15 @@ import '../models/video_feed.dart';
 import '../services/firestore_service.dart';
 import '../services/topic_progress_service.dart';
 import 'action_bar.dart';
-import '../services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart' show User;
 import '../screens/ai_explanation_screen.dart';
 import '../controllers/json_video_controller.dart';
 import 'dart:convert';
+import '../widgets/geometry_drawing_painter.dart';
+import '../models/drawing_spec_models.dart';
+import '../utils/handwriting_util.dart';
+import '../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart' show User;
+import 'geometry_drawing_painter.dart';
 
 class VideoFeedItem extends StatefulWidget {
   final int index;
@@ -29,7 +33,8 @@ class VideoFeedItem extends StatefulWidget {
   State<VideoFeedItem> createState() => _VideoFeedItemState();
 }
 
-class _VideoFeedItemState extends State<VideoFeedItem> {
+class _VideoFeedItemState extends State<VideoFeedItem>
+    with SingleTickerProviderStateMixin {
   final _progressService = TopicProgressService();
   StreamSubscription? _positionSubscription;
   late JsonVideoController _jsonController;
@@ -39,6 +44,7 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
   bool _hasTriggeredPageTurn = false;
   static const double _scrollThreshold = 100.0;
   double _overscrollAmount = 0.0;
+  late AnimationController _animationController;
 
   @override
   void initState() {
@@ -47,36 +53,22 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
         'VideoFeedItem: Initializing JSON video controller for video id: ${widget.feed.id}');
     _initializeJsonVideo();
     _innerScrollController = ScrollController();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: Duration(
+          seconds:
+              widget.feed.videoJson['instructions']['timing'].last['endTime']),
+    );
+    _animationController.forward();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Set up the subscription here
-    _setupSubscription();
-  }
-
-  void _setupSubscription() {
-    // Cancel any existing subscription first
     _positionSubscription?.cancel();
-
-    // Only set up new subscription if widget is mounted
-    if (mounted) {
-      _positionSubscription = _progressService.positionStream.listen(
-        (position) {
-          // Check mounted state before calling setState
-          if (mounted) {
-            setState(() {});
-          }
-        },
-        // Add error handling
-        onError: (error) {
-          print('Error in position stream: $error');
-        },
-        // Cancel subscription when stream is done
-        cancelOnError: true,
-      );
-    }
+    _positionSubscription = _progressService.positionStream.listen((position) {
+      if (mounted) setState(() {});
+    });
   }
 
   Future<void> _initializeJsonVideo() async {
@@ -123,107 +115,147 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
   }
 
   @override
-  void dispose() {
-    // Cancel subscription first
-    _positionSubscription?.cancel();
-    _jsonController.dispose();
-    _innerScrollController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
 
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Use an AnimatedBuilder to rebuild when the JSON controller updates.
         _isInitialized
             ? AnimatedBuilder(
-                animation: _jsonController,
+                animation: _animationController,
                 builder: (context, child) {
-                  final progressValue =
-                      _jsonController.position.inMilliseconds /
-                          _jsonController.duration.inMilliseconds;
+                  final currentTime = _animationController.value *
+                      widget.feed.videoJson['instructions']['timing']
+                          .last['endTime']
+                          .toDouble();
+
                   return Container(
-                    color: Colors.black,
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: NotificationListener<ScrollNotification>(
-                          onNotification: (notification) {
-                            if (notification is OverscrollNotification &&
-                                notification.overscroll < 0 &&
-                                _innerScrollController.position.pixels <=
-                                    _innerScrollController
-                                        .position.minScrollExtent) {
-                              if (!_hasTriggeredPageTurn) {
-                                _hasTriggeredPageTurn = true;
-                                widget.pageController.previousPage(
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.ease,
-                                );
-                              }
-                            } else if (notification is OverscrollNotification &&
-                                notification.overscroll > 0 &&
-                                _innerScrollController.position.pixels >=
-                                    _innerScrollController
-                                        .position.maxScrollExtent) {
-                              if (!_hasTriggeredPageTurn) {
-                                _hasTriggeredPageTurn = true;
-                                widget.pageController.nextPage(
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.ease,
-                                );
-                              }
-                            } else if (notification is ScrollEndNotification) {
-                              _hasTriggeredPageTurn = false;
+                    color: Colors.white,
+                    child: NotificationListener<ScrollNotification>(
+                      onNotification: (notification) {
+                        if (notification is ScrollUpdateNotification) {
+                          if (_innerScrollController.position.pixels >=
+                                  _innerScrollController
+                                      .position.maxScrollExtent &&
+                              notification.metrics.pixels >=
+                                  notification.metrics.maxScrollExtent) {
+                            _overscrollAmount += notification.scrollDelta ?? 0;
+                          } else if (_innerScrollController.position.pixels <=
+                                  _innerScrollController
+                                      .position.minScrollExtent &&
+                              notification.metrics.pixels <=
+                                  notification.metrics.minScrollExtent) {
+                            _overscrollAmount += notification.scrollDelta ?? 0;
+                          } else {
+                            _overscrollAmount = 0;
+                          }
+
+                          if (_overscrollAmount.abs() >= _scrollThreshold &&
+                              !_hasTriggeredPageTurn) {
+                            _hasTriggeredPageTurn = true;
+                            if (_overscrollAmount > 0) {
+                              widget.pageController.nextPage(
+                                duration: const Duration(milliseconds: 500),
+                                curve: Curves.easeOutCubic,
+                              );
+                            } else {
+                              widget.pageController.previousPage(
+                                duration: const Duration(milliseconds: 500),
+                                curve: Curves.easeOutCubic,
+                              );
                             }
-                            return false;
-                          },
-                          child: SingleChildScrollView(
-                            controller: _innerScrollController,
-                            physics: const ClampingScrollPhysics(),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Playing JSON Video:',
-                                  style: TextStyle(
-                                      color: Colors.white, fontSize: 18),
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  JsonEncoder.withIndent('  ')
-                                      .convert(widget.feed.videoJson),
-                                  style: const TextStyle(
-                                      color: Colors.white, fontSize: 16),
-                                ),
-                                const SizedBox(height: 16),
-                                LinearProgressIndicator(
-                                  value: progressValue,
-                                  backgroundColor: Colors.grey[700],
-                                  valueColor:
-                                      const AlwaysStoppedAnimation<Color>(
-                                          Colors.blueAccent),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '${_jsonController.position.inSeconds}s / ${_jsonController.duration.inSeconds}s',
-                                  style: const TextStyle(color: Colors.white),
-                                )
-                              ],
-                            ),
+                            _overscrollAmount = 0;
+                          }
+                        } else if (notification is ScrollEndNotification) {
+                          _hasTriggeredPageTurn = false;
+                          _overscrollAmount = 0;
+                        }
+                        return false;
+                      },
+                      child: CustomPaint(
+                        painter: GeometryDrawingPainter(
+                          currentTime: currentTime,
+                          specification: GeometryDrawingSpec(
+                            stages: List<DrawingStage>.from(widget
+                                .feed.videoJson['instructions']['timing']
+                                .map((stage) => DrawingStage(
+                                      stage: stage['stage'],
+                                      startTime: (stage['startTime'] as num)
+                                          .toDouble(),
+                                      endTime:
+                                          (stage['endTime'] as num).toDouble(),
+                                      description: stage['description'],
+                                      easing: stage['easing'],
+                                    ))),
+                            shapes: List<GeometryShape>.from(widget.feed
+                                .videoJson['instructions']['drawing']['shapes']
+                                .map((shape) => GeometryShape(
+                                      id: shape['id'],
+                                      vertices: shape['vertices']
+                                              ?.map<Offset>((v) => Offset(
+                                                  (v['x'] as num).toDouble(),
+                                                  (v['y'] as num).toDouble()))
+                                              ?.toList() ??
+                                          [],
+                                      path: shape['path'],
+                                      style: shape['style'],
+                                      strokeWidth: (shape['strokeWidth'] as num)
+                                          .toDouble(),
+                                      color: _hexToColor(shape['color']),
+                                      fadeInRange:
+                                          (shape['fadeInRange'] as List)
+                                              .map<double>(
+                                                  (v) => (v as num).toDouble())
+                                              .toList(),
+                                    ))),
+                            labels: List<GeometryLabel>.from(widget.feed
+                                .videoJson['instructions']['drawing']['labels']
+                                .map((label) => GeometryLabel(
+                                      id: label['id'],
+                                      text: label['text'],
+                                      position: Offset(
+                                          (label['position']['x'] as num)
+                                              .toDouble(),
+                                          (label['position']['y'] as num)
+                                              .toDouble()),
+                                      color: _hexToColor(label['color']),
+                                      fadeInRange:
+                                          (label['fadeInRange'] as List)
+                                              .map<double>(
+                                                  (v) => (v as num).toDouble())
+                                              .toList(),
+                                      drawingCommands:
+                                          label['handwritten'] == true
+                                              ? generateHandwrittenCommands(
+                                                  label['text'],
+                                                  Offset(
+                                                      (label['position']['x']
+                                                              as num)
+                                                          .toDouble(),
+                                                      (label['position']['y']
+                                                              as num)
+                                                          .toDouble()))
+                                              : null,
+                                    ))),
+                            speechScript: widget.feed.videoJson['instructions']
+                                    ['speech']['script'] ??
+                                '',
+                            speechPacing: Map<String, double>.from((widget
+                                            .feed.videoJson['instructions']
+                                        ['speech']['pacing'] ??
+                                    {})
+                                .map((key, value) =>
+                                    MapEntry(key, (value as num).toDouble()))),
                           ),
                         ),
+                        size: Size.infinite,
                       ),
                     ),
                   );
                 },
               )
             : const Center(child: CircularProgressIndicator()),
-        // Right-side action bar with comment's feature removed.
         Positioned(
           right: 16,
           bottom: 100,
@@ -247,23 +279,34 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
             },
           ),
         ),
-        // Bottom description remains unchanged.
         Positioned(
           left: 16,
           right: 72,
           bottom: 16,
           child: Text(
             widget.feed.description,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-            ),
+            style: const TextStyle(color: Colors.black, fontSize: 16),
           ),
         ),
-        // Removed the progress indicator previously positioned at the bottom.
-        // Optionally add a transition overlay here if needed.
-        // if (_showTransition) const WhiteboardScreen(),
       ],
     );
+  }
+
+  Color _hexToColor(String hexColor) {
+    final buffer = StringBuffer();
+    if (hexColor.length == 7) {
+      buffer.write('ff');
+      buffer.write(hexColor.replaceFirst('#', ''));
+    }
+    return Color(int.parse(buffer.toString(), radix: 16));
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    _jsonController.dispose();
+    _innerScrollController.dispose();
+    _animationController.dispose();
+    super.dispose();
   }
 }

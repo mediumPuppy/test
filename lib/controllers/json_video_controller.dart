@@ -9,16 +9,21 @@ class JsonVideoController extends ChangeNotifier {
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
-  // Simulated duration and current position.
-  Duration _duration;
+  late Duration _duration;
   Duration _position = Duration.zero;
   Duration get duration => _duration;
   Duration get position => _position;
 
   Timer? _timer;
 
-  JsonVideoController({required this.videoJson})
-      : _duration = const Duration(seconds: 10); // Default duration
+  JsonVideoController({required this.videoJson}) {
+    // Get duration from the last stage's endTime
+    final List timingStages = videoJson['instructions']['timing'] ?? [];
+    final double totalDuration = timingStages.isEmpty
+        ? 10.0
+        : (timingStages.last['endTime'] as num).toDouble();
+    _duration = Duration(seconds: totalDuration.round());
+  }
 
   /// Simulate initialization (e.g. parsing JSON, setting up animations)
   Future<void> initialize() async {
