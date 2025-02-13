@@ -1,3 +1,4 @@
+import 'dart:convert'; // Needed for JSON parsing
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:langchain/langchain.dart';
 import 'package:langchain_openai/langchain_openai.dart';
@@ -9,7 +10,7 @@ class GptService {
 
   late final ChatOpenAI _model;
   late final ChatPromptTemplate _promptTemplate;
-  late final StringOutputParser _outputParser;
+  late final JsonOutputParser _outputParser;
   late final LLMChain _chain;
 
   GptService._internal() {
@@ -30,7 +31,7 @@ class GptService {
       apiKey: apiKey,
       defaultOptions: const ChatOpenAIOptions(
         temperature: 0.7,
-        model: 'gpt-4o-mini',
+        model: 'o3-mini', // Updated to use o3-mini as instructed
         maxTokens: 1000,
       ),
     );
@@ -75,7 +76,7 @@ class GptService {
         * "fadeInRange": [start, end] for label fade-in.
         * "handwritten": true makes it write out handwritten chars instead of plaintext. Helpful for learning, but bigger size. (35 x 20, h x w)
     * Context Awareness:
-        * Ensure label positions do not overlap with shapes or each other. Place them near the relevant shape but with enough spacing to be visually pleasing.
+        * Ensure label positions do not overlap with shapes or lines. Place them near the relevant shape but with enough spacing to be visually pleasing.
         * If a shape extends to x=200,y=250, position the label in a clear spot that does not intersect lines or corners.
         * If you have multiple shapes, ensure each shape has enough space in the 320×568 area.
         * If a shape is near the bottom of the screen, do not place the label below 568.
@@ -165,31 +166,57 @@ Now produce the JSON instructions that depict the concept of YOUR_TOPIC_HERE in 
     ]);
     debugPrint('[GPTService] Prompt template configured');
 
-    _outputParser = const StringOutputParser();
+    // Updated output parser to use structured outputs (JSON)
+    _outputParser = const JsonOutputParser();
     debugPrint('[GPTService] Output parser configured');
 
     _chain = LLMChain(
       prompt: _promptTemplate,
       llm: _model,
-      outputParser: _outputParser,
     );
     debugPrint('[GPTService] LLM chain configured');
     debugPrint('[GPTService] Initialization complete');
   }
 
-  Future<String> sendPrompt(String topic) async {
+  Future<Map<String, dynamic>> sendPrompt(String topic) async {
     debugPrint('[GPTService] Sending prompt for topic: $topic');
     try {
       debugPrint('[GPTService] Running LLM chain...');
       final response = await _chain.run({'topic': topic});
       debugPrint('[GPTService] Successfully received response');
-      debugPrint('[GPTService] Response length: ${response.length} characters');
-      return response;
+      debugPrint(
+          '[GPTService] Response length: ${response.toString().length} characters');
+
+      // Parse the response into a Map
+      return JsonOutputParser().parse(response);
     } catch (e, stackTrace) {
       debugPrint('[GPTService] ERROR: Failed to generate response');
       debugPrint('[GPTService] Error details: $e');
       debugPrint('[GPTService] Stack trace: $stackTrace');
       throw Exception('Error generating response: $e');
     }
+  }
+}
+
+// Custom parser to handle JSON responses
+class JsonOutputParser {
+  const JsonOutputParser();
+
+  Map<String, dynamic> parse(String text) {
+    try {
+      // Find the first opening brace to ensure we capture the JSON object
+      final startIndex = text.indexOf('{');
+      if (startIndex == -1) {
+        throw Exception('No JSON object found in response');
+      }
+      final jsonString = text.substring(startIndex);
+      return jsonDecode(jsonString) as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('Failed to parse JSON: $e');
+    }
+  }
+
+  String getFormatInstructions() {
+    return 'Output must be a valid JSON object.';
   }
 }

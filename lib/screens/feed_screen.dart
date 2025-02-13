@@ -266,31 +266,10 @@ class _FeedScreenState extends State<FeedScreen>
 
     try {
       print('[CreateVideo] Calling GPT service...');
-      final String response = await _gptService.sendPrompt(prompt);
+      final Map<String, dynamic> videoJson =
+          await _gptService.sendPrompt(topic);
       print('[CreateVideo] Received response from GPT service');
-      print('[CreateVideo] Raw response: $response');
-
-      // Extract JSON substring (from the first '{' to the last '}')
-      final int start = response.indexOf('{');
-      final int end = response.lastIndexOf('}') + 1;
-      if (start == -1 || end == -1 || start >= end) {
-        print('[CreateVideo] ERROR: Invalid JSON format in response');
-        throw Exception("Invalid response format");
-      }
-      final String jsonStr = response.substring(start, end);
-      print('[CreateVideo] Extracted JSON string: $jsonStr');
-
-      Map<String, dynamic> videoJson;
-      try {
-        videoJson = json.decode(jsonStr);
-        print(
-            '[CreateVideo] Successfully parsed JSON. Keys: ${videoJson.keys.join(', ')}');
-        print('[CreateVideo] Full parsed JSON: $videoJson');
-      } catch (e) {
-        print('[CreateVideo] ERROR: Failed to parse JSON: $e');
-        print('[CreateVideo] Problematic JSON string: $jsonStr');
-        rethrow;
-      }
+      print('[CreateVideo] Response data: $videoJson');
 
       // Create a new video entry using default values (similar to sampleVideos)
       print('[CreateVideo] Creating VideoFeed object');
