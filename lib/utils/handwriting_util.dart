@@ -10,7 +10,7 @@ List<DrawingCommand> generateHandwrittenCommands(
   double y = startOffset.dy;
   List<DrawingCommand> commands = [];
 
-  for (var char in text.split('')) {
+  for (var char in text.toLowerCase().split('')) {
     // Check if the character is a multi-digit number
     if (RegExp(r'\d+').hasMatch(char) && char.length > 1) {
       // Handle multi-digit numbers by processing each digit separately

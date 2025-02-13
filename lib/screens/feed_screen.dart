@@ -177,7 +177,15 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
                       right: 16,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Handle button tap to create a new video.
+                          print('[VideoFeed] Create new video button clicked');
+                          _FeedScreenState? feedScreenState = context
+                              .findAncestorStateOfType<_FeedScreenState>();
+                          if (feedScreenState != null) {
+                            feedScreenState._handleCreateNewVideo();
+                          } else {
+                            print(
+                                '[VideoFeed] ERROR: Could not find FeedScreenState');
+                          }
                         },
                         child: const Text('Create new video?'),
                       ),
@@ -198,6 +206,7 @@ class _FeedScreenState extends State<FeedScreen>
     with SingleTickerProviderStateMixin {
   final FirestoreService _firestoreService = FirestoreService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _gptService = GptService();
   String? _selectedLearningPath;
   StreamSubscription? _pathSubscription;
   late AnimationController _animationController;
@@ -238,34 +247,57 @@ class _FeedScreenState extends State<FeedScreen>
   }
 
   Future<void> _handleCreateNewVideo() async {
+    print('[CreateVideo] Starting video creation process');
+
     // Capture current topic
     final String? topic = _selectedLearningPath;
-    if (topic == null) return;
+    if (topic == null) {
+      print('[CreateVideo] ERROR: No topic selected');
+      return;
+    }
+    print('[CreateVideo] Creating video for topic: $topic');
 
     // Compose the prompt (instructions should ideally be loaded from instructions.md)
     const String instructions = "REPLACE WITH CONTENTS OF instructions.md";
     final String prompt = "your topic is: $topic\n\n"
         "create a 15-25 second video explaining this concept\n\n"
         "$instructions";
+    print('[CreateVideo] Generated prompt for GPT service');
 
     try {
-      // Call the GPT-4O Mini API (assumes GptService.sendPrompt exists)
-      final String response = await GptService.sendPrompt(prompt);
+      print('[CreateVideo] Calling GPT service...');
+      final String response = await _gptService.sendPrompt(prompt);
+      print('[CreateVideo] Received response from GPT service');
+      print('[CreateVideo] Raw response: $response');
 
       // Extract JSON substring (from the first '{' to the last '}')
       final int start = response.indexOf('{');
       final int end = response.lastIndexOf('}') + 1;
       if (start == -1 || end == -1 || start >= end) {
+        print('[CreateVideo] ERROR: Invalid JSON format in response');
         throw Exception("Invalid response format");
       }
       final String jsonStr = response.substring(start, end);
-      final Map<String, dynamic> videoJson = json.decode(jsonStr);
+      print('[CreateVideo] Extracted JSON string: $jsonStr');
+
+      Map<String, dynamic> videoJson;
+      try {
+        videoJson = json.decode(jsonStr);
+        print(
+            '[CreateVideo] Successfully parsed JSON. Keys: ${videoJson.keys.join(', ')}');
+        print('[CreateVideo] Full parsed JSON: $videoJson');
+      } catch (e) {
+        print('[CreateVideo] ERROR: Failed to parse JSON: $e');
+        print('[CreateVideo] Problematic JSON string: $jsonStr');
+        rethrow;
+      }
 
       // Create a new video entry using default values (similar to sampleVideos)
+      print('[CreateVideo] Creating VideoFeed object');
       final newVideo = VideoFeed(
         id: generateUniqueId(),
         title: "New AI Generated Video",
-        topicId: topic,
+        topicId: "equations",
         subject: "algebra",
         skillLevel: "beginner",
         prerequisites: [],
@@ -281,14 +313,20 @@ class _FeedScreenState extends State<FeedScreen>
         shares: 0,
         createdAt: DateTime.now(),
       );
+      print('[CreateVideo] Created VideoFeed object with ID: ${newVideo.id}');
 
       // Use FirestoreService to store the new video
+      print('[CreateVideo] Storing video in Firestore...');
       await _firestoreService.createVideo(newVideo);
+      print('[CreateVideo] Successfully stored video in Firestore');
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("New video created successfully!")),
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('[CreateVideo] ERROR: Failed to create video');
+      print('[CreateVideo] Error details: $e');
+      print('[CreateVideo] Stack trace: $stackTrace');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Failed to create new video: $e")),
       );

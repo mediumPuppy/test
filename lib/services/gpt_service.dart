@@ -1,28 +1,42 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:langchain/langchain.dart';
 import 'package:langchain_openai/langchain_openai.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 
 class GptService {
-  static String? get _apiKey => dotenv.env['OPENAI_API_KEY'];
-  static late final ChatOpenAI _model;
-  static late final ChatPromptTemplate _promptTemplate;
-  static late final StringOutputParser _outputParser;
-  static late final LLMChain _chain;
+  static final GptService _instance = GptService._internal();
+  factory GptService() => _instance;
 
-  static void initialize() {
-    if (_apiKey == null) {
+  late final ChatOpenAI _model;
+  late final ChatPromptTemplate _promptTemplate;
+  late final StringOutputParser _outputParser;
+  late final LLMChain _chain;
+
+  GptService._internal() {
+    _initialize();
+  }
+
+  void _initialize() {
+    debugPrint('[GPTService] Initializing service...');
+    final apiKey = dotenv.env['OPENAI_API_KEY'];
+    if (apiKey == null) {
+      debugPrint(
+          '[GPTService] ERROR: OpenAI API key not found in environment variables');
       throw Exception('OpenAI API key not found in environment variables');
     }
 
+    debugPrint('[GPTService] Setting up OpenAI model...');
     _model = ChatOpenAI(
-      apiKey: _apiKey!,
+      apiKey: apiKey,
       defaultOptions: const ChatOpenAIOptions(
         temperature: 0.7,
         model: 'gpt-4o-mini',
         maxTokens: 1000,
       ),
     );
+    debugPrint('[GPTService] OpenAI model configured');
 
+    debugPrint('[GPTService] Setting up prompt template...');
     _promptTemplate = ChatPromptTemplate.fromTemplates([
       (
         ChatMessageType.system,
@@ -47,15 +61,16 @@ class GptService {
 5. Drawing Elements Inside "drawing", include two arrays: "shapes" and "labels".
     * shapes
         * "id": Must match a stage in the "timing".
-        * "vertices": List of { "x": _, "y": _ } points (optional but encouraged for clarity).
+        * "vertices": List of {{ "x": _, "y": _ }} points (optional but encouraged for clarity).
         * "path": The hand-drawn path instructions. For example: "moveTo(50, 20) lineTo(20, 80) lineTo(80, 80) lineTo(50, 20)", arcTo(centerX, centerY, width, height, startAngle, sweepAngle, forceMoveTo) (centerX, centerY: center point of arc, width, height: dimensions of bounding box, startAngle: start angle in radians (0 = right), sweepAngle: angle to draw (6.28 = full circle), ForceMoveTo: true to prevent connecting line)
         * "style": "stroke" or "fill".
         * "strokeWidth": A reasonable line thickness (e.g., 2–5).
         * "color": A color in hex format (e.g. "#000000").
         * "fadeInRange": [start, end] controlling when the shape fades from transparent to fully visible. Typically matches or is within the shape's drawing time.
     * labels
+        * "id": Must match a stage in the "timing" (e.g., "label_rectangle").
         * "text": The text content (for math, LaTeX in \\\$...\\\$ is allowed).
-        * "position": Where to place the label on the 320×568 grid.
+        * "position": {{ "x":..., "y":... }}
         * "color": The label color (hex).
         * "fadeInRange": [start, end] for label fade-in.
         * "handwritten": true makes it write out handwritten chars instead of plaintext. Helpful for learning, but bigger size. (35 x 20, h x w)
@@ -68,7 +83,7 @@ class GptService {
         * Place rectangle labels near edges or corners but offset so it's not overlapped by lines.
 6. Speech Under "speech", include:
     * "script": A concise narration explaining the concept.
-    * "pacing": An object with "initialDelay", "betweenStages", "finalDelay" in seconds.
+    * "pacing": {{ "initialDelay": ..., "betweenStages": ..., "finalDelay": ... }}
 7. Topic-Specific
     * The final JSON must illustrate a particular topic (replace "YOUR_TOPIC_HERE" with something else). For example, "basics of geometry," "pythagorean theorem," "circle theorems," etc.
     * The shapes, labels, and text must be thematically relevant (e.g., lines, angles, polygons for geometry basics).
@@ -80,23 +95,23 @@ You are an AI that outputs a single JSON object with instructions for Flutter's 
 
 ===IMPORTANT REQUIREMENTS===
 1) The JSON must have this structure:
-{
-  "instructions": {
+{{
+  "instructions": {{
     "timing": [...],
-    "drawing": {
+    "drawing": {{
       "shapes": [...],
       "labels": [...]
-    },
-    "speech": {
+    }},
+    "speech": {{
       "script": "...",
-      "pacing": {
+      "pacing": {{
         "initialDelay": ...,
         "betweenStages": ...,
         "finalDelay": ...
-      }
-    }
-  }
-}
+      }}
+    }}
+  }}
+}}
 
 2) Under "timing", produce drawing stages that do NOT overlap and are logically ordered, each with "stage", "startTime", "endTime", "description", and optional "easing".
 
@@ -112,7 +127,7 @@ You are an AI that outputs a single JSON object with instructions for Flutter's 
 4) Under "drawing.labels", each label has:
    - "id" (matching a stage if relevant)
    - "text"
-   - "position" { "x":..., "y":... }
+   - "position" {{ "x":..., "y":... }}
    - "color" (hex)
    - "fadeInRange" [start, end]
    - "handwritten" true
@@ -148,21 +163,32 @@ Now produce the JSON instructions that depict the concept of YOUR_TOPIC_HERE in 
         'your topic is: {topic}\n\ncreate a 15-25 second video explaining this concept'
       ),
     ]);
+    debugPrint('[GPTService] Prompt template configured');
 
     _outputParser = const StringOutputParser();
+    debugPrint('[GPTService] Output parser configured');
 
     _chain = LLMChain(
       prompt: _promptTemplate,
       llm: _model,
       outputParser: _outputParser,
     );
+    debugPrint('[GPTService] LLM chain configured');
+    debugPrint('[GPTService] Initialization complete');
   }
 
-  static Future<String> sendPrompt(String topic) async {
+  Future<String> sendPrompt(String topic) async {
+    debugPrint('[GPTService] Sending prompt for topic: $topic');
     try {
+      debugPrint('[GPTService] Running LLM chain...');
       final response = await _chain.run({'topic': topic});
+      debugPrint('[GPTService] Successfully received response');
+      debugPrint('[GPTService] Response length: ${response.length} characters');
       return response;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[GPTService] ERROR: Failed to generate response');
+      debugPrint('[GPTService] Error details: $e');
+      debugPrint('[GPTService] Stack trace: $stackTrace');
       throw Exception('Error generating response: $e');
     }
   }
