@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import '../models/video_feed.dart';
 import '../services/firestore_service.dart';
@@ -7,13 +6,9 @@ import '../services/topic_progress_service.dart';
 import 'action_bar.dart';
 import '../screens/ai_explanation_screen.dart';
 import '../controllers/json_video_controller.dart';
-import 'dart:convert';
 import '../widgets/geometry_drawing_painter.dart';
 import '../models/drawing_spec_models.dart';
 import '../utils/handwriting_util.dart';
-import '../services/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart' show User;
-import 'geometry_drawing_painter.dart';
 
 class VideoFeedItem extends StatefulWidget {
   final int index;
@@ -49,8 +44,6 @@ class _VideoFeedItemState extends State<VideoFeedItem>
   @override
   void initState() {
     super.initState();
-    print(
-        'VideoFeedItem: Initializing JSON video controller for video id: ${widget.feed.id}');
     _jsonController = JsonVideoController(videoJson: widget.feed.videoJson);
     _initializeJsonVideo();
     _innerScrollController = ScrollController();
@@ -87,22 +80,6 @@ class _VideoFeedItemState extends State<VideoFeedItem>
 
     setState(() {
       _isInitialized = _jsonController.isInitialized;
-    });
-  }
-
-  void _showTransitionScreen() {
-    print('Starting transition screen with whiteboard');
-    setState(() {
-      _showTransition = true;
-    });
-    Future.delayed(const Duration(seconds: 10), () {
-      print('Transition complete');
-      if (mounted) {
-        setState(() {
-          _showTransition = false;
-        });
-        // Optionally, resume playback here if needed.
-      }
     });
   }
 
