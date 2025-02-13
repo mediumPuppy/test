@@ -162,6 +162,7 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
                 index: index,
                 feed: video,
                 onShare: () {},
+                pageController: _pageController,
               );
             } catch (e) {
               return const SizedBox.shrink(); // Skip invalid videos

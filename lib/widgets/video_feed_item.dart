@@ -15,12 +15,14 @@ class VideoFeedItem extends StatefulWidget {
   final int index;
   final VideoFeed feed;
   final VoidCallback onShare;
+  final PageController pageController;
 
   const VideoFeedItem({
     super.key,
     required this.index,
     required this.feed,
     required this.onShare,
+    required this.pageController,
   });
 
   @override
@@ -33,6 +35,10 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
   late JsonVideoController _jsonController;
   bool _isInitialized = false;
   bool _showTransition = false;
+  late ScrollController _innerScrollController;
+  bool _hasTriggeredPageTurn = false;
+  static const double _scrollThreshold = 100.0;
+  double _overscrollAmount = 0.0;
 
   @override
   void initState() {
@@ -40,9 +46,37 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
     print(
         'VideoFeedItem: Initializing JSON video controller for video id: ${widget.feed.id}');
     _initializeJsonVideo();
-    _positionSubscription = _progressService.positionStream.listen((position) {
-      if (mounted) setState(() {});
-    });
+    _innerScrollController = ScrollController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Set up the subscription here
+    _setupSubscription();
+  }
+
+  void _setupSubscription() {
+    // Cancel any existing subscription first
+    _positionSubscription?.cancel();
+
+    // Only set up new subscription if widget is mounted
+    if (mounted) {
+      _positionSubscription = _progressService.positionStream.listen(
+        (position) {
+          // Check mounted state before calling setState
+          if (mounted) {
+            setState(() {});
+          }
+        },
+        // Add error handling
+        onError: (error) {
+          print('Error in position stream: $error');
+        },
+        // Cancel subscription when stream is done
+        cancelOnError: true,
+      );
+    }
   }
 
   Future<void> _initializeJsonVideo() async {
@@ -90,8 +124,10 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
 
   @override
   void dispose() {
-    _jsonController.dispose();
+    // Cancel subscription first
     _positionSubscription?.cancel();
+    _jsonController.dispose();
+    _innerScrollController.dispose();
     super.dispose();
   }
 
@@ -115,36 +151,70 @@ class _VideoFeedItemState extends State<VideoFeedItem> {
                     child: Center(
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
-                        child: SingleChildScrollView(
-                          physics: const NeverScrollableScrollPhysics(),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Playing JSON Video:',
-                                style: TextStyle(
-                                    color: Colors.white, fontSize: 18),
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                JsonEncoder.withIndent('  ')
-                                    .convert(widget.feed.videoJson),
-                                style: const TextStyle(
-                                    color: Colors.white, fontSize: 16),
-                              ),
-                              const SizedBox(height: 16),
-                              LinearProgressIndicator(
-                                value: progressValue,
-                                backgroundColor: Colors.grey[700],
-                                valueColor: const AlwaysStoppedAnimation<Color>(
-                                    Colors.blueAccent),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '${_jsonController.position.inSeconds}s / ${_jsonController.duration.inSeconds}s',
-                                style: const TextStyle(color: Colors.white),
-                              )
-                            ],
+                        child: NotificationListener<ScrollNotification>(
+                          onNotification: (notification) {
+                            if (notification is OverscrollNotification &&
+                                notification.overscroll < 0 &&
+                                _innerScrollController.position.pixels <=
+                                    _innerScrollController
+                                        .position.minScrollExtent) {
+                              if (!_hasTriggeredPageTurn) {
+                                _hasTriggeredPageTurn = true;
+                                widget.pageController.previousPage(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.ease,
+                                );
+                              }
+                            } else if (notification is OverscrollNotification &&
+                                notification.overscroll > 0 &&
+                                _innerScrollController.position.pixels >=
+                                    _innerScrollController
+                                        .position.maxScrollExtent) {
+                              if (!_hasTriggeredPageTurn) {
+                                _hasTriggeredPageTurn = true;
+                                widget.pageController.nextPage(
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.ease,
+                                );
+                              }
+                            } else if (notification is ScrollEndNotification) {
+                              _hasTriggeredPageTurn = false;
+                            }
+                            return false;
+                          },
+                          child: SingleChildScrollView(
+                            controller: _innerScrollController,
+                            physics: const ClampingScrollPhysics(),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Playing JSON Video:',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 18),
+                                ),
+                                const SizedBox(height: 16),
+                                Text(
+                                  JsonEncoder.withIndent('  ')
+                                      .convert(widget.feed.videoJson),
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 16),
+                                ),
+                                const SizedBox(height: 16),
+                                LinearProgressIndicator(
+                                  value: progressValue,
+                                  backgroundColor: Colors.grey[700],
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                          Colors.blueAccent),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${_jsonController.position.inSeconds}s / ${_jsonController.duration.inSeconds}s',
+                                  style: const TextStyle(color: Colors.white),
+                                )
+                              ],
+                            ),
                           ),
                         ),
                       ),
