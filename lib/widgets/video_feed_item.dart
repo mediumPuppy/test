@@ -59,7 +59,13 @@ class _VideoFeedItemState extends State<VideoFeedItem>
           seconds:
               widget.feed.videoJson['instructions']['timing'].last['endTime']),
     );
-    _animationController.forward();
+
+    // Add delay before starting animation
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        _animationController.forward();
+      }
+    });
   }
 
   @override
