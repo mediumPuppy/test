@@ -9,6 +9,7 @@ import '../controllers/json_video_controller.dart';
 import '../widgets/geometry_drawing_painter.dart';
 import '../models/drawing_spec_models.dart';
 import '../utils/handwriting_util.dart';
+import '../services/speech_service.dart';
 
 class VideoFeedItem extends StatefulWidget {
   final int index;
@@ -31,6 +32,7 @@ class VideoFeedItem extends StatefulWidget {
 class _VideoFeedItemState extends State<VideoFeedItem>
     with SingleTickerProviderStateMixin {
   final _progressService = TopicProgressService();
+  final SpeechService _speechService = SpeechService();
   StreamSubscription? _positionSubscription;
   late JsonVideoController _jsonController;
   bool _isInitialized = false;
@@ -40,6 +42,7 @@ class _VideoFeedItemState extends State<VideoFeedItem>
   static const double _scrollThreshold = 100.0;
   double _overscrollAmount = 0.0;
   late AnimationController _animationController;
+  bool _isSpeaking = false;
 
   @override
   void initState() {
@@ -55,10 +58,11 @@ class _VideoFeedItemState extends State<VideoFeedItem>
               .round()),
     );
 
-    // Add delay before starting animation
+    // Add delay before starting animation and speech
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         _animationController.forward();
+        _startSpeech();
       }
     });
   }
@@ -103,8 +107,23 @@ class _VideoFeedItemState extends State<VideoFeedItem>
   void _togglePlayPause() {
     if (_animationController.isAnimating) {
       _animationController.stop();
+      _speechService.stop();
+      _isSpeaking = false;
     } else {
       _animationController.forward(from: _animationController.value);
+      if (!_isSpeaking) {
+        _startSpeech();
+      }
+    }
+  }
+
+  void _startSpeech() async {
+    final script =
+        widget.feed.videoJson['instructions']['speech']['script'] as String;
+    if (script.isNotEmpty) {
+      _isSpeaking = true;
+      await _speechService.speak(script);
+      _isSpeaking = false;
     }
   }
 
@@ -292,6 +311,7 @@ class _VideoFeedItemState extends State<VideoFeedItem>
     _jsonController.dispose();
     _innerScrollController.dispose();
     _animationController.dispose();
+    _speechService.dispose();
     super.dispose();
   }
 }
