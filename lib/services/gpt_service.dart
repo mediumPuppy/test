@@ -1,7 +1,6 @@
 import 'dart:convert'; // Needed for JSON parsing
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dart_openai/dart_openai.dart';
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http; // Added for Gemini REST calls
 
 // Simple model to handle chat responses
@@ -34,38 +33,104 @@ class GptService {
   }
 
   void _initialize() {
-    debugPrint('[GPTService] Initializing service...');
     if (_provider == 'openai') {
       final apiKey = dotenv.env['OPENAI_API_KEY'];
       if (apiKey == null) {
-        debugPrint(
-            '[GPTService] ERROR: OpenAI API key not found in environment variables');
         throw Exception('OpenAI API key not found in environment variables');
       }
 
-      debugPrint('[GPTService] Setting up OpenAI configuration...');
       OpenAI.apiKey = apiKey;
-      debugPrint('[GPTService] OpenAI configured');
     } else if (_provider == 'gemini') {
       final geminiKey = dotenv.env['GEMINI_API_KEY'];
       if (geminiKey == null) {
-        debugPrint(
-            '[GPTService] ERROR: Gemini API key not found in environment variables');
         throw Exception('Gemini API key not found in environment variables');
       }
       _geminiApiKey = geminiKey;
       _geminiEndpoint = dotenv.env['GEMINI_ENDPOINT'] ??
           'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'; // Gemini API endpoint
-      debugPrint(
-          '[GPTService] Gemini configured with endpoint $_geminiEndpoint');
+    }
+  }
+
+  Future<Map<String, dynamic>> _getLayoutDescription(String prompt) async {
+    try {
+      if (_provider == 'openai') {
+        final response = await OpenAI.instance.chat.create(
+          model: 'gpt-4o-mini',
+          messages: [
+            OpenAIChatCompletionChoiceMessageModel(
+              role: OpenAIChatMessageRole.system,
+              content: [
+                OpenAIChatCompletionChoiceMessageContentItemModel.text(prompt),
+              ],
+            ),
+          ],
+          temperature: 0.7,
+          maxTokens: 500,
+        );
+        final jsonStr =
+            response.choices.first.message.content?.firstOrNull?.text?.trim() ??
+                '{}';
+        return jsonDecode(jsonStr) as Map<String, dynamic>;
+      } else if (_provider == 'gemini') {
+        final payload = {
+          "contents": [
+            {
+              "parts": [
+                {"text": prompt}
+              ]
+            }
+          ]
+        };
+
+        final uri = Uri.parse(_geminiEndpoint)
+            .replace(queryParameters: {"key": _geminiApiKey});
+        final geminiResponse = await http.post(
+          uri,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(payload),
+        );
+
+        if (geminiResponse.statusCode != 200) {
+          throw Exception(
+              'Gemini API call failed with status: ${geminiResponse.statusCode}');
+        }
+
+        Map<String, dynamic> respJson = jsonDecode(geminiResponse.body);
+        var rawText = respJson['candidates'][0]['content']['parts'][0]['text']
+                ?.toString()
+                .trim() ??
+            '{}';
+        rawText =
+            rawText.replaceAll('```json', '').replaceAll('```', '').trim();
+        return jsonDecode(rawText) as Map<String, dynamic>;
+      } else {
+        throw Exception('Unsupported AI provider: $_provider');
+      }
+    } catch (e) {
+      throw Exception('Error generating layout description: $e');
     }
   }
 
   Future<Map<String, dynamic>> sendPrompt(String topic) async {
-    debugPrint('[GPTService] Sending prompt for topic: $topic');
     try {
-      // DO NOT MODIFY THE PROMPT BELOW
-      final prompt = '''Your topic is $topic
+      // First, get the layout description
+      final layoutPrompt =
+          '''You are helping us pre-generate the exact shape arrangement and teaching content for a CustomPainter-based math video lesson.
+
+Topic: $topic
+
+Return a concise description of the final drawing we want and the teaching script. Include:
+1. The concept/topic description
+2. List of shapes with approximate coordinates, colors, and labeling ideas
+3. 2-3 sentence teaching script summary
+
+Output as a simple JSON with "layoutDescription" and "teachingFocus" fields only. No additional text or commentary.''';
+
+      final layoutDescription = await _getLayoutDescription(layoutPrompt);
+
+      // Now use the layout description for the main drawing prompt
+      final drawingPrompt =
+          '''Your topic is ${layoutDescription['layoutDescription']}
 
 You are an AI that generates perfect JSON output (with no additional text or explanations) to instruct Flutter's CustomPainter on how to draw and label mathematical concepts in a context-aware manner. Follow these rules precisely:
 1. JSON-Only Output Your response must be a single, valid JSON object. It must contain no extra text, commentary, or Markdown formatting. Do not wrap it in triple backticks, do not provide any explanation—only the JSON.
@@ -185,7 +250,6 @@ You are an AI that outputs a single JSON object with instructions for Flutter's 
 
 Now produce the JSON instructions that depict the concept of YOUR_TOPIC_HERE in a hand-drawn style, ensuring each shape is drawn progressively, labeled clearly, and fully visible on the 320x568 grid.''';
 
-      debugPrint('[GPTService] Running chat completion...');
       if (_provider == 'openai') {
         final response = await OpenAI.instance.chat.create(
           model: 'gpt-4o-mini',
@@ -194,8 +258,7 @@ Now produce the JSON instructions that depict the concept of YOUR_TOPIC_HERE in 
               role: OpenAIChatMessageRole.system,
               content: [
                 OpenAIChatCompletionChoiceMessageContentItemModel.text(
-                  prompt,
-                ),
+                    drawingPrompt),
               ],
             ),
           ],
@@ -205,70 +268,43 @@ Now produce the JSON instructions that depict the concept of YOUR_TOPIC_HERE in 
         final jsonStr =
             response.choices.first.message.content?.firstOrNull?.text?.trim() ??
                 '{}';
-        debugPrint('[GPTService] Extracted JSON: ```\n$jsonStr\n```');
         return jsonDecode(jsonStr) as Map<String, dynamic>;
       } else if (_provider == 'gemini') {
-        debugPrint('[GPTService] Using Gemini provider');
-        // Build the payload as expected by Gemini (using "contents" and "parts")
         final payload = {
           "contents": [
             {
               "parts": [
-                {"text": prompt}
+                {"text": drawingPrompt}
               ]
             }
           ]
         };
 
-        // Append the GEMINI_API_KEY as a query parameter "key" to the URL, and remove the Authorization header.
         final uri = Uri.parse(_geminiEndpoint)
             .replace(queryParameters: {"key": _geminiApiKey});
-
         final geminiResponse = await http.post(
           uri,
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: {"Content-Type": "application/json"},
           body: jsonEncode(payload),
         );
 
-        debugPrint(
-            '[GPTService] Gemini raw response: ```\n${geminiResponse.body}\n```');
         if (geminiResponse.statusCode != 200) {
-          debugPrint(
-              '[GPTService] Gemini API call failed with status: ${geminiResponse.statusCode}');
           throw Exception(
               'Gemini API call failed with status: ${geminiResponse.statusCode}');
         }
 
         Map<String, dynamic> respJson = jsonDecode(geminiResponse.body);
-        var extractedContent = '{}';
-        try {
-          // Get the raw text content
-          var rawText = respJson['candidates'][0]['content']['parts'][0]['text']
-                  ?.toString()
-                  .trim() ??
-              '{}';
-
-          // Clean up markdown formatting and code blocks
-          rawText =
-              rawText.replaceAll('```json', '').replaceAll('```', '').trim();
-
-          extractedContent = rawText;
-        } catch (e) {
-          debugPrint(
-              '[GPTService] Could not extract message content: $e. Using raw response.');
-          extractedContent = geminiResponse.body;
-        }
-        debugPrint('[GPTService] Extracted JSON: ```\n$extractedContent\n```');
-        return jsonDecode(extractedContent) as Map<String, dynamic>;
+        var rawText = respJson['candidates'][0]['content']['parts'][0]['text']
+                ?.toString()
+                .trim() ??
+            '{}';
+        rawText =
+            rawText.replaceAll('```json', '').replaceAll('```', '').trim();
+        return jsonDecode(rawText) as Map<String, dynamic>;
       } else {
         throw Exception('Unsupported AI provider: $_provider');
       }
-    } catch (e, stackTrace) {
-      debugPrint('[GPTService] ERROR: Failed to generate response');
-      debugPrint('[GPTService] Error details: $e');
-      debugPrint('[GPTService] Stack trace: $stackTrace');
+    } catch (e) {
       throw Exception('Error generating response: $e');
     }
   }
@@ -293,8 +329,8 @@ EXPLANATION:
 $script
 
 REQUIREMENTS:
-1. Title: Create a clear, specific title focusing on the mathematical concept (max 60 chars)
-2. Description: Write an engaging description explaining what will be learned (max 150 chars)
+1. Title: Create a clear, specific title focusing on the mathematical concept (max 30 chars)
+2. Description: Write an exact description explaining what will be learned (max 75 chars)
 
 Format your response as a JSON object with exactly these fields:
 {
@@ -311,7 +347,7 @@ Do not include any other text or explanation in your response.''';
             OpenAIChatCompletionChoiceMessageModel(
               role: OpenAIChatMessageRole.system,
               content: [
-                OpenAIChatCompletionChoiceMessageContentItemModel.text(prompt),
+                OpenAIChatCompletionChoiceMessageContentItemModel.text(prompt)
               ],
             ),
           ],

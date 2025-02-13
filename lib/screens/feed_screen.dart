@@ -271,22 +271,28 @@ class _FeedScreenState extends State<FeedScreen>
         const SnackBar(content: Text("Creating new video...")),
       );
 
+      // Step 1: Generate the video content
       print('[CreateVideo] Calling GPT service...');
       final Map<String, dynamic> videoJson =
           await _gptService.sendPrompt(topic);
       print('[CreateVideo] Received response from GPT service');
-      print('[CreateVideo] Response data: $videoJson');
 
-      // Create a new video entry using default values (similar to sampleVideos)
+      // Step 2: Generate title and description based on the content
+      print('[CreateVideo] Generating video metadata...');
+      final metadata = await _gptService.generateVideoMetadata(videoJson);
+      print('[CreateVideo] Generated metadata: $metadata');
+
+      // Step 3: Create video with AI-generated title/description and manually set fields
       print('[CreateVideo] Creating VideoFeed object');
       final newVideo = VideoFeed(
         id: generateUniqueId(),
-        title: "New AI Generated Video",
-        topicId: "equations",
-        subject: "algebra",
-        skillLevel: "beginner",
+        title: metadata['title']!,
+        topicId: "equations", // Manually set - should come from UI selection
+        subject: "algebra", // Manually set - should come from UI selection
+        skillLevel:
+            "beginner", // Manually set - should come from UI/system setting
         prerequisites: [],
-        description: "AI generated video for topic $topic",
+        description: metadata['description']!,
         learningPathId: _selectedLearningPath!,
         orderInPath: 0,
         estimatedMinutes: 5,
@@ -300,12 +306,12 @@ class _FeedScreenState extends State<FeedScreen>
       );
       print('[CreateVideo] Created VideoFeed object with ID: ${newVideo.id}');
 
-      // Use FirestoreService to store the new video
+      // Step 4: Save to Firestore
       print('[CreateVideo] Storing video in Firestore...');
       await _firestoreService.createVideo(newVideo);
       print('[CreateVideo] Successfully stored video in Firestore');
 
-      // Delay slightly to allow Firestore to update
+      // Allow Firestore to update
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
