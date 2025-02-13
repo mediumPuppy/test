@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import '../services/ai_explanation_service.dart';
 import '../widgets/ai_message_bubble.dart';
 import '../screens/interactive_whiteboard_screen.dart';
+import '../models/video_feed.dart';
 
 class AIExplanationScreen extends StatefulWidget {
-  final String? videoContext;
+  final VideoFeed? videoContext;
+  final Map<String, dynamic>? videoObject;
 
   const AIExplanationScreen({
     super.key,
     this.videoContext,
+    this.videoObject,
   });
 
   @override
@@ -31,29 +34,60 @@ class _AIExplanationScreenState extends State<AIExplanationScreen> {
   @override
   void initState() {
     super.initState();
-    // Comment out original initialization for testing
-    // _initializeConversation();
-
-    // TO BE DELETED LATER - Add test message
-    _messages.add({
-      'text':
-          'Here\'s the equation we\'ll solve: \$\$\\frac{2x-4}{3} = 2y^3\$\$\n\nLet\'s break this down step by step...',
-      'isUser': false,
-      'timestamp': DateTime.now(),
-    });
+    if (widget.videoObject != null) {
+      _initializeConversation();
+    } else {
+      _messages.add({
+        'text': "Ask me anything you need help understanding!",
+        'isUser': false,
+        'timestamp': DateTime.now(),
+      });
+    }
   }
 
   Future<void> _initializeConversation() async {
-    if (widget.videoContext != null && widget.videoContext!.isNotEmpty) {
+    if (widget.videoObject != null) {
       setState(() => _isLoading = true);
 
       try {
-        final response = await _aiService.generateExplanation(
-            '''For a video about "${widget.videoContext}", respond with ONLY a list of 3-4 key concepts formatted exactly as:
+        final videoMetadata = widget.videoObject!;
+        final videoJson = videoMetadata['videoJson'];
+        final contextBuilder = StringBuffer();
+
+        // Add lesson context
+        contextBuilder.writeln('Lesson Details:');
+        contextBuilder.writeln('Subject: ${videoMetadata['subject']}');
+        contextBuilder.writeln('Topic: ${videoMetadata['title']}');
+        contextBuilder.writeln('Skill Level: ${videoMetadata['skillLevel']}');
+        contextBuilder.writeln('Topic ID: ${videoMetadata['topicId']}');
+
+        // Extract from instructions object in videoJson
+        if (videoJson != null && videoJson['instructions'] != null) {
+          // Add visual descriptions from timing array
+          if (videoJson['instructions']['timing'] != null) {
+            contextBuilder.writeln('\nWhat was shown in the lesson:');
+            for (var timing in videoJson['instructions']['timing']) {
+              contextBuilder.writeln('- ${timing['description']}');
+            }
+          }
+
+          // Add narration from speech object
+          if (videoJson['instructions']['speech'] != null) {
+            contextBuilder.writeln('\nLesson Explanation:');
+            contextBuilder
+                .writeln(videoJson['instructions']['speech']['script']);
+          }
+        }
+
+        final response =
+            await _aiService.generateExplanation('''Based on this lesson:
+${contextBuilder.toString()}
+
+Please identify 3-4 key concepts that were covered, formatted as:
 A) [concept 1]
 B) [concept 2]
 C) [concept 3]
-Do not add any other text before or after the options.''');
+List only the concepts, no additional text.''');
 
         setState(() {
           _messages.add({
@@ -61,7 +95,7 @@ Do not add any other text before or after the options.''');
 
 $response
 
-Or ask me anything else about ${widget.videoContext}!''',
+Or feel free to ask any other questions about the video.''',
             'isUser': false,
             'timestamp': DateTime.now(),
           });
@@ -73,7 +107,7 @@ Or ask me anything else about ${widget.videoContext}!''',
         setState(() {
           _messages.add({
             'text':
-                'I encountered an error while preparing your options. Please feel free to ask any question about ${widget.videoContext}.',
+                'I encountered an error preparing the lesson summary. Feel free to ask any questions about what you saw, and I\'ll do my best to help!',
             'isUser': false,
             'timestamp': DateTime.now(),
             'isError': true,
@@ -118,7 +152,7 @@ Or ask me anything else about ${widget.videoContext}!''',
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-              'You\'ve reached the maximum number of messages. Starting a new conversation.'),
+              'You\'ve reached the maximum number of questions. Starting a new conversation.'),
           duration: Duration(seconds: 3),
         ),
       );
@@ -146,14 +180,44 @@ Or ask me anything else about ${widget.videoContext}!''',
 
     try {
       _updateConversationContext();
-      final prompt =
-          '''Context: This is a math tutoring session about "${widget.videoContext}".
-Previous conversation:
-$_conversationContext
 
-Student's question: $message
+      // Build enhanced prompt with lesson context
+      final videoMetadata = widget.videoObject;
+      final contextBuilder = StringBuffer();
 
-Provide a clear, helpful explanation that builds on our previous conversation. Remember to be encouraging and break down complex concepts.''';
+      if (videoMetadata != null) {
+        contextBuilder.writeln(
+            'This is a ${videoMetadata['skillLevel']} level lesson about "${videoMetadata['title']}" in ${videoMetadata['subject']}.');
+
+        // Add visual descriptions from timing array
+        if (videoMetadata['videoJson']?['instructions']?['timing'] != null) {
+          contextBuilder.writeln('\nThe lesson showed:');
+          for (var timing in videoMetadata['videoJson']['instructions']
+              ['timing']) {
+            contextBuilder.writeln('- ${timing['description']}');
+          }
+        }
+
+        // Add narration
+        if (videoMetadata['videoJson']?['instructions']?['speech']?['script'] !=
+            null) {
+          contextBuilder.writeln('\nThe explanation given was:');
+          contextBuilder.writeln(
+              videoMetadata['videoJson']['instructions']['speech']['script']);
+        }
+      }
+
+      contextBuilder.writeln('\nPrevious conversation:');
+      contextBuilder.writeln(_conversationContext);
+
+      final prompt = '''VIDEO CONTEXT:
+${contextBuilder.toString()}
+
+STUDENT QUESTION:
+$message
+
+INSTRUCTIONS:
+Provide a clear, helpful explanation that builds on the video content shown above. Reference specific visual examples or explanations from the video when relevant.''';
 
       final response = await _aiService.generateExplanation(prompt);
       setState(() {

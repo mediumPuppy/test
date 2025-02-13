@@ -93,7 +93,8 @@ class _VideoFeedItemState extends State<VideoFeedItem>
       context,
       MaterialPageRoute(
         builder: (context) => AIExplanationScreen(
-          videoContext: widget.feed.description,
+          videoContext: widget.feed,
+          videoObject: widget.feed.toJson(),
         ),
       ),
     );

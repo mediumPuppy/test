@@ -77,4 +77,29 @@ class VideoFeed {
       videoJson: data['videoJson'] ?? {},
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'videoUrl': videoUrl,
+      'creatorId': creatorId,
+      'description': description,
+      'likes': likes,
+      'shares': shares,
+      'createdAt': createdAt.toIso8601String(),
+      'learningPathId': learningPathId,
+      'orderInPath': orderInPath,
+      'title': title,
+      'topicId': topicId,
+      'subject': subject,
+      'skillLevel': skillLevel,
+      'prerequisites': prerequisites,
+      'topics': topics,
+      'estimatedMinutes': estimatedMinutes,
+      'hasQuiz': hasQuiz,
+      'progress': progress,
+      'isCompleted': isCompleted,
+      'videoJson': videoJson,
+    };
+  }
 }

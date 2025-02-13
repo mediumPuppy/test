@@ -272,6 +272,111 @@ Now produce the JSON instructions that depict the concept of YOUR_TOPIC_HERE in 
       throw Exception('Error generating response: $e');
     }
   }
+
+  Future<Map<String, String>> generateVideoMetadata(
+      Map<String, dynamic> videoJson) async {
+    try {
+      final instructions = videoJson['instructions'];
+      final script = instructions['speech']['script'] as String;
+      final timingDescriptions = (instructions['timing'] as List)
+          .map((t) => t['description'] as String)
+          .join('\n');
+
+      final prompt =
+          '''Analyze this math lesson content and generate a title and description.
+The content includes:
+
+VISUAL STEPS:
+$timingDescriptions
+
+EXPLANATION:
+$script
+
+REQUIREMENTS:
+1. Title: Create a clear, specific title focusing on the mathematical concept (max 60 chars)
+2. Description: Write an engaging description explaining what will be learned (max 150 chars)
+
+Format your response as a JSON object with exactly these fields:
+{
+  "title": "Your Title Here",
+  "description": "Your Description Here"
+}
+
+Do not include any other text or explanation in your response.''';
+
+      if (_provider == 'openai') {
+        final response = await OpenAI.instance.chat.create(
+          model: 'gpt-4o-mini',
+          messages: [
+            OpenAIChatCompletionChoiceMessageModel(
+              role: OpenAIChatMessageRole.system,
+              content: [
+                OpenAIChatCompletionChoiceMessageContentItemModel.text(prompt),
+              ],
+            ),
+          ],
+          temperature: 0.7,
+          maxTokens: 200,
+        );
+
+        final jsonStr =
+            response.choices.first.message.content?.firstOrNull?.text?.trim() ??
+                '{}';
+        final metadata = jsonDecode(jsonStr) as Map<String, dynamic>;
+        return {
+          'title': metadata['title'] as String? ?? 'Math Lesson',
+          'description': metadata['description'] as String? ??
+              'Learn an important mathematical concept.',
+        };
+      } else if (_provider == 'gemini') {
+        final payload = {
+          "contents": [
+            {
+              "parts": [
+                {"text": prompt}
+              ]
+            }
+          ]
+        };
+
+        final uri = Uri.parse(_geminiEndpoint)
+            .replace(queryParameters: {"key": _geminiApiKey});
+        final geminiResponse = await http.post(
+          uri,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(payload),
+        );
+
+        if (geminiResponse.statusCode != 200) {
+          throw Exception(
+              'Gemini API call failed with status: ${geminiResponse.statusCode}');
+        }
+
+        Map<String, dynamic> respJson = jsonDecode(geminiResponse.body);
+        var rawText = respJson['candidates'][0]['content']['parts'][0]['text']
+                ?.toString()
+                .trim() ??
+            '{}';
+        rawText =
+            rawText.replaceAll('```json', '').replaceAll('```', '').trim();
+
+        final metadata = jsonDecode(rawText) as Map<String, dynamic>;
+        return {
+          'title': metadata['title'] as String? ?? 'Math Lesson',
+          'description': metadata['description'] as String? ??
+              'Learn an important mathematical concept.',
+        };
+      } else {
+        throw Exception('Unsupported AI provider: $_provider');
+      }
+    } catch (e) {
+      // Return default values if metadata generation fails
+      return {
+        'title': 'Math Lesson',
+        'description': 'Learn an important mathematical concept.',
+      };
+    }
+  }
 }
 
 // Custom parser to handle JSON responses
