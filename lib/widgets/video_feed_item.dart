@@ -114,186 +114,205 @@ class _VideoFeedItemState extends State<VideoFeedItem>
     );
   }
 
+  void _togglePlayPause() {
+    if (_animationController.isAnimating) {
+      _animationController.stop();
+    } else {
+      _animationController.forward(from: _animationController.value);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final firestoreService = FirestoreService();
 
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        _isInitialized
-            ? AnimatedBuilder(
-                animation: _animationController,
-                builder: (context, child) {
-                  final currentTime = _animationController.value *
-                      widget.feed.videoJson['instructions']['timing']
-                          .last['endTime']
-                          .toDouble();
+    return GestureDetector(
+      onTap: _togglePlayPause,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _isInitialized
+              ? AnimatedBuilder(
+                  animation: _animationController,
+                  builder: (context, child) {
+                    final currentTime = _animationController.value *
+                        widget.feed.videoJson['instructions']['timing']
+                            .last['endTime']
+                            .toDouble();
 
-                  return Container(
-                    color: Colors.white,
-                    child: NotificationListener<ScrollNotification>(
-                      onNotification: (notification) {
-                        if (notification is ScrollUpdateNotification) {
-                          if (_innerScrollController.position.pixels >=
-                                  _innerScrollController
-                                      .position.maxScrollExtent &&
-                              notification.metrics.pixels >=
-                                  notification.metrics.maxScrollExtent) {
-                            _overscrollAmount += notification.scrollDelta ?? 0;
-                          } else if (_innerScrollController.position.pixels <=
-                                  _innerScrollController
-                                      .position.minScrollExtent &&
-                              notification.metrics.pixels <=
-                                  notification.metrics.minScrollExtent) {
-                            _overscrollAmount += notification.scrollDelta ?? 0;
-                          } else {
-                            _overscrollAmount = 0;
-                          }
-
-                          if (_overscrollAmount.abs() >= _scrollThreshold &&
-                              !_hasTriggeredPageTurn) {
-                            _hasTriggeredPageTurn = true;
-                            if (_overscrollAmount > 0) {
-                              widget.pageController.nextPage(
-                                duration: const Duration(milliseconds: 500),
-                                curve: Curves.easeOutCubic,
-                              );
+                    return Container(
+                      color: Colors.white,
+                      child: NotificationListener<ScrollNotification>(
+                        onNotification: (notification) {
+                          if (notification is ScrollUpdateNotification) {
+                            if (_innerScrollController.position.pixels >=
+                                    _innerScrollController
+                                        .position.maxScrollExtent &&
+                                notification.metrics.pixels >=
+                                    notification.metrics.maxScrollExtent) {
+                              _overscrollAmount +=
+                                  notification.scrollDelta ?? 0;
+                            } else if (_innerScrollController.position.pixels <=
+                                    _innerScrollController
+                                        .position.minScrollExtent &&
+                                notification.metrics.pixels <=
+                                    notification.metrics.minScrollExtent) {
+                              _overscrollAmount +=
+                                  notification.scrollDelta ?? 0;
                             } else {
-                              widget.pageController.previousPage(
-                                duration: const Duration(milliseconds: 500),
-                                curve: Curves.easeOutCubic,
-                              );
+                              _overscrollAmount = 0;
                             }
+
+                            if (_overscrollAmount.abs() >= _scrollThreshold &&
+                                !_hasTriggeredPageTurn) {
+                              _hasTriggeredPageTurn = true;
+                              if (_overscrollAmount > 0) {
+                                widget.pageController.nextPage(
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeOutCubic,
+                                );
+                              } else {
+                                widget.pageController.previousPage(
+                                  duration: const Duration(milliseconds: 500),
+                                  curve: Curves.easeOutCubic,
+                                );
+                              }
+                              _overscrollAmount = 0;
+                            }
+                          } else if (notification is ScrollEndNotification) {
+                            _hasTriggeredPageTurn = false;
                             _overscrollAmount = 0;
                           }
-                        } else if (notification is ScrollEndNotification) {
-                          _hasTriggeredPageTurn = false;
-                          _overscrollAmount = 0;
-                        }
-                        return false;
-                      },
-                      child: CustomPaint(
-                        painter: GeometryDrawingPainter(
-                          currentTime: currentTime,
-                          specification: GeometryDrawingSpec(
-                            stages: List<DrawingStage>.from(widget
-                                .feed.videoJson['instructions']['timing']
-                                .map((stage) => DrawingStage(
-                                      stage: stage['stage'],
-                                      startTime: (stage['startTime'] as num)
-                                          .toDouble(),
-                                      endTime:
-                                          (stage['endTime'] as num).toDouble(),
-                                      description: stage['description'],
-                                      easing: stage['easing'],
-                                    ))),
-                            shapes: List<GeometryShape>.from(widget.feed
-                                .videoJson['instructions']['drawing']['shapes']
-                                .map((shape) => GeometryShape(
-                                      id: shape['id'],
-                                      vertices: shape['vertices']
-                                              ?.map<Offset>((v) => Offset(
-                                                  (v['x'] as num).toDouble(),
-                                                  (v['y'] as num).toDouble()))
-                                              ?.toList() ??
-                                          [],
-                                      path: shape['path'],
-                                      style: shape['style'],
-                                      strokeWidth: (shape['strokeWidth'] as num)
-                                          .toDouble(),
-                                      color: _hexToColor(shape['color']),
-                                      fadeInRange:
-                                          (shape['fadeInRange'] as List)
-                                              .map<double>(
-                                                  (v) => (v as num).toDouble())
-                                              .toList(),
-                                    ))),
-                            labels: List<GeometryLabel>.from(widget.feed
-                                .videoJson['instructions']['drawing']['labels']
-                                .map((label) => GeometryLabel(
-                                      id: label['id'],
-                                      text: label['text'],
-                                      position: Offset(
-                                          (label['position']['x'] as num)
-                                              .toDouble(),
-                                          (label['position']['y'] as num)
-                                              .toDouble()),
-                                      color: _hexToColor(label['color']),
-                                      fadeInRange:
-                                          (label['fadeInRange'] as List)
-                                              .map<double>(
-                                                  (v) => (v as num).toDouble())
-                                              .toList(),
-                                      drawingCommands:
-                                          label['handwritten'] == true
-                                              ? generateHandwrittenCommands(
-                                                  label['text'],
-                                                  Offset(
-                                                      (label['position']['x']
-                                                              as num)
-                                                          .toDouble(),
-                                                      (label['position']['y']
-                                                              as num)
-                                                          .toDouble()))
-                                              : null,
-                                    ))),
-                            speechScript: widget.feed.videoJson['instructions']
-                                    ['speech']['script'] ??
-                                '',
-                            speechPacing: Map<String, double>.from((widget
-                                            .feed.videoJson['instructions']
-                                        ['speech']['pacing'] ??
-                                    {})
-                                .map((key, value) =>
-                                    MapEntry(key, (value as num).toDouble()))),
+                          return false;
+                        },
+                        child: CustomPaint(
+                          painter: GeometryDrawingPainter(
+                            currentTime: currentTime,
+                            specification: GeometryDrawingSpec(
+                              stages: List<DrawingStage>.from(widget
+                                  .feed.videoJson['instructions']['timing']
+                                  .map((stage) => DrawingStage(
+                                        stage: stage['stage'],
+                                        startTime: (stage['startTime'] as num)
+                                            .toDouble(),
+                                        endTime: (stage['endTime'] as num)
+                                            .toDouble(),
+                                        description: stage['description'],
+                                        easing: stage['easing'],
+                                      ))),
+                              shapes: List<GeometryShape>.from(widget
+                                  .feed
+                                  .videoJson['instructions']['drawing']
+                                      ['shapes']
+                                  .map((shape) => GeometryShape(
+                                        id: shape['id'],
+                                        vertices: shape['vertices']
+                                                ?.map<Offset>((v) => Offset(
+                                                    (v['x'] as num).toDouble(),
+                                                    (v['y'] as num).toDouble()))
+                                                ?.toList() ??
+                                            [],
+                                        path: shape['path'],
+                                        style: shape['style'],
+                                        strokeWidth:
+                                            (shape['strokeWidth'] as num)
+                                                .toDouble(),
+                                        color: _hexToColor(shape['color']),
+                                        fadeInRange: (shape['fadeInRange']
+                                                as List)
+                                            .map<double>(
+                                                (v) => (v as num).toDouble())
+                                            .toList(),
+                                      ))),
+                              labels: List<GeometryLabel>.from(widget
+                                  .feed
+                                  .videoJson['instructions']['drawing']
+                                      ['labels']
+                                  .map((label) => GeometryLabel(
+                                        id: label['id'],
+                                        text: label['text'],
+                                        position: Offset(
+                                            (label['position']['x'] as num)
+                                                .toDouble(),
+                                            (label['position']['y'] as num)
+                                                .toDouble()),
+                                        color: _hexToColor(label['color']),
+                                        fadeInRange: (label['fadeInRange']
+                                                as List)
+                                            .map<double>(
+                                                (v) => (v as num).toDouble())
+                                            .toList(),
+                                        drawingCommands:
+                                            label['handwritten'] == true
+                                                ? generateHandwrittenCommands(
+                                                    label['text'],
+                                                    Offset(
+                                                        (label['position']['x']
+                                                                as num)
+                                                            .toDouble(),
+                                                        (label['position']['y']
+                                                                as num)
+                                                            .toDouble()))
+                                                : null,
+                                      ))),
+                              speechScript:
+                                  widget.feed.videoJson['instructions']
+                                          ['speech']['script'] ??
+                                      '',
+                              speechPacing: Map<String, double>.from(
+                                  (widget.feed.videoJson['instructions']
+                                              ['speech']['pacing'] ??
+                                          {})
+                                      .map((key, value) => MapEntry(
+                                          key, (value as num).toDouble()))),
+                            ),
                           ),
+                          size: Size.infinite,
                         ),
-                        size: Size.infinite,
                       ),
-                    ),
-                  );
-                },
-              )
-            : Container(
-                color: Colors.white,
-                child: const Center(
-                  child: CircularProgressIndicator(),
+                    );
+                  },
+                )
+              : Container(
+                  color: Colors.white,
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
                 ),
-              ),
-        Positioned(
-          right: 16,
-          bottom: 100,
-          child: StreamBuilder<bool>(
-            stream: firestoreService.isVideoLiked(widget.feed.id),
-            builder: (context, likedSnapshot) {
-              return StreamBuilder<int>(
-                stream: firestoreService.getVideoLikesCount(widget.feed.id),
-                builder: (context, likesSnapshot) {
-                  return ActionBar(
-                    onLike: _handleLike,
-                    onShare: widget.onShare,
-                    onExplain: _handleExplain,
-                    likes: likesSnapshot.data ?? widget.feed.likes,
-                    shares: widget.feed.shares,
-                    isLiked: likedSnapshot.data ?? false,
-                    currentTopics: widget.feed.topics,
-                  );
-                },
-              );
-            },
+          Positioned(
+            right: 16,
+            bottom: 100,
+            child: StreamBuilder<bool>(
+              stream: firestoreService.isVideoLiked(widget.feed.id),
+              builder: (context, likedSnapshot) {
+                return StreamBuilder<int>(
+                  stream: firestoreService.getVideoLikesCount(widget.feed.id),
+                  builder: (context, likesSnapshot) {
+                    return ActionBar(
+                      onLike: _handleLike,
+                      onShare: widget.onShare,
+                      onExplain: _handleExplain,
+                      likes: likesSnapshot.data ?? widget.feed.likes,
+                      shares: widget.feed.shares,
+                      isLiked: likedSnapshot.data ?? false,
+                      currentTopics: widget.feed.topics,
+                    );
+                  },
+                );
+              },
+            ),
           ),
-        ),
-        Positioned(
-          left: 16,
-          right: 72,
-          bottom: 16,
-          child: Text(
-            widget.feed.description,
-            style: const TextStyle(color: Colors.black, fontSize: 16),
+          Positioned(
+            left: 16,
+            right: 72,
+            bottom: 16,
+            child: Text(
+              widget.feed.description,
+              style: const TextStyle(color: Colors.black, fontSize: 16),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
