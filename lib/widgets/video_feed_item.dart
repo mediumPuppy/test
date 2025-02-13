@@ -255,7 +255,12 @@ class _VideoFeedItemState extends State<VideoFeedItem>
                   );
                 },
               )
-            : const Center(child: CircularProgressIndicator()),
+            : Container(
+                color: Colors.white,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
         Positioned(
           right: 16,
           bottom: 100,
