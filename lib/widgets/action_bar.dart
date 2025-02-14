@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/quiz_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/quiz_service.dart';
 
 class ActionBar extends StatelessWidget {
   final VoidCallback onLike;
@@ -23,40 +21,6 @@ class ActionBar extends StatelessWidget {
     required this.currentTopics,
   });
 
-  Future<void> _triggerQuiz(BuildContext context) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    try {
-      final quizService = QuizService();
-      final quizzes = await quizService.getQuizzesForTopics(
-        topics: ['arithmetic'], // Hardcode to match the quiz in Firestore
-        limit: 1,
-      );
-
-      if (quizzes.isNotEmpty && context.mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                QuizScreen(quiz: quizzes[0], userId: user.uid),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'No quiz available at the moment. Complete more topics first!'),
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading quiz: $e')),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -68,14 +32,6 @@ class ActionBar extends StatelessWidget {
           labelStyle: const TextStyle(color: Colors.black),
           onTap: onLike,
           color: isLiked ? Colors.red : Colors.black,
-        ),
-        const SizedBox(height: 16),
-        _buildActionButton(
-          icon: Icons.quiz_outlined,
-          label: 'Quiz',
-          onTap: () => _triggerQuiz(context),
-          showCount: false,
-          color: Colors.black,
         ),
         const SizedBox(height: 16),
         _buildActionButton(
