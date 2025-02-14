@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import 'dart:convert';
 import '../data/geometry_drawing_spec.dart';
 import '../models/video_feed.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -959,5 +960,90 @@ class FirestoreService {
       'isCompleted': video.isCompleted,
       'videoJson': video.videoJson,
     });
+  }
+
+  Future<void> addCurriculumData(Map<String, dynamic> curriculumData) async {
+    try {
+      final curriculum = curriculumData['curriculum'] as List<dynamic>;
+
+      for (final yearData in curriculum) {
+        final year = yearData['year'] as String;
+        final subject = yearData['subject'] as String;
+        final introduction = yearData['introduction'] as String;
+        final criticalAreas =
+            List<String>.from(yearData['criticalAreas'] as List);
+        final learningPathId =
+            '$year-$subject'.replaceAll(' ', '-').toLowerCase();
+
+        // Create learning path document
+        await _db.collection('learning_paths').doc(learningPathId).set({
+          'id': learningPathId,
+          'year': year,
+          'subject': subject,
+          'introduction': introduction,
+          'criticalAreas': criticalAreas,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        // Add topics to the learning path
+        final strands = yearData['strands'] as List<dynamic>;
+        for (final strandData in strands) {
+          final strandName = strandData['strandName'] as String;
+          final standards = strandData['standards'] as List<dynamic>;
+          for (final standardData in standards) {
+            final standardId = standardData['id'] as String;
+            final description = standardData['description'] as String;
+            final topicId = '$learningPathId-$standardId'
+                .replaceAll(' ', '-')
+                .toLowerCase();
+
+            await _db
+                .collection('learning_paths')
+                .doc(learningPathId)
+                .collection('topics')
+                .doc(topicId)
+                .set({
+              'id': topicId,
+              'standardId': standardId,
+              'strandName': strandName,
+              'description': description,
+              'order': _getOrder(standardId), // Helper to determine order
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+          }
+        }
+      }
+
+      print('Curriculum data added successfully!');
+    } catch (e) {
+      print('Error adding curriculum data: $e');
+    }
+  }
+
+  // Helper function to determine the order of topics based on standardId
+  int _getOrder(String standardId) {
+    // Extract the numeric part of the standardId and use it as the order
+    final numericPart = int.tryParse(standardId.split('.').last) ?? 0;
+    return numericPart;
+  }
+
+  Future<void> initializeCurriculumData() async {
+    try {
+      // Check if curriculum data already exists
+      final existingPaths = await _db.collection('learning_paths').get();
+      if (existingPaths.docs.isNotEmpty) {
+        print('Curriculum data already exists');
+        return;
+      }
+
+      // Load and parse curriculum data from assets
+      final jsonString = await rootBundle.loadString('assets/curriculum.json');
+      final curriculumData = jsonDecode(jsonString);
+
+      await addCurriculumData(curriculumData);
+      print('Curriculum data initialized successfully!');
+    } catch (e) {
+      print('Error initializing curriculum data: $e');
+    }
   }
 }

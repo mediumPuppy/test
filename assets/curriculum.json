@@ -1,0 +1,1037 @@
+
+{
+  "curriculum": [
+    {
+      "year": "Kindergarten",
+      "subject": "Mathematics",
+      "introduction": "In kindergarten, instructional time should focus on two critical areas: (1) representing, relating, and operating on whole numbers, initially with sets of objects; (2) describing shapes and space. More learning time in kindergarten should be devoted to number than to other topics.",
+      "criticalAreas": [
+        "(1) Students will use numbers, including written numerals, to represent quantities and to solve quantitative problems, such as counting objects in a set; counting out a given number of objects; comparing sets or numerals; and modeling simple joining and separating situations with sets of objects, or eventually with equations such as 5 + 2 = 7 and 7 – 2 = 5. Students will choose, combine, and apply effective strategies for answering quantitative questions, including quickly recognizing the cardinalities of small sets of objects, counting and producing sets of given sizes, counting the number of objects in combined sets, or counting the number of objects that remain in a set after some are taken away.",
+        "(2) Students will describe their physical world using geometric ideas (for example, shape, orientation, spatial relations) and vocabulary. They will identify, name, and describe basic two-dimensional shapes, such as squares, triangles, circles, rectangles, and hexagons, presented in a variety of ways (for example, with different sizes and orientations), as well as three-dimensional shapes such as cubes, cones, cylinders, and spheres. They will use basic shapes and spatial reasoning to model objects in their environment and to construct more complex shapes."
+      ],
+      "strands": [
+        {
+          "strandName": "MATHEMATICAL PRACTICES (K.MP)",
+          "standards": [
+            {
+              "id": "K.MP.1",
+              "description": "Make sense of problems and persevere in solving them. Explain the meaning of a problem, look for entry points to begin work on the problem, and plan and choose a solution pathway. When a solution pathway does not make sense, look for another pathway that does. Explain connections between various solution strategies and representations. Upon finding a solution, look back at the problem to determine whether the solution is reasonable and accurate, often checking answers to problems using a different method or approach."
+            },
+            {
+              "id": "K.MP.2",
+              "description": "Reason abstractly and quantitatively. Make sense of quantities and their relationships in problem situations. Contextualize quantities and operations by using images or stories. Decontextualize a given situation and represent it symbolically. Interpret symbols as having meaning, not just as directions to carry out a procedure. Know and flexibly use different properties of operations, numbers, and geometric objects."
+            },
+            {
+              "id": "K.MP.3",
+              "description": "Construct viable arguments and critique the reasoning of others. Use stated assumptions, definitions, and previously established results to construct arguments. Explain and justify the mathematical reasoning underlying a strategy, solution, or conjecture by using concrete referents such as objects, drawings, diagrams, and actions. Listen to or read the arguments of others, decide whether they make sense, ask useful questions to clarify or improve the arguments, and build on those arguments."
+            },
+            {
+              "id": "K.MP.4",
+              "description": "Model with mathematics. Identify the mathematical elements of a situation and create a mathematical model that shows the relationships among them. Identify important quantities in a contextual situation, use mathematical models to show the relationships of those quantities, analyze the relationships, and draw conclusions. Models may be verbal, contextual, visual, symbolic, or physical."
+            },
+            {
+              "id": "K.MP.5",
+              "description": "Use appropriate tools strategically. Consider the tools that are available when solving a mathematical problem, whether in a real-world or mathematical context. Choose tools that are relevant and useful to the problem at hand, such as physical objects, drawings, diagrams, physical tools, technologies, or mathematical tools such as estimation or a particular strategy or algorithm."
+            },
+            {
+              "id": "K.MP.6",
+              "description": "Attend to precision. Communicate precisely to others by crafting careful explanations that communicate mathematical reasoning by referring specifically to each important mathematical element, describing the relationships among them, and connecting their words clearly to representations. Calculate accurately and efficiently, and use clear and concise notation to record work."
+            },
+            {
+              "id": "K.MP.7",
+              "description": "Look for and make use of structure. Recognize and apply the structures of mathematics, such as patterns, place value, the properties of operations, or the flexibility of numbers. See complicated things as single objects or as being composed of several objects."
+            },
+            {
+              "id": "K.MP.8",
+              "description": "Look for and express regularity in repeated reasoning. Notice repetitions in mathematics when solving multiple related problems. Use observations and reasoning to find shortcuts or generalizations. Evaluate the reasonableness of intermediate results."
+            }
+          ]
+        },
+        {
+          "strandName": "COUNTING AND CARDINALITY (K.CC)",
+          "standards": [
+            {
+              "id": "K.CC.1",
+              "description": "Count to 100 by ones and by tens."
+            },
+            {
+              "id": "K.CC.2",
+              "description": "Count forward beginning from a given number within the known sequence (instead of having to begin at 1)."
+            },
+            {
+              "id": "K.CC.3",
+              "description": "Read and write numbers using base ten numerals from 0 to 20. Represent a number of objects with a written numeral, in or out of sequence (0 represents a count of no objects)."
+            },
+            {
+              "id": "K.CC.4",
+              "description": "Understand the relationship between numbers and quantities; connect counting to cardinality.\n- When counting objects, say the numbers in the standard order. Pair each quantity of objects with one and only one number and each number with the correct quantity of objects.\n- Understand that the last number said represents the number of objects counted. The number of objects is the same regardless of their arrangement or the order in which they were counted.\n- Understand that each successive number refers to a quantity that is one greater than the previous number."
+            },
+            {
+              "id": "K.CC.5",
+              "description": "Use counting to answer questions about 'how many.' For example, 20 or fewer objects arranged in a line, a rectangular array, or circle; 10 or fewer objects in a scattered configuration. Using a number from 1-20, count out that many objects."
+            },
+            {
+              "id": "K.CC.6",
+              "description": "Use matching or counting strategies to identify whether the number of objects in one group is greater than, less than, or equal to the number of objects in another group. Include groups with up to ten objects."
+            },
+            {
+              "id": "K.CC.7",
+              "description": "Compare two numbers between 1 and 10 presented as written numerals using 'greater than,' 'less than,' or 'equal to.'"
+            }
+          ]
+        },
+        {
+          "strandName": "OPERATIONS AND ALGEBRAIC THINKING (K.OA)",
+          "standards": [
+            {
+              "id": "K.OA.1",
+              "description": "Represent addition and subtraction with objects, fingers, mental images, simple drawings, or sounds. For example, use clapping, act out situations, and use verbal explanations, expressions, or equations."
+            },
+            {
+              "id": "K.OA.2",
+              "description": "Solve addition and subtraction word problems within 10. Use objects or drawings to represent the problem."
+            },
+            {
+              "id": "K.OA.3",
+              "description": "Decompose numbers less than or equal to 10 into pairs in more than one way by using objects or drawings. Record each decomposition by a drawing or equation. For example, 5 = 2 + 3 and 5 = 4 + 1."
+            },
+            {
+              "id": "K.OA.4",
+              "description": "Make sums of 10 using any number from 1 to 9. For example, 2 + 8 = 10. Use objects or drawings to represent and record the answer."
+            },
+            {
+              "id": "K.OA.5",
+              "description": "Fluently add and subtract using numbers within 5."
+            }
+          ]
+        },
+        {
+          "strandName": "NUMBER AND OPERATIONS IN BASE TEN (K.NBT)",
+          "standards": [
+            {
+              "id": "K.NBT.1",
+              "description": "Compose and decompose numbers from 11-19 into ten ones and some further ones. Use objects or drawings and record each composition or decomposition by a drawing or equation. For example, 18 = 10 + 8. Understand that these numbers are composed of ten ones and one, two, three, four, five, six, seven, eight, or nine ones."
+            }
+          ]
+        },
+        {
+          "strandName": "MEASUREMENT AND DATA (K.MD)",
+          "standards": [
+            {
+              "id": "K.MD.1",
+              "description": "Describe measurable attributes of objects, such as length or weight. Describe several measurable attributes of a single object."
+            },
+            {
+              "id": "K.MD.2",
+              "description": "Directly compare two objects with a measurable attribute in common, to see which object has 'more of'/'less of' the attribute, and describe the difference. For example, directly compare the length of two pencils and describe one as shorter or longer."
+            },
+            {
+              "id": "K.MD.3",
+              "description": "Classify objects into given categories; count the numbers of objects in each category and sort the categories by count. Limit the category counts to less than or equal to 10."
+            }
+          ]
+        },
+        {
+          "strandName": "GEOMETRY (K.G)",
+          "standards": [
+            {
+              "id": "K.G.1",
+              "description": "Describe objects in the environment using names of shapes, and describe the relative positions of these objects using terms such as above, below, beside, in front of, behind, and next to."
+            },
+            {
+              "id": "K.G.2",
+              "description": "Correctly name shapes regardless of their orientations or overall sizes."
+            },
+            {
+              "id": "K.G.3",
+              "description": "Identify shapes as two-dimensional ('flat') or three-dimensional ('solid')."
+            },
+            {
+              "id": "K.G.4",
+              "description": "Analyze, compare, and sort two- and three-dimensional shapes and objects, in different sizes and orientations, using informal language to describe their similarities, differences, and other attributes (for example, color, size, shape, number of sides)."
+            },
+            {
+              "id": "K.G.5",
+              "description": "Model and create shapes from components such as sticks and clay balls."
+            },
+            {
+              "id": "K.G.6",
+              "description": "Compose simple shapes to form larger shapes. For example, 'Can you join these two triangles with full sides touching to make a rectangle?'"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "year": "Grade 1",
+      "subject": "Mathematics",
+      "introduction": "In Grade 1, instructional time should focus on four critical areas: (1) developing understanding of addition, subtraction, and strategies for addition and subtraction within 20; (2) developing understanding of whole number relationships and place value, including grouping in tens and ones; (3) developing understanding of linear measurement and measuring lengths as iterating length units; and (4) reasoning about attributes of, and composing and decomposing geometric shapes.",
+      "criticalAreas": [
+        "(1) Students will develop strategies for adding and subtracting whole numbers based on their prior work with small numbers. They will use a variety of models, including discrete objects and length-based models, to model add-to, take-from, put-together, and take-apart; compare situations to develop meaning for the operations of addition and subtraction; and develop strategies to solve arithmetic problems with these operations. Students will understand connections between counting and addition and subtraction. They will use properties of addition to add whole numbers and to create and use increasingly sophisticated strategies based on these properties to solve addition and subtraction problems within 20. By comparing a variety of solution strategies, children will build their understanding of the relationship between addition and subtraction.",
+        "(2) Students will develop, discuss, and use efficient, accurate, and generalizable methods to add within 100 and subtract multiples of 10. They will compare whole numbers (at least to 100) to develop understanding of and solve problems involving their relative sizes. They will think of whole numbers between 10 and 100 in terms of tens and ones (especially recognizing the numbers 11 to 19 as composed of a ten and some ones). Through activities that build number sense, they will understand the order of the counting numbers and their relative magnitudes.",
+        "(3) Students will develop an understanding of the meaning and processes of measurement, including underlying concepts such as iterating and the transitivity principle for indirect measurement.",
+        "(4) Students will compose and decompose plane or solid figures and build understanding of part-whole relationships, as well as the properties of the original and composite shapes."
+      ],
+      "strands": [
+        {
+          "strandName": "MATHEMATICAL PRACTICES (1.MP)",
+          "standards": [
+            {
+              "id": "1.MP.1",
+              "description": "Make sense of problems and persevere in solving them. Explain the meaning of a problem, look for entry points to begin work on the problem, and plan and choose a solution pathway. When a solution pathway does not make sense, look for another pathway that does. Explain connections between various solution strategies and representations. Upon finding a solution, look back at the problem to determine whether the solution is reasonable and accurate."
+            },
+            {
+              "id": "1.MP.2",
+              "description": "Reason abstractly and quantitatively. Make sense of quantities and their relationships in problem situations. Contextualize quantities and operations by using images or stories. Decontextualize a situation and represent it symbolically. Interpret symbols as having meaning, not just as directions to carry out a procedure."
+            },
+            {
+              "id": "1.MP.3",
+              "description": "Construct viable arguments and critique the reasoning of others. Use stated assumptions, definitions, and previously established results to construct arguments. Explain and justify the reasoning underlying a strategy or solution by using concrete referents. Listen to or read the arguments of others, decide whether they make sense, ask questions to clarify, and build on those arguments."
+            },
+            {
+              "id": "1.MP.4",
+              "description": "Model with mathematics. Identify the mathematical elements of a situation and create a model that shows the relationships among them. Use mathematical models to show important quantities in context, analyze relationships, and draw conclusions."
+            },
+            {
+              "id": "1.MP.5",
+              "description": "Use appropriate tools strategically. Consider the tools available when solving a problem, and choose those that are most useful. Tools might include drawings, diagrams, technologies, or specific strategies or algorithms."
+            },
+            {
+              "id": "1.MP.6",
+              "description": "Attend to precision. Communicate precisely by using clear explanations, describing relationships among elements, and connecting words to representations. Calculate accurately and record work using clear notation."
+            },
+            {
+              "id": "1.MP.7",
+              "description": "Look for and make use of structure. Recognize and apply structures in mathematics, such as patterns or place value. See complex things as being composed of simpler objects."
+            },
+            {
+              "id": "1.MP.8",
+              "description": "Look for and express regularity in repeated reasoning. Notice repetitions when solving multiple related problems, and use observations to find shortcuts or generalizations. Evaluate whether intermediate results make sense."
+            }
+          ]
+        },
+        {
+          "strandName": "OPERATIONS AND ALGEBRAIC THINKING (1.OA)",
+          "standards": [
+            {
+              "id": "1.OA.1",
+              "description": "Use addition and subtraction within 20 to solve word problems involving adding to, taking from, putting together, taking apart, and comparing, with unknowns in all positions."
+            },
+            {
+              "id": "1.OA.2",
+              "description": "Solve word problems that call for addition of three whole numbers whose sum is less than or equal to 20. Use objects, drawings, and equations with a symbol for the unknown."
+            },
+            {
+              "id": "1.OA.3",
+              "description": "Apply properties of operations as strategies to add and subtract. For example, if 8 + 3 = 11, then 3 + 8 = 11 (commutative). If 2 + 6 + 4 = 12, then 2 + 6 + 4 can be seen as 2 + 10 = 12 (associative)."
+            },
+            {
+              "id": "1.OA.4",
+              "description": "Understand subtraction as an unknown-addend problem. For example, 10 – 8 = ? can be understood by finding the number that makes 10 when added to 8."
+            },
+            {
+              "id": "1.OA.5",
+              "description": "Relate counting to addition and subtraction (for example, by counting on 2 to add 2)."
+            },
+            {
+              "id": "1.OA.6",
+              "description": "Add and subtract within 20. Use strategies such as counting on, making ten, decomposing numbers, using relationships, or creating known sums. Demonstrate fluency for addition and subtraction within 10."
+            },
+            {
+              "id": "1.OA.7",
+              "description": "Understand the meaning of the equal sign, and determine if equations involving addition and subtraction are true or false."
+            },
+            {
+              "id": "1.OA.8",
+              "description": "Determine the unknown number in an addition or subtraction equation relating three whole numbers."
+            }
+          ]
+        },
+        {
+          "strandName": "NUMBER AND OPERATIONS IN BASE TEN (1.NBT)",
+          "standards": [
+            {
+              "id": "1.NBT.1",
+              "description": "Count to 120, starting at any number less than 120. In this range, read and write numerals and represent a number of objects with a written numeral."
+            },
+            {
+              "id": "1.NBT.2",
+              "description": "Understand that the two digits of a two-digit number represent amounts of tens and ones. 10 can be a bundle of ten ones called a 'ten.' 11 to 19 are composed of a ten and some additional ones, etc."
+            },
+            {
+              "id": "1.NBT.3",
+              "description": "Compare two two-digit numbers based on meanings of the tens and ones digits, using >, =, and < symbols."
+            },
+            {
+              "id": "1.NBT.4",
+              "description": "Add within 100, including adding a two-digit number and a one-digit number or multiple of 10. Use concrete models or drawings and strategies based on place value. Understand that adding two-digit numbers involves adding tens to tens and ones to ones."
+            },
+            {
+              "id": "1.NBT.5",
+              "description": "Mentally find 10 more or 10 less than a two-digit number without having to count."
+            },
+            {
+              "id": "1.NBT.6",
+              "description": "Subtract multiples of 10 in the range 10–90 from multiples of 10 in the range 10–90. Use strategies based on place value, properties of operations, and/or the relationship between addition and subtraction."
+            }
+          ]
+        },
+        {
+          "strandName": "MEASUREMENT AND DATA (1.MD)",
+          "standards": [
+            {
+              "id": "1.MD.1",
+              "description": "Order three objects by length; compare the lengths of two objects indirectly by using a third object."
+            },
+            {
+              "id": "1.MD.2",
+              "description": "Express the length of an object as a whole number of length units by laying multiple copies of a shorter object end to end."
+            },
+            {
+              "id": "1.MD.3",
+              "description": "Tell and write time in hours and half-hours using analog and digital clocks."
+            },
+            {
+              "id": "1.MD.4",
+              "description": "Organize, represent, and interpret data with up to three categories. Ask and answer questions about the total number of data points and compare categories."
+            },
+            {
+              "id": "1.MD.5",
+              "description": "Identify the values of pennies, nickels, dimes, and quarters and know their comparative values. Use appropriate notation (for example, 5¢)."
+            }
+          ]
+        },
+        {
+          "strandName": "GEOMETRY (1.G)",
+          "standards": [
+            {
+              "id": "1.G.1",
+              "description": "Distinguish between defining attributes (like being closed and having three sides) vs. non-defining attributes (like color, orientation, overall size). Build and draw shapes to possess defining attributes."
+            },
+            {
+              "id": "1.G.2",
+              "description": "Compose two-dimensional shapes to create a composite shape, and compose new shapes from the composite shape. Similarly, compose three-dimensional shapes."
+            },
+            {
+              "id": "1.G.3",
+              "description": "Partition circles and rectangles into two and four equal shares; describe the shares using halves, fourths, and quarters. Understand that decomposing into more equal shares creates smaller shares."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "year": "Grade 2",
+      "subject": "Mathematics",
+      "introduction": "In Grade 2, instructional time should focus on four critical areas: (1) extending understanding of base-ten notation; (2) building fluency with addition and subtraction; (3) using standard units of measure; and (4) describing and analyzing shapes.",
+      "criticalAreas": [
+        "(1) Students will extend their understanding of the base-ten system, including ideas of counting in fives, tens, and multiples of hundreds, tens, and ones, and number relationships. Students will understand multi-digit numbers (up to 1,000) written in base-ten notation, recognizing the digits in each place.",
+        "(2) Students will use their understanding of addition to develop fluency with addition and subtraction within 100. They will solve problems within 1,000 by applying understanding of models for addition and subtraction, and use efficient methods for sums and differences in base-ten notation.",
+        "(3) Students will recognize the need for standard units of measure and use rulers and other measurement tools. They will understand that the smaller the unit, the more iterations needed to cover a given length.",
+        "(4) Students will describe and analyze shapes by examining their sides and angles, and by decomposing and combining shapes to make other shapes."
+      ],
+      "strands": [
+        {
+          "strandName": "MATHEMATICAL PRACTICES (2.MP)",
+          "standards": [
+            {
+              "id": "2.MP.1",
+              "description": "Make sense of problems and persevere in solving them. Explain what a problem is asking, look for entry points, plan a solution pathway, and check results."
+            },
+            {
+              "id": "2.MP.2",
+              "description": "Reason abstractly and quantitatively. Contextualize quantities and operations by using representations, and decontextualize a situation to represent it symbolically."
+            },
+            {
+              "id": "2.MP.3",
+              "description": "Construct viable arguments and critique the reasoning of others. Use assumptions, definitions, and previously established results to construct arguments and justify reasoning with drawings, diagrams, or actions."
+            },
+            {
+              "id": "2.MP.4",
+              "description": "Model with mathematics. Identify the elements of a situation and create a model to represent relationships. Analyze the relationships and draw conclusions."
+            },
+            {
+              "id": "2.MP.5",
+              "description": "Use appropriate tools strategically. Consider what tools (drawings, diagrams, or technologies) are most helpful for solving a problem."
+            },
+            {
+              "id": "2.MP.6",
+              "description": "Attend to precision. Communicate clearly, calculate accurately, and record work using notation that is clear and understandable."
+            },
+            {
+              "id": "2.MP.7",
+              "description": "Look for and make use of structure. Recognize patterns and structures in mathematics, including place value and properties of operations."
+            },
+            {
+              "id": "2.MP.8",
+              "description": "Look for and express regularity in repeated reasoning. Notice repetition in multiple related problems and use that to find shortcuts or generalizations."
+            }
+          ]
+        },
+        {
+          "strandName": "OPERATIONS AND ALGEBRAIC THINKING (2.OA)",
+          "standards": [
+            {
+              "id": "2.OA.1",
+              "description": "Use addition and subtraction within 100 to solve one- and two-step word problems involving various situations with unknowns in all positions."
+            },
+            {
+              "id": "2.OA.2",
+              "description": "Fluently add and subtract within 20 using mental strategies. By the end of Grade 2, know from memory all sums of two one-digit numbers."
+            },
+            {
+              "id": "2.OA.3",
+              "description": "Determine whether a group of objects (up to 20) has an odd or even number of members; write an equation to express an even number as a sum of two equal addends."
+            },
+            {
+              "id": "2.OA.4",
+              "description": "Use addition to find the total number of objects in rectangular arrays up to 5×5; write an equation to express the total as a sum of equal addends."
+            }
+          ]
+        },
+        {
+          "strandName": "NUMBER AND OPERATIONS IN BASE TEN (2.NBT)",
+          "standards": [
+            {
+              "id": "2.NBT.1",
+              "description": "Understand that the three digits of a three-digit number represent amounts of hundreds, tens, and ones (for example, 706 equals 7 hundreds, 0 tens, and 6 ones)."
+            },
+            {
+              "id": "2.NBT.2",
+              "description": "Count within 1,000; skip-count by fives, tens, and hundreds."
+            },
+            {
+              "id": "2.NBT.3",
+              "description": "Read and write numbers to 1,000 using base-ten numerals, number names, and expanded form."
+            },
+            {
+              "id": "2.NBT.4",
+              "description": "Compare two three-digit numbers using >, =, and <, based on the meaning of the hundreds, tens, and ones digits."
+            },
+            {
+              "id": "2.NBT.5",
+              "description": "Fluently add and subtract within 100 using strategies based on place value, properties of operations, and/or the relationship between addition and subtraction."
+            },
+            {
+              "id": "2.NBT.6",
+              "description": "Add up to four two-digit numbers using strategies based on place value and properties of operations."
+            },
+            {
+              "id": "2.NBT.7",
+              "description": "Add and subtract within 1,000 using concrete models or drawings and strategies based on place value. Understand that hundreds match with hundreds, tens with tens, and ones with ones."
+            },
+            {
+              "id": "2.NBT.8",
+              "description": "Mentally add 10 or 100 to a given number 100–900, and mentally subtract 10 or 100 from a given number 100–900."
+            },
+            {
+              "id": "2.NBT.9",
+              "description": "Explain why addition and subtraction strategies work, using place value and the properties of operations."
+            }
+          ]
+        },
+        {
+          "strandName": "MEASUREMENT AND DATA (2.MD)",
+          "standards": [
+            {
+              "id": "2.MD.1",
+              "description": "Measure the length of an object by selecting and using appropriate tools such as rulers, yardsticks, meter sticks, or measuring tapes."
+            },
+            {
+              "id": "2.MD.2",
+              "description": "Measure the length of an object twice, using different length units; describe how the two measurements relate to the unit size chosen."
+            },
+            {
+              "id": "2.MD.3",
+              "description": "Estimate lengths using units of inches, feet, centimeters, and meters."
+            },
+            {
+              "id": "2.MD.4",
+              "description": "Measure to determine how much longer one object is than another, expressing the difference in a standard length unit."
+            },
+            {
+              "id": "2.MD.5",
+              "description": "Use addition and subtraction within 100 to solve word problems involving lengths given in the same units."
+            },
+            {
+              "id": "2.MD.6",
+              "description": "Represent whole numbers as lengths on a number line diagram. Represent whole number sums and differences within 100 on a number line diagram."
+            },
+            {
+              "id": "2.MD.7",
+              "description": "Tell and write time from analog and digital clocks to the nearest five minutes, using a.m. and p.m."
+            },
+            {
+              "id": "2.MD.8",
+              "description": "Solve word problems involving dollar bills, quarters, dimes, nickels, and pennies, using $ and ¢ symbols appropriately."
+            },
+            {
+              "id": "2.MD.9",
+              "description": "Generate measurement data by measuring lengths of objects or by making repeated measurements. Show the measurements by making a line plot."
+            },
+            {
+              "id": "2.MD.10",
+              "description": "Draw a picture graph and a bar graph to represent a data set with up to four categories. Solve simple comparison problems using the data."
+            }
+          ]
+        },
+        {
+          "strandName": "GEOMETRY (2.G)",
+          "standards": [
+            {
+              "id": "2.G.1",
+              "description": "Recognize and draw shapes having specified attributes (e.g., a certain number of angles). Identify triangles, quadrilaterals, pentagons, hexagons, and cubes."
+            },
+            {
+              "id": "2.G.2",
+              "description": "Partition a rectangle into rows and columns of same-size squares and count to find the total number of them."
+            },
+            {
+              "id": "2.G.3",
+              "description": "Partition circles and rectangles into two, three, or four equal shares. Describe the shares using the words halves, thirds, etc., and understand that equal shares of identical wholes need not have the same shape."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "year": "Grade 3",
+      "subject": "Mathematics",
+      "introduction": "In Grade 3, instructional time should focus on four critical areas: (1) developing understanding of multiplication and division and strategies for multiplication and division within 100; (2) developing understanding of fractions, especially unit fractions; (3) developing understanding of the structure of rectangular arrays and of area; and (4) describing and analyzing two-dimensional shapes.",
+      "criticalAreas": [
+        "(1) Students will develop an understanding of the meanings of multiplication and division of whole numbers through activities and problems involving equal-sized groups, arrays, and area models. They will use properties of operations to calculate products of whole numbers and relate multiplication and division.",
+        "(2) Students will develop an understanding of fractions, beginning with unit fractions. They will use fractions to represent numbers equal to, less than, and greater than one, and solve problems that involve comparing fractions by using visual models and strategies.",
+        "(3) Students will recognize area as an attribute of two-dimensional regions. They will measure area by counting unit squares and relate area to multiplication and addition.",
+        "(4) Students will describe, analyze, and compare properties of two-dimensional shapes. They will classify shapes by sides and angles, and connect these with definitions."
+      ],
+      "strands": [
+        {
+          "strandName": "MATHEMATICAL PRACTICES (3.MP)",
+          "standards": [
+            {
+              "id": "3.MP.1",
+              "description": "Make sense of problems and persevere in solving them. Explain the meaning of a problem, look for entry points, and plan a solution. Check for reasonableness of results."
+            },
+            {
+              "id": "3.MP.2",
+              "description": "Reason abstractly and quantitatively. Use contexts, representations, and symbolic notation to interpret problem situations."
+            },
+            {
+              "id": "3.MP.3",
+              "description": "Construct viable arguments and critique the reasoning of others. Use definitions and established results to explain or justify reasoning. Listen to or read the arguments of others and determine whether they make sense."
+            },
+            {
+              "id": "3.MP.4",
+              "description": "Model with mathematics. Represent problem situations with models (verbal, contextual, visual, symbolic, or physical), analyze those models, and draw conclusions."
+            },
+            {
+              "id": "3.MP.5",
+              "description": "Use appropriate tools strategically. Consider tools (drawings, diagrams, technology) for solving problems and use them effectively."
+            },
+            {
+              "id": "3.MP.6",
+              "description": "Attend to precision. Communicate clearly and precisely, use clear notation, and calculate accurately."
+            },
+            {
+              "id": "3.MP.7",
+              "description": "Look for and make use of structure. Identify and apply patterns or properties in mathematics."
+            },
+            {
+              "id": "3.MP.8",
+              "description": "Look for and express regularity in repeated reasoning. Notice repetitions in related problems to find generalized methods or shortcuts."
+            }
+          ]
+        },
+        {
+          "strandName": "OPERATIONS AND ALGEBRAIC THINKING (3.OA)",
+          "standards": [
+            {
+              "id": "3.OA.1",
+              "description": "Interpret products of whole numbers. For example, interpret 5 × 7 as the total number of objects in 5 groups of 7 objects each."
+            },
+            {
+              "id": "3.OA.2",
+              "description": "Interpret whole-number quotients of whole numbers, for example, 56 ÷ 8 as the number of objects in each share when 56 objects are partitioned into 8 shares."
+            },
+            {
+              "id": "3.OA.3",
+              "description": "Use multiplication and division within 100 to solve word problems involving equal groups, arrays, and measurement quantities."
+            },
+            {
+              "id": "3.OA.4",
+              "description": "Determine the unknown whole number in a multiplication or division equation relating three whole numbers."
+            },
+            {
+              "id": "3.OA.5",
+              "description": "Apply properties of operations as strategies to multiply and divide (commutative, associative, distributive)."
+            },
+            {
+              "id": "3.OA.6",
+              "description": "Understand division as an unknown-factor problem. For example, find 32 ÷ 8 by finding the number that makes 32 when multiplied by 8."
+            },
+            {
+              "id": "3.OA.7",
+              "description": "Fluently multiply and divide within 100 using strategies. By the end of Grade 3, know all products of two one-digit numbers from memory."
+            },
+            {
+              "id": "3.OA.8",
+              "description": "Solve two-step word problems using the four operations. Represent these problems using equations with a letter for the unknown quantity."
+            },
+            {
+              "id": "3.OA.9",
+              "description": "Identify arithmetic patterns in addition or multiplication tables, and explain them using properties of operations."
+            }
+          ]
+        },
+        {
+          "strandName": "NUMBER AND OPERATIONS IN BASE TEN (3.NBT)",
+          "standards": [
+            {
+              "id": "3.NBT.1",
+              "description": "Use place value understanding to round whole numbers to the nearest 10 or 100."
+            },
+            {
+              "id": "3.NBT.2",
+              "description": "Fluently add and subtract within 1,000 using strategies and algorithms based on place value, properties of operations, and/or relationships between addition and subtraction."
+            },
+            {
+              "id": "3.NBT.3",
+              "description": "Multiply one-digit whole numbers by multiples of 10 in the range 10–90 using strategies based on place value and properties of operations."
+            }
+          ]
+        },
+        {
+          "strandName": "NUMBER AND OPERATIONS - FRACTIONS (3.NF)",
+          "standards": [
+            {
+              "id": "3.NF.1",
+              "description": "Understand a fraction 1/b as one part when a whole is partitioned into b equal parts. Understand a fraction a/b as a parts of size 1/b."
+            },
+            {
+              "id": "3.NF.2",
+              "description": "Understand a fraction as a number on the number line; represent fractions on a number line diagram."
+            },
+            {
+              "id": "3.NF.3",
+              "description": "Explain equivalence of fractions, and compare fractions by reasoning about their size. Show fractions are equivalent if they are the same point on a number line or same size."
+            }
+          ]
+        },
+        {
+          "strandName": "MEASUREMENT AND DATA (3.MD)",
+          "standards": [
+            {
+              "id": "3.MD.1",
+              "description": "Tell and write time to the nearest minute and measure time intervals in minutes. Solve word problems involving addition and subtraction of time."
+            },
+            {
+              "id": "3.MD.2",
+              "description": "Measure and estimate liquid volumes and masses using standard units. Solve one-step word problems involving these measurements."
+            },
+            {
+              "id": "3.MD.3",
+              "description": "Draw a scaled picture graph and a scaled bar graph to represent a data set with several categories. Solve one- and two-step 'how many more/less' problems using information in graphs."
+            },
+            {
+              "id": "3.MD.4",
+              "description": "Generate measurement data by measuring lengths with rulers marked in halves and fourths of an inch. Show data by making a line plot."
+            },
+            {
+              "id": "3.MD.5",
+              "description": "Recognize area as an attribute of plane figures and understand concepts of area measurement."
+            },
+            {
+              "id": "3.MD.6",
+              "description": "Measure areas by counting unit squares (square cm, square m, square in., square ft., etc.)."
+            },
+            {
+              "id": "3.MD.7",
+              "description": "Relate area to the operations of multiplication and addition. Find the area of rectangles by tiling, multiply side lengths, and apply the distributive property."
+            },
+            {
+              "id": "3.MD.8",
+              "description": "Solve real-world problems involving perimeters of polygons, including finding an unknown side length."
+            }
+          ]
+        },
+        {
+          "strandName": "GEOMETRY (3.G)",
+          "standards": [
+            {
+              "id": "3.G.1",
+              "description": "Understand that shapes in different categories may share attributes. Recognize rhombuses, rectangles, and squares as examples of quadrilaterals. Draw examples of quadrilaterals that do not belong to these subcategories."
+            },
+            {
+              "id": "3.G.2",
+              "description": "Partition shapes into parts with equal areas. Express the area of each part as a unit fraction of the whole."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "year": "Grade 4",
+      "subject": "Mathematics",
+      "introduction": "In Grade 4, instructional time should focus on three critical areas: (1) developing understanding and fluency with multi-digit multiplication, and understanding of dividing to find quotients involving multi-digit dividends; (2) developing understanding of fraction equivalence, addition and subtraction of fractions with like denominators, and multiplication of fractions by whole numbers; and (3) understanding that geometric figures can be analyzed and classified based on their properties.",
+      "criticalAreas": [
+        "(1) Students will generalize their understanding of place value to 1,000,000. They use models for multiplication and place value to compute products of multi-digit whole numbers and develop fluency in multiplication. They apply this understanding to division, using efficient, accurate, and generalizable procedures.",
+        "(2) Students will develop understanding of fraction equivalence and operations with fractions. They recognize that different fractions can be equal, and they use the meaning of fractions and of multiplication to multiply a fraction by a whole number.",
+        "(3) Students will describe and analyze two-dimensional shapes, comparing properties such as parallel and perpendicular sides, particular angle measures, and symmetry."
+      ],
+      "strands": [
+        {
+          "strandName": "MATHEMATICAL PRACTICES (4.MP)",
+          "standards": [
+            {
+              "id": "4.MP.1",
+              "description": "Make sense of problems and persevere in solving them."
+            },
+            {
+              "id": "4.MP.2",
+              "description": "Reason abstractly and quantitatively."
+            },
+            {
+              "id": "4.MP.3",
+              "description": "Construct viable arguments and critique the reasoning of others."
+            },
+            {
+              "id": "4.MP.4",
+              "description": "Model with mathematics."
+            },
+            {
+              "id": "4.MP.5",
+              "description": "Use appropriate tools strategically."
+            },
+            {
+              "id": "4.MP.6",
+              "description": "Attend to precision."
+            },
+            {
+              "id": "4.MP.7",
+              "description": "Look for and make use of structure."
+            },
+            {
+              "id": "4.MP.8",
+              "description": "Look for and express regularity in repeated reasoning."
+            }
+          ]
+        },
+        {
+          "strandName": "OPERATIONS AND ALGEBRAIC THINKING (4.OA)",
+          "standards": [
+            {
+              "id": "4.OA.1",
+              "description": "Interpret a multiplication equation as a comparison (for example, 35 = 5 × 7 means 35 is 5 times as many as 7). Represent verbal statements as multiplication equations."
+            },
+            {
+              "id": "4.OA.2",
+              "description": "Multiply or divide to solve word problems involving multiplicative comparison, distinguishing multiplicative comparison from additive comparison."
+            },
+            {
+              "id": "4.OA.3",
+              "description": "Solve multi-step word problems using the four operations. Represent these problems with equations and assess reasonableness of answers using estimation."
+            },
+            {
+              "id": "4.OA.4",
+              "description": "Find all factor pairs for a whole number in the range 1–100. Recognize that a whole number is a multiple of each of its factors. Determine whether a given whole number is prime or composite."
+            },
+            {
+              "id": "4.OA.5",
+              "description": "Generate a number or shape pattern that follows a rule. Identify features of the pattern that were not explicit in the rule."
+            }
+          ]
+        },
+        {
+          "strandName": "NUMBER AND OPERATIONS IN BASE TEN (4.NBT)",
+          "standards": [
+            {
+              "id": "4.NBT.1",
+              "description": "Recognize that in a multi-digit number, a digit in one place represents ten times what it represents in the place to its right."
+            },
+            {
+              "id": "4.NBT.2",
+              "description": "Read and write multi-digit whole numbers using base-ten numerals, number names, and expanded form. Compare two multi-digit numbers using >, =, and <."
+            },
+            {
+              "id": "4.NBT.3",
+              "description": "Use place value understanding to round multi-digit whole numbers to any place."
+            },
+            {
+              "id": "4.NBT.4",
+              "description": "Fluently add and subtract multi-digit whole numbers using the standard algorithm."
+            },
+            {
+              "id": "4.NBT.5",
+              "description": "Multiply a whole number of up to four digits by a one-digit whole number, and multiply two two-digit numbers. Use strategies based on place value and illustrate using equations or arrays."
+            },
+            {
+              "id": "4.NBT.6",
+              "description": "Find whole-number quotients and remainders with up to four-digit dividends and one-digit divisors, using strategies based on place value and properties of operations."
+            }
+          ]
+        },
+        {
+          "strandName": "NUMBER AND OPERATIONS - FRACTIONS (4.NF)",
+          "standards": [
+            {
+              "id": "4.NF.1",
+              "description": "Explain why a fraction a/b is equivalent to (n×a)/(n×b) by using visual models. Use this principle to recognize and generate equivalent fractions."
+            },
+            {
+              "id": "4.NF.2",
+              "description": "Compare two fractions with different numerators and denominators by creating common denominators or numerators, or by comparing to a benchmark. Record results using >, =, <."
+            },
+            {
+              "id": "4.NF.3",
+              "description": "Understand a fraction a/b with a > 1 as a sum of fractions 1/b. Decompose and add/subtract fractions with the same denominator, and solve related word problems."
+            },
+            {
+              "id": "4.NF.4",
+              "description": "Apply and extend understanding of multiplication to multiply a fraction by a whole number."
+            },
+            {
+              "id": "4.NF.5",
+              "description": "Express a fraction with denominator 10 as an equivalent fraction with denominator 100, and use this to add two fractions with denominators 10 and 100."
+            },
+            {
+              "id": "4.NF.6",
+              "description": "Use decimal notation for fractions with denominators 10 or 100."
+            },
+            {
+              "id": "4.NF.7",
+              "description": "Compare two decimals to hundredths by reasoning about their size, using >, =, <, and justify conclusions."
+            }
+          ]
+        },
+        {
+          "strandName": "MEASUREMENT AND DATA (4.MD)",
+          "standards": [
+            {
+              "id": "4.MD.1",
+              "description": "Know relative sizes of measurement units within one system. Convert from a larger unit to a smaller unit and record in a two-column table."
+            },
+            {
+              "id": "4.MD.2",
+              "description": "Use the four operations to solve word problems involving measurements. Represent measurement quantities with diagrams."
+            },
+            {
+              "id": "4.MD.3",
+              "description": "Apply area and perimeter formulas for rectangles to solve real-world and mathematical problems."
+            },
+            {
+              "id": "4.MD.4",
+              "description": "Make a line plot to display a data set of measurements in fractions of a unit. Solve problems involving addition and subtraction of fractions using information in line plots."
+            },
+            {
+              "id": "4.MD.5",
+              "description": "Recognize angles as geometric figures formed by two rays with a common endpoint. Understand concepts of angle measurement."
+            },
+            {
+              "id": "4.MD.6",
+              "description": "Measure angles in whole-number degrees using a protractor. Sketch angles of specified measure."
+            },
+            {
+              "id": "4.MD.7",
+              "description": "Recognize angle measure as additive. Solve addition and subtraction problems to find unknown angles on a diagram."
+            }
+          ]
+        },
+        {
+          "strandName": "GEOMETRY (4.G)",
+          "standards": [
+            {
+              "id": "4.G.1",
+              "description": "Draw points, lines, line segments, rays, angles, and perpendicular/parallel lines. Identify these in two-dimensional figures."
+            },
+            {
+              "id": "4.G.2",
+              "description": "Classify two-dimensional figures based on parallel/perpendicular lines or angles of a specified size. Recognize right triangles as a category and identify them."
+            },
+            {
+              "id": "4.G.3",
+              "description": "Recognize a line of symmetry for a two-dimensional figure. Identify line-symmetric figures and draw lines of symmetry."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "year": "Grade 5",
+      "subject": "Mathematics",
+      "introduction": "In Grade 5, instructional time should focus on three critical areas: (1) developing fluency with addition and subtraction of fractions, and understanding of multiplication and division of fractions (in limited cases); (2) extending division to two-digit divisors, integrating decimal fractions into the place value system and developing fluency with operations with decimals to hundredths; and (3) developing understanding of volume.",
+      "criticalAreas": [
+        "(1) Students will apply their understanding of fractions to represent addition and subtraction of fractions with unlike denominators, and also understand and explain why procedures for multiplying and dividing fractions make sense (limited to dividing unit fractions by whole numbers and whole numbers by unit fractions).",
+        "(2) Students will develop understanding of why division procedures work based on the meaning of base-ten numerals and properties of operations. They will extend their understanding to decimals to hundredths and become fluent with these operations.",
+        "(3) Students will recognize volume as an attribute of three-dimensional space. They will learn to measure volume by counting unit cubes and find volumes of right rectangular prisms."
+      ],
+      "strands": [
+        {
+          "strandName": "MATHEMATICAL PRACTICES (5.MP)",
+          "standards": [
+            {
+              "id": "5.MP.1",
+              "description": "Make sense of problems and persevere in solving them. Plan solution pathways and check answers for reasonableness."
+            },
+            {
+              "id": "5.MP.2",
+              "description": "Reason abstractly and quantitatively. Interpret and connect problem situations with symbolic representations."
+            },
+            {
+              "id": "5.MP.3",
+              "description": "Construct viable arguments and critique the reasoning of others. Use assumptions and established results to construct arguments. Explain and justify solutions and listen for sense in the arguments of others."
+            },
+            {
+              "id": "5.MP.4",
+              "description": "Model with mathematics. Identify quantities and relationships in situations, represent them with mathematical models, and analyze to draw conclusions."
+            },
+            {
+              "id": "5.MP.5",
+              "description": "Use appropriate tools strategically. Consider available tools (including estimations, drawings, technology) to solve problems effectively."
+            },
+            {
+              "id": "5.MP.6",
+              "description": "Attend to precision. Communicate clearly, calculate accurately, and connect words and symbols precisely to representations."
+            },
+            {
+              "id": "5.MP.7",
+              "description": "Look for and make use of structure. Recognize and apply mathematical patterns and properties in solving problems."
+            },
+            {
+              "id": "5.MP.8",
+              "description": "Look for and express regularity in repeated reasoning. Notice repeated calculations or processes and apply general methods to similar problems."
+            }
+          ]
+        },
+        {
+          "strandName": "OPERATIONS AND ALGEBRAIC THINKING (5.OA)",
+          "standards": [
+            {
+              "id": "5.OA.1",
+              "description": "Use parentheses, brackets, or braces in numerical expressions, and evaluate expressions with these symbols."
+            },
+            {
+              "id": "5.OA.2",
+              "description": "Write and interpret simple numerical expressions. For example, express 'add 8 and 7, then multiply by 2' as 2 × (8+7)."
+            },
+            {
+              "id": "5.OA.3",
+              "description": "Generate two numerical patterns using two given rules. Identify relationships between corresponding terms and graph ordered pairs on a coordinate plane."
+            }
+          ]
+        },
+        {
+          "strandName": "NUMBER AND OPERATIONS IN BASE TEN (5.NBT)",
+          "standards": [
+            {
+              "id": "5.NBT.1",
+              "description": "Recognize that in a multi-digit number, a digit in one place represents 10 times as much as it represents in the place to its right."
+            },
+            {
+              "id": "5.NBT.2",
+              "description": "Explain patterns in the number of zeros when multiplying by powers of 10, and in the placement of the decimal point when a decimal is multiplied or divided by a power of 10."
+            },
+            {
+              "id": "5.NBT.3",
+              "description": "Read, write, and compare decimals to thousandths."
+            },
+            {
+              "id": "5.NBT.4",
+              "description": "Use place value understanding to round decimals to any place."
+            },
+            {
+              "id": "5.NBT.5",
+              "description": "Fluently multiply multi-digit whole numbers using the standard algorithm."
+            },
+            {
+              "id": "5.NBT.6",
+              "description": "Find whole-number quotients of whole numbers with up to four-digit dividends and two-digit divisors, using place value strategies and properties of operations."
+            },
+            {
+              "id": "5.NBT.7",
+              "description": "Add, subtract, multiply, and divide decimals to hundredths using models or drawings based on place value and properties of operations."
+            }
+          ]
+        },
+        {
+          "strandName": "NUMBER AND OPERATIONS - FRACTIONS (5.NF)",
+          "standards": [
+            {
+              "id": "5.NF.1",
+              "description": "Add and subtract fractions with unlike denominators (including mixed numbers) by replacing given fractions with equivalent fractions."
+            },
+            {
+              "id": "5.NF.2",
+              "description": "Solve real-world problems involving addition and subtraction of fractions referring to the same whole, including cases of unlike denominators."
+            },
+            {
+              "id": "5.NF.3",
+              "description": "Interpret a fraction as division of the numerator by the denominator (a/b = a ÷ b). Solve real-world problems involving division of whole numbers leading to fractional answers."
+            },
+            {
+              "id": "5.NF.4",
+              "description": "Apply and extend previous understandings of multiplication to multiply a fraction or whole number by a fraction. Find areas of rectangles with fractional side lengths."
+            },
+            {
+              "id": "5.NF.5",
+              "description": "Interpret multiplication as scaling. Explain why multiplying a given number by a fraction greater than 1 results in a product greater than the number, etc."
+            },
+            {
+              "id": "5.NF.6",
+              "description": "Solve real-world problems involving multiplication of fractions and mixed numbers."
+            },
+            {
+              "id": "5.NF.7",
+              "description": "Apply and extend previous understandings of division to divide unit fractions by whole numbers and whole numbers by unit fractions (limited to specific cases)."
+            }
+          ]
+        },
+        {
+          "strandName": "MEASUREMENT AND DATA (5.MD)",
+          "standards": [
+            {
+              "id": "5.MD.1",
+              "description": "Convert among different-sized standard measurement units within a given system, and use these conversions in solving multi-step problems."
+            },
+            {
+              "id": "5.MD.2",
+              "description": "Make a line plot to display a data set of measurements in fractions of a unit. Use operations on fractions to solve problems using information from line plots."
+            },
+            {
+              "id": "5.MD.3",
+              "description": "Recognize volume as an attribute of solid figures and understand concepts of volume measurement."
+            },
+            {
+              "id": "5.MD.4",
+              "description": "Measure volumes by counting unit cubes using cubic cm, cubic in., cubic ft., and improvised units."
+            },
+            {
+              "id": "5.MD.5",
+              "description": "Relate volume to multiplication and addition. Solve real-world and mathematical problems involving volume of right rectangular prisms."
+            }
+          ]
+        },
+        {
+          "strandName": "GEOMETRY (5.G)",
+          "standards": [
+            {
+              "id": "5.G.1",
+              "description": "Compose and understand the coordinate plane in quadrant one. Understand that the x-coordinate represents how far to travel horizontally and the y-coordinate how far to travel vertically."
+            },
+            {
+              "id": "5.G.2",
+              "description": "Represent real-world problems by graphing points in quadrant one. Interpret coordinate values in context."
+            },
+            {
+              "id": "5.G.3",
+              "description": "Understand that attributes belonging to a category of two-dimensional figures also belong to all subcategories of that category. For example, squares have four right angles, and so do rectangles."
+            },
+            {
+              "id": "5.G.4",
+              "description": "Classify two-dimensional figures in a hierarchy based on their properties."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

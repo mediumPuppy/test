@@ -142,24 +142,27 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
     }
   }
 
-  Future<void> _refreshData() async {
+  void _refreshData() async {
+    if (_isLoading) return;
+
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // Initialize sample data first
-      await FirestoreService().initializeSampleData();
-      // Then refresh the learning paths
-      setState(() {
-        _firestoreService.getLearningPaths();
-      });
+      await _firestoreService.initializeCurriculumData();
     } catch (e) {
-      // Error handling without logging
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error refreshing data: $e')),
+        );
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
