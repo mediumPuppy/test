@@ -82,6 +82,15 @@ class _VideoFeedItemState extends State<VideoFeedItem>
               .round()),
     );
 
+    // Add listener to track animation completion
+    _animationController.addStatusListener((status) {
+      print('Animation status changed to: $status');
+      if (status == AnimationStatus.completed) {
+        print('Video completed! Should show restart button now.');
+        if (mounted) setState(() {});
+      }
+    });
+
     // Add page controller listener to detect when transition is complete
     widget.pageController.addListener(_onPageScroll);
 
@@ -430,25 +439,35 @@ class _VideoFeedItemState extends State<VideoFeedItem>
             ),
           ),
           // Add restart button when video is complete
-          if (_animationController.isCompleted)
-            Center(
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.replay,
-                    color: Colors.white,
-                    size: 40,
+          if (_animationController.isCompleted) ...[
+            Builder(
+              builder: (context) {
+                print(
+                    'Attempting to render restart button. Animation completed: ${_animationController.isCompleted}');
+                return Center(
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.replay,
+                        color: Colors.white,
+                        size: 40,
+                      ),
+                      onPressed: () {
+                        print('Restart button pressed!');
+                        _startPlayback();
+                      },
+                    ),
                   ),
-                  onPressed: _startPlayback,
-                ),
-              ),
+                );
+              },
             ),
+          ],
         ],
       ),
     );

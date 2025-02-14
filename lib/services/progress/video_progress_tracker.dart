@@ -30,8 +30,6 @@ class VideoProgressTracker implements ProgressTracker {
     _progress = _content.progress;
     _highestProgress = _progress;
     _completed = _content.isCompleted;
-    print(
-        'VideoProgressTracker: Initialized for video[${_content.id}] with progress: ${(_progress * 100).toStringAsFixed(1)}%');
   }
 
   @override
@@ -56,8 +54,6 @@ class VideoProgressTracker implements ProgressTracker {
     if (_lastUpdateTime != null) {
       final inactivityDuration = now.difference(_lastUpdateTime!);
       if (inactivityDuration > _inactivityThreshold && _progress > 0.1) {
-        print(
-            'VideoProgressTracker: Inactivity detected (${inactivityDuration.inSeconds}s), marking as completed');
         await markCompleted();
         return;
       }
@@ -70,18 +66,11 @@ class VideoProgressTracker implements ProgressTracker {
       _highestProgress = newProgress;
       _progress = newProgress;
       _progressController.add(_progress);
-      print(
-          'VideoProgressTracker: Updated video[${_content.id}] progress to new high: ${(_progress * 100).toStringAsFixed(1)}%');
 
       // Auto-complete if progress reaches 95%
       if (_progress >= 0.95 && !_completed) {
-        print(
-            'VideoProgressTracker: Progress reached 95%, marking as completed');
         await markCompleted();
       }
-    } else {
-      print(
-          'VideoProgressTracker: Ignoring lower progress ${(newProgress * 100).toStringAsFixed(1)}% < ${(_highestProgress * 100).toStringAsFixed(1)}%');
     }
   }
 
@@ -96,19 +85,14 @@ class VideoProgressTracker implements ProgressTracker {
       _progress = 1.0;
       _highestProgress = 1.0;
       _progressController.add(_progress);
-      print('VideoProgressTracker: Marked video[${_content.id}] as completed');
     }
   }
 
   @override
-  Future<void> reset() async {
-    print(
-        'VideoProgressTracker: Reset requested but ignored to maintain progress');
-  }
+  Future<void> reset() async {}
 
   @override
   void dispose() {
-    print('VideoProgressTracker: Disposing tracker for video[${_content.id}]');
     _progressController.close();
   }
 
@@ -117,17 +101,12 @@ class VideoProgressTracker implements ProgressTracker {
     // First, track this video
     if (!_recentVideos.any((video) => video.id == _content.id)) {
       _recentVideos.add(_content);
-      print(
-          'VideoProgressTracker: Added video[${_content.id}] to recent videos. Count: ${_recentVideos.length}');
     }
 
     // Check if we've reached the threshold
     if (_recentVideos.length < _quizThreshold) {
-      print('VideoProgressTracker: Not enough videos watched for quiz yet.');
       return false;
     }
-
-    print('VideoProgressTracker: Quiz threshold reached. Preparing quiz...');
 
     // Stop video playback
     VideoFeedItem.stopPlayback(context);
