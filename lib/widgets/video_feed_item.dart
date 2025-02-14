@@ -123,7 +123,14 @@ class _VideoFeedItemState extends State<VideoFeedItem>
     if (script.isNotEmpty) {
       _isSpeaking = true;
       await _speechService.speak(script);
-      _isSpeaking = false;
+      if (mounted) {
+        final isStillPlaying = await _speechService.isPlaying;
+        if (!isStillPlaying) {
+          setState(() {
+            _isSpeaking = false;
+          });
+        }
+      }
     }
   }
 

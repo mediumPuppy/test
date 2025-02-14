@@ -15,11 +15,16 @@ class SpeechService {
 
   Future<void> speak(String text) async {
     await initialize();
-    await _tts.speak(text);
+    return _tts.speak(text);
   }
 
   Future<void> stop() async {
     await _tts.stop();
+  }
+
+  Future<bool> get isPlaying async {
+    final ttsState = await _tts.getSpeechRateValidRange;
+    return ttsState != null;
   }
 
   Future<void> dispose() async {
