@@ -513,7 +513,7 @@ $prompt''';
               ],
             ),
           ],
-          temperature: 1.0, // Increased from 0.7 for more randomness
+          temperature: 1.7, // Increased from 0.7 for more randomness
           maxTokens: 2000,
         );
 
@@ -529,7 +529,7 @@ $prompt''';
               ]
             }
           ],
-          "generationConfig": {"temperature": 1.0, "topP": 0.8, "topK": 40}
+          "generationConfig": {"temperature": 1.7, "topP": 0.8, "topK": 40}
         };
 
         final uri = Uri.parse(_geminiEndpoint)

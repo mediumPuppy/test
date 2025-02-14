@@ -32,16 +32,18 @@ class _QuizScreenState extends State<QuizScreen> {
   int _timeRemaining = 0;
   final TextEditingController _openEndedController = TextEditingController();
   final bool _showDebugInfo = true; // Add debug flag
+  late DateTime _startTime;
 
   @override
   void initState() {
     super.initState();
+    _startTime = DateTime.now();
     _initializeQuiz();
   }
 
   void _initializeQuiz() {
     setState(() {
-      _timeRemaining = widget.quiz.timeLimit * 60;
+      _timeRemaining = 60; // Set to 1 minute (60 seconds)
     });
     _startTimer();
   }
@@ -238,7 +240,10 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Future<void> _submitQuiz() async {
     _timer?.cancel();
-    final timeSpent = Duration(seconds: (_timeRemaining ~/ 60).abs());
+
+    // Calculate actual time spent
+    final endTime = DateTime.now();
+    final timeSpent = endTime.difference(_startTime);
 
     int score = _isCorrect.values.where((correct) => correct).length;
     await _quizService.recordQuizAttempt(
@@ -251,15 +256,24 @@ class _QuizScreenState extends State<QuizScreen> {
       timeSpent: timeSpent,
     );
 
-    // Show results dialog
+    // Show results dialog with actual time spent
+    if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text('Quiz Complete'),
-        content: Text(
-            'You scored $score out of ${widget.quiz.questions.length}\n'
-            'Time taken: ${timeSpent.inMinutes}m ${timeSpent.inSeconds % 60}s'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Score: $score out of ${widget.quiz.questions.length}'),
+            const SizedBox(height: 8),
+            Text(
+              'Time taken: ${timeSpent.inMinutes}:${(timeSpent.inSeconds % 60).toString().padLeft(2, '0')}',
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             child: Text('Review Answers'),
@@ -284,6 +298,11 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Format remaining time as MM:SS
+    final minutes = (_timeRemaining ~/ 60).toString().padLeft(1, '0');
+    final seconds = (_timeRemaining % 60).toString().padLeft(2, '0');
+    final timeDisplay = '$minutes:$seconds';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.quiz.title),
@@ -294,13 +313,20 @@ class _QuizScreenState extends State<QuizScreen> {
               onPressed: _showDebugDialog,
             ),
           Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color:
+                    _timeRemaining <= 10 ? Colors.red.withOpacity(0.2) : null,
+                borderRadius: BorderRadius.circular(4),
+              ),
               child: Text(
-                '${(_timeRemaining ~/ 60).toString().padLeft(2, '0')}:'
-                '${(_timeRemaining % 60).toString().padLeft(2, '0')}',
-                style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                timeDisplay,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: _timeRemaining <= 10 ? Colors.red : null,
+                ),
               ),
             ),
           ),
