@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import '../services/gpt_service.dart';
 import 'package:uuid/uuid.dart';
+import '../services/video_progress_tracker.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -33,6 +34,7 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
   final PageController _pageController = PageController();
   final FirestoreService _firestoreService = FirestoreService();
   final _progressService = TopicProgressService();
+  final _videoProgressTracker = VideoProgressTracker();
   int _lastPage = 0;
   int _lastVideoCount = 0; // Track video count changes
 
@@ -65,6 +67,11 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return const Center(child: Text('Please log in to view videos'));
+    }
+
     if (widget.selectedPath == null) {
       return Center(
         child: Column(
@@ -168,6 +175,8 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
                     feed: video,
                     onShare: () {},
                     pageController: _pageController,
+                    userId: user.uid,
+                    progressTracker: _videoProgressTracker,
                   ),
                   // Detect last video by comparing index with total count
                   if (index == videos.length - 1)

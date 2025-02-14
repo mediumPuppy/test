@@ -3,6 +3,7 @@ import 'dart:async';
 import '../models/video_feed.dart';
 import '../services/firestore_service.dart';
 import '../services/topic_progress_service.dart';
+import '../services/video_progress_tracker.dart';
 import 'action_bar.dart';
 import '../screens/ai_explanation_screen.dart';
 import '../controllers/json_video_controller.dart';
@@ -16,6 +17,8 @@ class VideoFeedItem extends StatefulWidget {
   final VideoFeed feed;
   final VoidCallback onShare;
   final PageController pageController;
+  final String userId;
+  final VideoProgressTracker progressTracker;
 
   const VideoFeedItem({
     super.key,
@@ -23,6 +26,8 @@ class VideoFeedItem extends StatefulWidget {
     required this.feed,
     required this.onShare,
     required this.pageController,
+    required this.userId,
+    required this.progressTracker,
   });
 
   @override
@@ -182,6 +187,12 @@ class _VideoFeedItemState extends State<VideoFeedItem>
       });
       // Start playback once transition is complete
       _startPlayback();
+
+      // Track video for quiz scheduling
+      widget.progressTracker.trackVideo(widget.feed);
+
+      // Check if we should show a quiz
+      widget.progressTracker.shouldShowQuiz(context, widget.userId);
     }
 
     // Pause playback during scrolling if this is the current page

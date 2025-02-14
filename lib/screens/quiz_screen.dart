@@ -3,15 +3,18 @@ import 'dart:async';
 import '../models/quiz_model.dart';
 import '../services/quiz_service.dart';
 import '../services/math_expression_service.dart';
+import '../models/video_feed.dart';
 
 class QuizScreen extends StatefulWidget {
   final Quiz quiz;
   final String userId;
+  final List<VideoFeed>? videoContext;
 
   const QuizScreen({
     super.key,
     required this.quiz,
     required this.userId,
+    this.videoContext,
   });
 
   @override
@@ -53,6 +56,36 @@ class _QuizScreenState extends State<QuizScreen> {
         _submitQuiz();
       }
     });
+  }
+
+  Widget _buildContextHeader() {
+    if (widget.videoContext == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Based on your recent lessons:',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          ...widget.videoContext!.map((video) => Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text(
+                  '• ${video.title ?? "Untitled"}',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              )),
+        ],
+      ),
+    );
   }
 
   Widget _buildQuestionCard(QuizQuestion question) {
@@ -259,11 +292,12 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
           Center(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
                 '${(_timeRemaining ~/ 60).toString().padLeft(2, '0')}:'
                 '${(_timeRemaining % 60).toString().padLeft(2, '0')}',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -275,6 +309,7 @@ class _QuizScreenState extends State<QuizScreen> {
             value: (_currentQuestionIndex + 1) / widget.quiz.questions.length,
             backgroundColor: Colors.grey[200],
           ),
+          _buildContextHeader(),
           Expanded(
             child: _buildQuestionCard(
                 widget.quiz.questions[_currentQuestionIndex]),
@@ -347,6 +382,13 @@ class _QuizScreenState extends State<QuizScreen> {
               Text('Total Questions: ${widget.quiz.questions.length}'),
               Text('Time Limit: ${widget.quiz.timeLimit} seconds'),
               Text('Remaining Time: $_timeRemaining seconds'),
+              if (widget.videoContext != null) ...[
+                const Divider(),
+                const Text('Video Context:'),
+                ...widget.videoContext!.map((v) => Text(
+                      '• ${v.title ?? "Untitled"} (${v.topics.join(", ")})',
+                    )),
+              ],
               const Divider(),
               Text('Current Question: ${_currentQuestionIndex + 1}'),
               Text('Selected Answers: ${_answers.values.join(", ")}'),

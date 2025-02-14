@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/quiz_model.dart';
+import '../models/video_feed.dart';
 import 'learning_progress_service.dart';
 import 'quiz_service.dart';
 
@@ -16,16 +17,35 @@ class QuizSchedulerService {
   Future<Quiz?> generateQuizForUser({
     required String userId,
     required List<String> currentTopics,
+    List<VideoFeed>? previousVideos,
     int questionCount = _defaultQuestionCount,
   }) async {
     try {
-      final masteryLevels = await _progressService.getTopicMasteryLevels(userId);
-      
+      final masteryLevels =
+          await _progressService.getTopicMasteryLevels(userId);
+
+      // If we have previous videos, extract their topics and context
+      String? contextSummary;
+      if (previousVideos != null && previousVideos.isNotEmpty) {
+        final contextBuilder = StringBuffer();
+        contextBuilder.writeln('Quiz based on your recent lessons:');
+
+        for (var video in previousVideos) {
+          contextBuilder.writeln('• ${video.title}');
+          // Add topics from previous videos to current topics
+          currentTopics.addAll(video.topics);
+        }
+
+        // Remove duplicates
+        currentTopics = currentTopics.toSet().toList();
+        contextSummary = contextBuilder.toString();
+      }
+
       // Calculate question distribution
       final recentCount = (questionCount * _recentTopicsWeight).round();
       final reviewCount = (questionCount * _reviewTopicsWeight).round();
       final advancedCount = (questionCount * _advancedTopicsWeight).round();
-      
+
       // Adjust counts to ensure they sum to questionCount
       final totalCount = recentCount + reviewCount + advancedCount;
       final adjustment = questionCount - totalCount;
@@ -66,18 +86,23 @@ class QuizSchedulerService {
       // Create a new quiz
       return Quiz(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: 'Progress Check Quiz',
+        title: previousVideos != null
+            ? 'Quick Progress Check'
+            : 'Progress Check Quiz',
         topics: [...currentTopics, ...completedTopics, ...upcomingTopics],
         difficulty: _getDifficultyForMastery(
           masteryLevels[currentTopics.last] ?? 0.0,
         ),
         questions: allQuestions,
-        timeLimit: 900, // 15 minutes
+        timeLimit: previousVideos != null
+            ? 300
+            : 900, // 5 minutes for quick quiz, 15 for regular
         shuffleQuestions: true,
         metadata: {
           'generatedFor': userId,
           'generatedAt': DateTime.now().toIso8601String(),
-          'type': 'adaptive',
+          'type': previousVideos != null ? 'video_progress' : 'adaptive',
+          if (contextSummary != null) 'contextSummary': contextSummary,
         },
       );
     } catch (e) {
