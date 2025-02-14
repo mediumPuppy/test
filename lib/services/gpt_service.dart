@@ -422,6 +422,9 @@ Do not include any other text or explanation in your response.''';
     int questionCount = 5,
   }) async {
     try {
+      // Ensure questionCount is between 2-3
+      questionCount = questionCount.clamp(2, 3);
+
       final prompt =
           '''You are a specialized JSON generator for math quizzes. Your task is to output ONLY a valid JSON object with NO additional text or formatting.
 
@@ -457,7 +460,7 @@ Required structure:
 Requirements:
 1. Generate exactly $questionCount questions
 2. Topics: ${topics.join(", ")}
-3. Difficulty: ${difficulty.name}
+3. Difficulty: ${difficulty.name} - ALL questions must be at this exact difficulty level
 4. Use simple mathematical symbols (>, <, >=, <=, =) instead of Unicode symbols
 5. Ensure all JSON keys and values are properly quoted
 6. Array elements and object properties must be comma-separated
@@ -567,41 +570,78 @@ Output ONLY the JSON object.''';
     DifficultyLevel difficulty,
   ) {
     try {
-      final questions = (aiResponse['questions'] as List).map((q) {
-        // Validate question structure
-        if (!q.containsKey('question') || !q.containsKey('type')) {
-          print(
-              '[GPTService] Invalid question structure: ${q.keys.join(', ')}');
-          throw FormatException('Invalid question format');
-        }
+      print('\n[GPTService] DIAGNOSTIC LOGS:');
+      print('[GPTService] Requested difficulty: ${difficulty.name}');
+      print(
+          '[GPTService] Initial questions from AI: ${(aiResponse['questions'] as List).length}');
 
-        return QuizQuestion(
-          id: DateTime.now().millisecondsSinceEpoch.toString() +
-              '_${q['question'].hashCode}',
-          question: q['question'],
-          type: QuestionType.values.firstWhere(
-            (t) => t.toString().split('.').last == q['type'],
-            orElse: () => QuestionType.multipleChoice,
-          ),
-          difficulty: difficulty,
-          topics: List<String>.from(q['topics'] ?? topics),
-          metadata: Map<String, dynamic>.from(q['metadata'] ?? {}),
-          options:
-              q['options'] != null ? List<String>.from(q['options']) : null,
-          correctAnswer: q['correctAnswer'],
-          explanation: q['explanation'],
-          commonMistakes: q['commonMistakes'] != null
-              ? Map<String, String>.from(q['commonMistakes'])
-              : null,
-        );
-      }).toList();
+      // Log all questions and their difficulties before filtering
+      print('\n[GPTService] Questions before filtering:');
+      (aiResponse['questions'] as List).forEach((q) {
+        print(
+            '[GPTService] Question: "${q['question']?.toString().substring(0, 20)}..." - Difficulty: ${q['difficulty']}');
+      });
+
+      // Filter questions to match exact difficulty and limit count
+      var filteredQuestions = (aiResponse['questions'] as List)
+          .where((q) {
+            final questionDifficulty =
+                q['difficulty']?.toString().toLowerCase() ?? '';
+            final targetDifficulty = difficulty.name.toLowerCase();
+            print('\n[GPTService] Difficulty comparison:');
+            print('  Question difficulty: "$questionDifficulty"');
+            print('  Target difficulty:   "$targetDifficulty"');
+            print('  Match: ${questionDifficulty == targetDifficulty}');
+            return questionDifficulty == targetDifficulty;
+          })
+          .take(3) // Ensure we get at most 3 questions
+          .map((q) {
+            if (!q.containsKey('question') || !q.containsKey('type')) {
+              print(
+                  '[GPTService] Invalid question structure: ${q.keys.join(', ')}');
+              throw FormatException('Invalid question format');
+            }
+
+            return QuizQuestion(
+              id: DateTime.now().millisecondsSinceEpoch.toString() +
+                  '_${q['question'].hashCode}',
+              question: q['question'],
+              type: QuestionType.values.firstWhere(
+                (t) => t.toString().split('.').last == q['type'],
+                orElse: () => QuestionType.multipleChoice,
+              ),
+              difficulty: difficulty,
+              topics: List<String>.from(q['topics'] ?? topics),
+              metadata: Map<String, dynamic>.from(q['metadata'] ?? {}),
+              options:
+                  q['options'] != null ? List<String>.from(q['options']) : null,
+              correctAnswer: q['correctAnswer'],
+              explanation: q['explanation'],
+              commonMistakes: q['commonMistakes'] != null
+                  ? Map<String, String>.from(q['commonMistakes'])
+                  : null,
+            );
+          })
+          .toList();
+
+      print('\n[GPTService] RESULTS:');
+      print(
+          '[GPTService] Questions after filtering: ${filteredQuestions.length}');
+      print('[GPTService] Final difficulty level: ${difficulty.name}');
+
+      // Ensure we have at least 2 questions
+      if (filteredQuestions.length < 2) {
+        print('[GPTService] Not enough valid questions generated');
+        throw FormatException(
+            'Not enough valid questions of the specified difficulty');
+      }
 
       return Quiz(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         title: aiResponse['title'] ?? 'AI Generated Quiz',
         topics: topics,
         difficulty: difficulty,
-        questions: questions,
+        questions: filteredQuestions,
         timeLimit: 300, // 5 minutes for AI generated quizzes
         shuffleQuestions: true,
         metadata: {

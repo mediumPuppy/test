@@ -60,95 +60,47 @@ class QuizSchedulerService {
           await _progressService.getTopicMasteryLevels(userId);
       print('[QuizScheduler] User mastery levels: $masteryLevels');
 
-      // If we have previous videos, extract their topics and context
-      String? contextSummary;
-      final allTopics = List<String>.from(currentTopics); // Create new list
-
+      // If we have previous videos, extract their topics
       if (previousVideos != null && previousVideos.isNotEmpty) {
-        final contextBuilder = StringBuffer();
-        contextBuilder.writeln('Quiz based on your recent lessons:');
-
         for (var video in previousVideos) {
-          contextBuilder.writeln('• ${video.title}');
-          // Add topics from previous videos to new list
-          allTopics.addAll(video.topics);
+          currentTopics.addAll(video.topics);
         }
-
         // Remove duplicates
-        allTopics.removeWhere((topic) => topic.isEmpty);
-        final uniqueTopics = allTopics.toSet().toList();
-
-        contextSummary = contextBuilder.toString();
+        currentTopics = currentTopics.toSet().toList();
         print(
-            '[QuizScheduler] Updated topics after adding from videos: ${uniqueTopics.join(", ")}');
+            '[QuizScheduler] Updated topics after adding from videos: ${currentTopics.join(", ")}');
       }
 
-      // Calculate question distribution
-      final recentCount = (questionCount * _recentTopicsWeight).round();
-      final reviewCount = (questionCount * _reviewTopicsWeight).round();
-      final advancedCount = (questionCount * _advancedTopicsWeight).round();
-
-      print(
-          '[QuizScheduler] Question distribution - Recent: $recentCount, Review: $reviewCount, Advanced: $advancedCount');
-
-      // Adjust counts to ensure they sum to questionCount
-      final totalCount = recentCount + reviewCount + advancedCount;
-      final adjustment = questionCount - totalCount;
-      final adjustedRecentCount = recentCount + adjustment;
-
-      // Get questions for each category
+      // Calculate difficulty based on mastery of current topics
       final difficulty = _getDifficultyForMastery(
-        masteryLevels[allTopics.last] ?? 0.0,
+        masteryLevels[currentTopics.last] ?? 0.0,
       );
       print('[QuizScheduler] Calculated difficulty level: $difficulty');
 
-      print('[QuizScheduler] Getting recent questions...');
-      final recentQuestions = await _getQuestionsForTopics(
-        topics: allTopics,
-        count: adjustedRecentCount,
+      // Generate questions with consistent difficulty
+      final questions = await _getQuestionsForTopics(
+        topics: currentTopics,
+        count: 2, // Always generate 2-3 questions
         difficulty: difficulty,
       );
 
-      print('[QuizScheduler] Getting review questions...');
-      final completedTopics = await _getCompletedTopics(userId);
-      print('[QuizScheduler] Completed topics: ${completedTopics.join(", ")}');
-      final reviewQuestions = await _getQuestionsForTopics(
-        topics: completedTopics,
-        count: reviewCount,
-        difficulty: DifficultyLevel.intermediate,
-      );
-
-      print('[QuizScheduler] Getting advanced questions...');
-      final upcomingTopics = await _getUpcomingTopics(allTopics.last);
-      print('[QuizScheduler] Upcoming topics: ${upcomingTopics.join(", ")}');
-      final advancedQuestions = await _getQuestionsForTopics(
-        topics: upcomingTopics,
-        count: advancedCount,
-        difficulty: DifficultyLevel.advanced,
-      );
-
-      // Combine all questions
-      final allQuestions = [
-        ...recentQuestions,
-        ...reviewQuestions,
-        ...advancedQuestions,
-      ];
-
-      print('[QuizScheduler] Total questions found: ${allQuestions.length}');
-      if (allQuestions.isEmpty) {
-        print('[QuizScheduler] No questions found for any category');
+      if (questions.isEmpty) {
+        print('[QuizScheduler] No questions generated');
         return null;
       }
 
-      // Create a new quiz
+      print(
+          '[QuizScheduler] Successfully generated ${questions.length} questions');
+
+      // Create quiz with consistent difficulty
       return Quiz(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         title: previousVideos != null
             ? 'Quick Progress Check'
             : 'Progress Check Quiz',
-        topics: [...allTopics, ...completedTopics, ...upcomingTopics],
+        topics: currentTopics,
         difficulty: difficulty,
-        questions: allQuestions,
+        questions: questions,
         timeLimit: previousVideos != null
             ? 300
             : 900, // 5 minutes for quick quiz, 15 for regular
@@ -157,7 +109,6 @@ class QuizSchedulerService {
           'generatedFor': userId,
           'generatedAt': DateTime.now().toIso8601String(),
           'type': previousVideos != null ? 'video_progress' : 'adaptive',
-          if (contextSummary != null) 'contextSummary': contextSummary,
         },
       );
     } catch (e, stackTrace) {
