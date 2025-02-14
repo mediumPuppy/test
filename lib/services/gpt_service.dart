@@ -438,7 +438,8 @@ Required structure:
       "difficulty": "${difficulty.name}",
       "topics": ["string"],
       "metadata": {
-        "category": "string - math category"
+        "category": "string - math category",
+        "subtype": "string - specific type of problem"
       },
       "options": [
         "string - correct answer",
@@ -457,16 +458,28 @@ Required structure:
   ]
 }
 
-Requirements:
-1. Generate exactly $questionCount questions
-2. Topics: ${topics.join(", ")}
-3. Difficulty: ${difficulty.name} - ALL questions must be at this exact difficulty level
-4. Use simple mathematical symbols (>, <, >=, <=, =) instead of Unicode symbols
-5. Ensure all JSON keys and values are properly quoted
-6. Array elements and object properties must be comma-separated
-7. No trailing commas
-8. No comments or additional text
-9. No markdown formatting
+VARIETY REQUIREMENTS:
+1. Each question MUST be significantly different from others
+2. Use different problem structures (e.g., solve for x, word problems, comparisons)
+3. Use different numbers and scenarios
+4. Mix different subtopics within the main topic
+5. Vary the complexity while staying within the specified difficulty level
+6. Include at least one word problem if appropriate for the topic
+7. Use different formats for presenting similar concepts
+
+Topics to cover: ${topics.join(", ")}
+Difficulty Level: ${difficulty.name}
+Number of questions: $questionCount
+
+Additional Guidelines:
+1. For ${difficulty.name} difficulty:
+   - Beginner: Focus on basic concepts, single-step problems
+   - Intermediate: Two-step problems, basic word problems
+   - Advanced: Multi-step problems, complex applications
+2. Ensure questions build on different aspects of the topic
+3. Include real-world applications where possible
+4. Make wrong answers plausible but clearly incorrect
+5. Provide detailed explanations for both correct and incorrect answers
 
 Output ONLY the JSON object.''';
 

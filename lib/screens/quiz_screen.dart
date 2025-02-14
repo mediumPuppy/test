@@ -92,35 +92,38 @@ class _QuizScreenState extends State<QuizScreen> {
     return Card(
       elevation: 4,
       margin: EdgeInsets.all(16),
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (question.visualAid != null)
-              Image.network(
-                question.visualAid!,
-                height: 200,
-                fit: BoxFit.contain,
-              ),
-            Text(
-              question.question,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 16),
-            if (question.type == QuestionType.multipleChoice)
-              _buildMultipleChoiceOptions(question)
-            else
-              _buildOpenEndedInput(),
-            if (_showExplanation && question.explanation != null)
-              _buildExplanation(question),
-            if (_showDebugInfo)
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (question.visualAid != null)
+                Image.network(
+                  question.visualAid!,
+                  height: 200,
+                  fit: BoxFit.contain,
+                ),
               Text(
-                'Question ${_currentQuestionIndex + 1}/${widget.quiz.questions.length} '
-                '(${question.difficulty})',
-                style: const TextStyle(color: Colors.grey),
+                question.question,
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-          ],
+              SizedBox(height: 16),
+              if (question.type == QuestionType.multipleChoice)
+                _buildMultipleChoiceOptions(question)
+              else
+                _buildOpenEndedInput(),
+              if (_showExplanation && question.explanation != null)
+                _buildExplanation(question),
+              if (_showDebugInfo)
+                Text(
+                  'Question ${_currentQuestionIndex + 1}/${widget.quiz.questions.length} '
+                  '(${question.difficulty})',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+            ],
+          ),
         ),
       ),
     );
