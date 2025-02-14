@@ -104,16 +104,15 @@ class _VideoFeedItemState extends State<VideoFeedItem>
       print('Stopping animation and audio');
       _animationController.stop();
       _speechService.pause();
-      _isSpeaking = false;
     } else {
       print('Starting animation from: ${_animationController.value}');
       _animationController.forward(from: _animationController.value);
-      if (!_isSpeaking) {
-        print('Starting speech since not currently speaking');
-        _startSpeech();
-      } else {
+      if (_isSpeaking) {
         print('Resuming existing speech');
         _speechService.resume();
+      } else {
+        print('Starting speech since not currently speaking');
+        _startSpeech();
       }
     }
   }
