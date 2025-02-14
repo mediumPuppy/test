@@ -349,12 +349,14 @@ class _QuizScreenState extends State<QuizScreen> {
                   )
                 else
                   ElevatedButton(
-                    onPressed: _answers[widget
-                                .quiz.questions[_currentQuestionIndex].id] !=
-                            null
-                        ? _submitQuiz
-                        : null,
-                    child: Text('Submit'),
+                    onPressed: _showExplanation
+                        ? () => Navigator.pop(context)
+                        : (_answers[widget.quiz.questions[_currentQuestionIndex]
+                                    .id] !=
+                                null
+                            ? _submitQuiz
+                            : null),
+                    child: Text(_showExplanation ? 'Done' : 'Submit'),
                   ),
               ],
             ),
