@@ -124,8 +124,10 @@ class _VideoFeedItemState extends State<VideoFeedItem>
 
   void _startSpeech() async {
     print('_startSpeech called');
-    final script =
-        widget.feed.videoJson['instructions']['speech']['script'] as String;
+    final speechData = widget.feed.videoJson['instructions']['speech'];
+    final script = speechData['script'] as String;
+    final preGeneratedMp3Url = speechData['mp3_url'] as String?;
+
     print(
         'Speech script: ${script.substring(0, script.length > 50 ? 50 : script.length)}...');
     if (script.isNotEmpty) {
@@ -135,7 +137,8 @@ class _VideoFeedItemState extends State<VideoFeedItem>
       });
       print('Attempting to play audio');
       try {
-        await _speechService.speak(script);
+        await _speechService.speak(script,
+            preGeneratedMp3Url: preGeneratedMp3Url);
         print('Audio playback started');
 
         // Listen for playback completion

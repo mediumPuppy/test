@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:crypto/crypto.dart';
 
 class SpeechService {
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -13,6 +14,7 @@ class SpeechService {
   static const String _defaultVoiceId = 'pNInz6obpgDQGcFmaJgB'; // Adam voice
   File? _currentAudioFile;
   String? _selectedModelId;
+  final Map<String, String> _audioCache = {};
 
   Future<void> initialize() async {
     if (!_isInitialized) {
@@ -21,8 +23,48 @@ class SpeechService {
             'ELEVEN_LABS_API_KEY not found in environment variables');
       }
       await _fetchAvailableModels();
+      await _initializeCache();
       _isInitialized = true;
     }
+  }
+
+  Future<void> _initializeCache() async {
+    final cacheDir = await _getCacheDirectory();
+    if (await cacheDir.exists()) {
+      final files = await cacheDir.list().toList();
+      for (var file in files) {
+        if (file is File && file.path.endsWith('.mp3')) {
+          final hash = file.path.split('/').last.replaceAll('.mp3', '');
+          _audioCache[hash] = file.path;
+        }
+      }
+    }
+  }
+
+  Future<Directory> _getCacheDirectory() async {
+    final tempDir = await getTemporaryDirectory();
+    final cacheDir = Directory('${tempDir.path}/audio_cache');
+    if (!await cacheDir.exists()) {
+      await cacheDir.create(recursive: true);
+    }
+    return cacheDir;
+  }
+
+  String _generateHash(String text) {
+    return md5.convert(utf8.encode(text)).toString();
+  }
+
+  Future<String?> _getCachedAudioPath(String text) async {
+    final hash = _generateHash(text);
+    return _audioCache[hash];
+  }
+
+  Future<void> _cacheAudio(String text, List<int> audioBytes) async {
+    final hash = _generateHash(text);
+    final cacheDir = await _getCacheDirectory();
+    final audioFile = File('${cacheDir.path}/$hash.mp3');
+    await audioFile.writeAsBytes(audioBytes);
+    _audioCache[hash] = audioFile.path;
   }
 
   Future<void> _fetchAvailableModels() async {
@@ -37,32 +79,47 @@ class SpeechService {
 
       if (response.statusCode == 200) {
         final models = json.decode(response.body);
-        // Select the first available model or a specific one
         if (models is List && models.isNotEmpty) {
           _selectedModelId = models[0]['model_id'];
           print('Selected model: $_selectedModelId');
         }
       } else {
         print('Failed to fetch models: ${response.body}');
-        // Fallback to a known model ID
         _selectedModelId = 'eleven_multilingual_v2';
       }
     } catch (e) {
       print('Error fetching models: $e');
-      // Fallback to a known model ID
       _selectedModelId = 'eleven_multilingual_v2';
     }
   }
 
-  Future<void> speak(String text) async {
+  Future<void> speak(String text, {String? preGeneratedMp3Url}) async {
     try {
       await initialize();
 
+      // First, check if we have a pre-generated MP3 URL
+      if (preGeneratedMp3Url != null && preGeneratedMp3Url.isNotEmpty) {
+        print('Using pre-generated MP3 URL: $preGeneratedMp3Url');
+        await _audioPlayer.setUrl(preGeneratedMp3Url);
+        await _audioPlayer.play();
+        return;
+      }
+
+      // Then, check if we have a cached version
+      final cachedPath = await _getCachedAudioPath(text);
+      if (cachedPath != null) {
+        print('Using cached audio file: $cachedPath');
+        await _audioPlayer.setFilePath(cachedPath);
+        await _audioPlayer.play();
+        return;
+      }
+
+      // If no cache or pre-generated URL, generate new audio
       if (_selectedModelId == null) {
         throw Exception('No text-to-speech model available');
       }
 
-      // Get audio bytes from Eleven Labs
+      print('Generating new audio from Eleven Labs API');
       final url = Uri.parse('$_baseUrl/text-to-speech/$_defaultVoiceId');
       final response = await http.post(
         url,
@@ -87,15 +144,17 @@ class SpeechService {
         throw Exception('Failed to generate speech: ${response.body}');
       }
 
-      // Save audio bytes to a temporary file
-      final tempDir = await getTemporaryDirectory();
-      final tempPath =
-          '${tempDir.path}/temp_audio_${DateTime.now().millisecondsSinceEpoch}.mp3';
-      _currentAudioFile = File(tempPath);
-      await _currentAudioFile!.writeAsBytes(response.bodyBytes);
+      // Cache the new audio
+      await _cacheAudio(text, response.bodyBytes);
 
-      // Play the audio from the temporary file
-      await _audioPlayer.setFilePath(_currentAudioFile!.path);
+      // Get the cached file path
+      final audioPath = await _getCachedAudioPath(text);
+      if (audioPath == null) {
+        throw Exception('Failed to cache audio file');
+      }
+
+      // Play the audio from the cached file
+      await _audioPlayer.setFilePath(audioPath);
       await _audioPlayer.play();
     } catch (e) {
       print('Error in speak: $e');
@@ -105,7 +164,6 @@ class SpeechService {
 
   Future<void> stop() async {
     await _audioPlayer.stop();
-    await _cleanupTempFile();
   }
 
   Future<void> pause() async {
@@ -119,18 +177,6 @@ class SpeechService {
   Future<void> dispose() async {
     await stop();
     await _audioPlayer.dispose();
-    await _cleanupTempFile();
-  }
-
-  Future<void> _cleanupTempFile() async {
-    if (_currentAudioFile != null && await _currentAudioFile!.exists()) {
-      try {
-        await _currentAudioFile!.delete();
-        _currentAudioFile = null;
-      } catch (e) {
-        print('Error cleaning up temp file: $e');
-      }
-    }
   }
 
   bool get isPlaying => _audioPlayer.playing;
