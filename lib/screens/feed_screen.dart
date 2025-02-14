@@ -34,13 +34,15 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
   final PageController _pageController = PageController();
   final FirestoreService _firestoreService = FirestoreService();
   final _progressService = TopicProgressService();
-  final _videoProgressTracker = VideoProgressTracker();
+  late final VideoProgressTracker _videoProgressTracker;
   int _lastPage = 0;
   int _lastVideoCount = 0; // Track video count changes
 
   @override
   void initState() {
     super.initState();
+    print('[FeedScreen] Initializing VideoProgressTracker');
+    _videoProgressTracker = VideoProgressTracker();
     _pageController.addListener(_handlePageChange);
   }
 
@@ -60,6 +62,7 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
 
   @override
   void dispose() {
+    print('[FeedScreen] Disposing VideoProgressTracker');
     _pageController.removeListener(_handlePageChange);
     _pageController.dispose();
     super.dispose();

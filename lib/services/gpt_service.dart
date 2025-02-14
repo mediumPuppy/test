@@ -1,7 +1,9 @@
 import 'dart:convert'; // Needed for JSON parsing
+import 'dart:math'; // For min/max functions
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:dart_openai/dart_openai.dart';
 import 'package:http/http.dart' as http; // Added for Gemini REST calls
+import '../models/quiz_model.dart'; // Added for Quiz and QuizQuestion models
 
 // Simple model to handle chat responses
 class ChatResponse {
@@ -411,6 +413,207 @@ Do not include any other text or explanation in your response.''';
         'title': 'Math Lesson',
         'description': 'Learn an important mathematical concept.',
       };
+    }
+  }
+
+  Future<Quiz?> generateQuizFromTopics({
+    required List<String> topics,
+    required DifficultyLevel difficulty,
+    int questionCount = 5,
+  }) async {
+    try {
+      final prompt =
+          '''You are a specialized JSON generator for math quizzes. Your task is to output ONLY a valid JSON object with NO additional text or formatting.
+
+Required structure:
+{
+  "title": "string - quiz title",
+  "questions": [
+    {
+      "question": "string - the question text using simple symbols (>, <, >=, <=, =)",
+      "type": "string - one of: multipleChoice, openEnded, wordProblem, mathExpression",
+      "difficulty": "${difficulty.name}",
+      "topics": ["string"],
+      "metadata": {
+        "category": "string - math category"
+      },
+      "options": [
+        "string - correct answer",
+        "string - wrong answer 1",
+        "string - wrong answer 2",
+        "string - wrong answer 3"
+      ],
+      "correctAnswer": "string - must match first option exactly",
+      "explanation": "string - explanation using simple symbols",
+      "commonMistakes": {
+        "wrong answer 1": "string - explanation of this mistake",
+        "wrong answer 2": "string - explanation of this mistake",
+        "wrong answer 3": "string - explanation of this mistake"
+      }
+    }
+  ]
+}
+
+Requirements:
+1. Generate exactly $questionCount questions
+2. Topics: ${topics.join(", ")}
+3. Difficulty: ${difficulty.name}
+4. Use simple mathematical symbols (>, <, >=, <=, =) instead of Unicode symbols
+5. Ensure all JSON keys and values are properly quoted
+6. Array elements and object properties must be comma-separated
+7. No trailing commas
+8. No comments or additional text
+9. No markdown formatting
+
+Output ONLY the JSON object.''';
+
+      String rawResponse;
+      if (_provider == 'openai') {
+        final response = await OpenAI.instance.chat.create(
+          model: 'gpt-4o-mini',
+          messages: [
+            OpenAIChatCompletionChoiceMessageModel(
+              role: OpenAIChatMessageRole.system,
+              content: [
+                OpenAIChatCompletionChoiceMessageContentItemModel.text(prompt),
+              ],
+            ),
+          ],
+          temperature: 0.7,
+          maxTokens: 2000,
+        );
+
+        rawResponse =
+            response.choices.first.message.content?.firstOrNull?.text?.trim() ??
+                '{}';
+      } else if (_provider == 'gemini') {
+        final payload = {
+          "contents": [
+            {
+              "parts": [
+                {"text": prompt}
+              ]
+            }
+          ]
+        };
+
+        final uri = Uri.parse(_geminiEndpoint)
+            .replace(queryParameters: {"key": _geminiApiKey});
+        final geminiResponse = await http.post(
+          uri,
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode(payload),
+        );
+
+        if (geminiResponse.statusCode != 200) {
+          throw Exception(
+              'Gemini API call failed with status: ${geminiResponse.statusCode}');
+        }
+
+        Map<String, dynamic> respJson = jsonDecode(geminiResponse.body);
+        rawResponse = respJson['candidates'][0]['content']['parts'][0]['text']
+                ?.toString()
+                .trim() ??
+            '{}';
+      } else {
+        throw Exception('Unsupported AI provider: $_provider');
+      }
+
+      // Clean up the response
+      rawResponse =
+          rawResponse.replaceAll('```json', '').replaceAll('```', '').trim();
+
+      // Log raw response for debugging
+      print('[GPTService] Raw quiz response: $rawResponse');
+
+      // Validate JSON structure before parsing
+      if (!rawResponse.startsWith('{') || !rawResponse.endsWith('}')) {
+        print('[GPTService] Invalid JSON structure');
+        print(
+            '[GPTService] Response starts with: ${rawResponse.substring(0, min(20, rawResponse.length))}');
+        print(
+            '[GPTService] Response ends with: ${rawResponse.substring(max(0, rawResponse.length - 20))}');
+        return null;
+      }
+
+      Map<String, dynamic> quizData;
+      try {
+        quizData = jsonDecode(rawResponse) as Map<String, dynamic>;
+      } catch (e) {
+        print('[GPTService] JSON parsing error: $e');
+        print('[GPTService] Failed to parse response: $rawResponse');
+        return null;
+      }
+
+      // Validate required fields
+      if (!quizData.containsKey('questions') ||
+          !(quizData['questions'] is List)) {
+        print('[GPTService] Missing or invalid questions array');
+        print('[GPTService] Quiz data structure: ${quizData.keys.join(', ')}');
+        return null;
+      }
+
+      return _createQuizFromAIResponse(quizData, topics, difficulty);
+    } catch (e, stackTrace) {
+      print('[GPTService] Error generating quiz: $e');
+      print('[GPTService] Stack trace: $stackTrace');
+      return null;
+    }
+  }
+
+  Quiz _createQuizFromAIResponse(
+    Map<String, dynamic> aiResponse,
+    List<String> topics,
+    DifficultyLevel difficulty,
+  ) {
+    try {
+      final questions = (aiResponse['questions'] as List).map((q) {
+        // Validate question structure
+        if (!q.containsKey('question') || !q.containsKey('type')) {
+          print(
+              '[GPTService] Invalid question structure: ${q.keys.join(', ')}');
+          throw FormatException('Invalid question format');
+        }
+
+        return QuizQuestion(
+          id: DateTime.now().millisecondsSinceEpoch.toString() +
+              '_${q['question'].hashCode}',
+          question: q['question'],
+          type: QuestionType.values.firstWhere(
+            (t) => t.toString().split('.').last == q['type'],
+            orElse: () => QuestionType.multipleChoice,
+          ),
+          difficulty: difficulty,
+          topics: List<String>.from(q['topics'] ?? topics),
+          metadata: Map<String, dynamic>.from(q['metadata'] ?? {}),
+          options:
+              q['options'] != null ? List<String>.from(q['options']) : null,
+          correctAnswer: q['correctAnswer'],
+          explanation: q['explanation'],
+          commonMistakes: q['commonMistakes'] != null
+              ? Map<String, String>.from(q['commonMistakes'])
+              : null,
+        );
+      }).toList();
+
+      return Quiz(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: aiResponse['title'] ?? 'AI Generated Quiz',
+        topics: topics,
+        difficulty: difficulty,
+        questions: questions,
+        timeLimit: 300, // 5 minutes for AI generated quizzes
+        shuffleQuestions: true,
+        metadata: {
+          'generatedBy': 'ai',
+          'generatedAt': DateTime.now().toIso8601String(),
+          'provider': _provider,
+        },
+      );
+    } catch (e, stackTrace) {
+      print('[GPTService] Error creating quiz from response: $e');
+      print('[GPTService] Stack trace: $stackTrace');
+      rethrow;
     }
   }
 }

@@ -3,16 +3,48 @@ import '../models/quiz_model.dart';
 import '../models/video_feed.dart';
 import 'learning_progress_service.dart';
 import 'quiz_service.dart';
+import 'gpt_service.dart';
 
 class QuizSchedulerService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final LearningProgressService _progressService = LearningProgressService();
   final QuizService _quizService = QuizService();
+  final GptService _gptService = GptService();
 
   static const int _defaultQuestionCount = 10;
   static const double _recentTopicsWeight = 0.5;
   static const double _reviewTopicsWeight = 0.3;
   static const double _advancedTopicsWeight = 0.2;
+
+  Future<List<QuizQuestion>> _getQuestionsForTopics({
+    required List<String> topics,
+    required int count,
+    required DifficultyLevel difficulty,
+  }) async {
+    if (topics.isEmpty || count <= 0) {
+      print('[QuizScheduler] No topics provided or count is 0');
+      return [];
+    }
+
+    print(
+        '[QuizScheduler] Searching for questions with topics: ${topics.join(", ")}');
+    print('[QuizScheduler] Difficulty level: $difficulty');
+
+    final quiz = await _gptService.generateQuizFromTopics(
+      topics: topics,
+      difficulty: difficulty,
+      questionCount: count,
+    );
+
+    if (quiz == null) {
+      print('[QuizScheduler] Failed to generate quiz questions');
+      return [];
+    }
+
+    print(
+        '[QuizScheduler] Successfully generated ${quiz.questions.length} questions');
+    return quiz.questions;
+  }
 
   Future<Quiz?> generateQuizForUser({
     required String userId,
@@ -21,8 +53,12 @@ class QuizSchedulerService {
     int questionCount = _defaultQuestionCount,
   }) async {
     try {
+      print('[QuizScheduler] Generating quiz for user: $userId');
+      print('[QuizScheduler] Current topics: ${currentTopics.join(", ")}');
+
       final masteryLevels =
           await _progressService.getTopicMasteryLevels(userId);
+      print('[QuizScheduler] User mastery levels: $masteryLevels');
 
       // If we have previous videos, extract their topics and context
       String? contextSummary;
@@ -39,6 +75,8 @@ class QuizSchedulerService {
         // Remove duplicates
         currentTopics = currentTopics.toSet().toList();
         contextSummary = contextBuilder.toString();
+        print(
+            '[QuizScheduler] Updated topics after adding from videos: ${currentTopics.join(", ")}');
       }
 
       // Calculate question distribution
@@ -46,28 +84,39 @@ class QuizSchedulerService {
       final reviewCount = (questionCount * _reviewTopicsWeight).round();
       final advancedCount = (questionCount * _advancedTopicsWeight).round();
 
+      print(
+          '[QuizScheduler] Question distribution - Recent: $recentCount, Review: $reviewCount, Advanced: $advancedCount');
+
       // Adjust counts to ensure they sum to questionCount
       final totalCount = recentCount + reviewCount + advancedCount;
       final adjustment = questionCount - totalCount;
       final adjustedRecentCount = recentCount + adjustment;
 
       // Get questions for each category
+      final difficulty = _getDifficultyForMastery(
+        masteryLevels[currentTopics.last] ?? 0.0,
+      );
+      print('[QuizScheduler] Calculated difficulty level: $difficulty');
+
+      print('[QuizScheduler] Getting recent questions...');
       final recentQuestions = await _getQuestionsForTopics(
         topics: currentTopics,
         count: adjustedRecentCount,
-        difficulty: _getDifficultyForMastery(
-          masteryLevels[currentTopics.last] ?? 0.0,
-        ),
+        difficulty: difficulty,
       );
 
+      print('[QuizScheduler] Getting review questions...');
       final completedTopics = await _getCompletedTopics(userId);
+      print('[QuizScheduler] Completed topics: ${completedTopics.join(", ")}');
       final reviewQuestions = await _getQuestionsForTopics(
         topics: completedTopics,
         count: reviewCount,
         difficulty: DifficultyLevel.intermediate,
       );
 
+      print('[QuizScheduler] Getting advanced questions...');
       final upcomingTopics = await _getUpcomingTopics(currentTopics.last);
+      print('[QuizScheduler] Upcoming topics: ${upcomingTopics.join(", ")}');
       final advancedQuestions = await _getQuestionsForTopics(
         topics: upcomingTopics,
         count: advancedCount,
@@ -81,7 +130,11 @@ class QuizSchedulerService {
         ...advancedQuestions,
       ];
 
-      if (allQuestions.isEmpty) return null;
+      print('[QuizScheduler] Total questions found: ${allQuestions.length}');
+      if (allQuestions.isEmpty) {
+        print('[QuizScheduler] No questions found for any category');
+        return null;
+      }
 
       // Create a new quiz
       return Quiz(
@@ -90,9 +143,7 @@ class QuizSchedulerService {
             ? 'Quick Progress Check'
             : 'Progress Check Quiz',
         topics: [...currentTopics, ...completedTopics, ...upcomingTopics],
-        difficulty: _getDifficultyForMastery(
-          masteryLevels[currentTopics.last] ?? 0.0,
-        ),
+        difficulty: difficulty,
         questions: allQuestions,
         timeLimit: previousVideos != null
             ? 300
@@ -105,32 +156,11 @@ class QuizSchedulerService {
           if (contextSummary != null) 'contextSummary': contextSummary,
         },
       );
-    } catch (e) {
-      print('Error generating quiz: $e');
+    } catch (e, stackTrace) {
+      print('[QuizScheduler] Error generating quiz: $e');
+      print('[QuizScheduler] Stack trace: $stackTrace');
       return null;
     }
-  }
-
-  Future<List<QuizQuestion>> _getQuestionsForTopics({
-    required List<String> topics,
-    required int count,
-    required DifficultyLevel difficulty,
-  }) async {
-    if (topics.isEmpty || count <= 0) return [];
-
-    final quizzes = await _quizService.getQuizzesForTopics(
-      topics: topics,
-      difficulty: difficulty,
-      limit: 5,
-    );
-
-    final questions = quizzes
-        .expand((quiz) => quiz.questions)
-        .where((q) => q.difficulty == difficulty)
-        .toList();
-
-    questions.shuffle();
-    return questions.take(count).toList();
   }
 
   Future<List<String>> _getCompletedTopics(String userId) async {

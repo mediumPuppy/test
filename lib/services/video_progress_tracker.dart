@@ -10,20 +10,38 @@ class VideoProgressTracker {
   final QuizSchedulerService _quizScheduler = QuizSchedulerService();
 
   void trackVideo(VideoFeed video) {
+    print('[VideoTracker] Adding video to tracker: ${video.title}');
+    print(
+        '[VideoTracker] Current video count before adding: ${_recentVideos.length}');
+
     _recentVideos.add(video);
     if (_recentVideos.length > videosBeforeQuiz) {
+      print(
+          '[VideoTracker] Removing oldest video as we exceeded $videosBeforeQuiz videos');
       _recentVideos.removeAt(0);
     }
+
+    print(
+        '[VideoTracker] Current videos tracked: ${_recentVideos.map((v) => v.title).join(", ")}');
   }
 
   Future<bool> shouldShowQuiz(BuildContext context, String userId) async {
-    if (_recentVideos.length < videosBeforeQuiz) return false;
+    print('[VideoTracker] Checking if should show quiz...');
+    print('[VideoTracker] Current video count: ${_recentVideos.length}');
+
+    if (_recentVideos.length < videosBeforeQuiz) {
+      print(
+          '[VideoTracker] Not enough videos watched yet (${_recentVideos.length}/$videosBeforeQuiz)');
+      return false;
+    }
 
     // Get unique topics from recent videos
     final topics =
         _recentVideos.expand((video) => video.topics).toSet().toList();
+    print('[VideoTracker] Topics collected for quiz: ${topics.join(", ")}');
 
     // Generate a quiz based on recent videos
+    print('[VideoTracker] Generating quiz for user: $userId');
     final quiz = await _quizScheduler.generateQuizForUser(
       userId: userId,
       currentTopics: topics,
@@ -31,8 +49,12 @@ class VideoProgressTracker {
       questionCount: 5, // Shorter quiz for between-video experience
     );
 
-    if (quiz == null) return false;
+    if (quiz == null) {
+      print('[VideoTracker] Failed to generate quiz');
+      return false;
+    }
 
+    print('[VideoTracker] Successfully generated quiz, showing to user');
     // Show the quiz
     if (context.mounted) {
       await Navigator.push(
@@ -47,6 +69,7 @@ class VideoProgressTracker {
       );
     }
 
+    print('[VideoTracker] Quiz completed, clearing video history');
     // Clear tracked videos after quiz
     _recentVideos.clear();
     return true;
