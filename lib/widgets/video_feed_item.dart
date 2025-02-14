@@ -58,7 +58,7 @@ class _VideoFeedItemState extends State<VideoFeedItem>
               .round()),
     );
 
-    // Add delay before starting animation and speech
+    // Add delay before starting animation and audio
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
         _animationController.forward();
@@ -78,10 +78,7 @@ class _VideoFeedItemState extends State<VideoFeedItem>
 
   Future<void> _initializeJsonVideo() async {
     await _jsonController.initialize();
-
-    // Only do further work if the widget is still mounted.
     if (!mounted) return;
-
     setState(() {
       _isInitialized = _jsonController.isInitialized;
     });
@@ -105,32 +102,49 @@ class _VideoFeedItemState extends State<VideoFeedItem>
   }
 
   void _togglePlayPause() {
+    print(
+        '_togglePlayPause called - animation state: ${_animationController.isAnimating}');
     if (_animationController.isAnimating) {
+      print('Stopping animation and audio');
       _animationController.stop();
       _speechService.stop();
       _isSpeaking = false;
     } else {
+      print('Starting animation from: ${_animationController.value}');
       _animationController.forward(from: _animationController.value);
       if (!_isSpeaking) {
+        print('Starting speech since not currently speaking');
         _startSpeech();
       }
     }
   }
 
   void _startSpeech() async {
+    print('_startSpeech called');
     final script =
         widget.feed.videoJson['instructions']['speech']['script'] as String;
+    print(
+        'Speech script: ${script.substring(0, script.length > 50 ? 50 : script.length)}...');
     if (script.isNotEmpty) {
+      print('Script is not empty, setting _isSpeaking to true');
       _isSpeaking = true;
-      await _speechService.speak(script);
-      if (mounted) {
-        final isStillPlaying = await _speechService.isPlaying;
-        if (!isStillPlaying) {
-          setState(() {
-            _isSpeaking = false;
-          });
-        }
+      print('Attempting to play audio');
+      try {
+        await _speechService.speak(script);
+        print('Audio playback completed');
+      } catch (e) {
+        print('Error playing audio: $e');
       }
+      if (mounted) {
+        print('Widget still mounted, setting _isSpeaking to false');
+        setState(() {
+          _isSpeaking = false;
+        });
+      } else {
+        print('Widget no longer mounted after audio playback');
+      }
+    } else {
+      print('Script is empty, skipping audio playback');
     }
   }
 
@@ -150,7 +164,6 @@ class _VideoFeedItemState extends State<VideoFeedItem>
                   widget
                       .feed.videoJson['instructions']['timing'].last['endTime']
                       .toDouble();
-
               return Container(
                 color: Colors.white,
                 child: NotificationListener<ScrollNotification>(
@@ -252,12 +265,12 @@ class _VideoFeedItemState extends State<VideoFeedItem>
                         speechScript: widget.feed.videoJson['instructions']
                                 ['speech']['script'] ??
                             '',
-                        speechPacing: Map<String, double>.from(
-                            (widget.feed.videoJson['instructions']['speech']
-                                        ['pacing'] ??
-                                    {})
-                                .map((key, value) =>
-                                    MapEntry(key, (value as num).toDouble()))),
+                        speechPacing: (widget.feed.videoJson['instructions']
+                                        ['speech']['pacing']
+                                    as Map<String, dynamic>? ??
+                                {})
+                            .map((key, value) =>
+                                MapEntry(key, (value as num).toDouble())),
                       ),
                     ),
                     size: Size.infinite,
