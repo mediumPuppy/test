@@ -43,6 +43,7 @@ class _VideoFeedItemState extends State<VideoFeedItem>
   double _overscrollAmount = 0.0;
   late AnimationController _animationController;
   bool _isSpeaking = false;
+  bool _isPageTransitionComplete = false;
 
   @override
   void initState() {
@@ -58,13 +59,8 @@ class _VideoFeedItemState extends State<VideoFeedItem>
               .round()),
     );
 
-    // Add delay before starting animation and audio
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) {
-        _animationController.forward();
-        _startSpeech();
-      }
-    });
+    // Add page controller listener to detect when transition is complete
+    widget.pageController.addListener(_onPageScroll);
   }
 
   @override
@@ -163,6 +159,26 @@ class _VideoFeedItemState extends State<VideoFeedItem>
       }
     } else {
       print('Script is empty, skipping audio playback');
+    }
+  }
+
+  void _onPageScroll() {
+    // Check if we're at a whole number page index (transition complete)
+    if (widget.pageController.page?.round() == widget.index &&
+        !_isPageTransitionComplete &&
+        (widget.pageController.page! - widget.index).abs() < 0.01) {
+      setState(() {
+        _isPageTransitionComplete = true;
+      });
+      // Start playback once transition is complete
+      _startPlayback();
+    }
+  }
+
+  void _startPlayback() {
+    if (mounted) {
+      _animationController.forward();
+      _startSpeech();
     }
   }
 
@@ -345,6 +361,7 @@ class _VideoFeedItemState extends State<VideoFeedItem>
 
   @override
   void dispose() {
+    widget.pageController.removeListener(_onPageScroll);
     _positionSubscription?.cancel();
     _jsonController.dispose();
     _innerScrollController.dispose();
