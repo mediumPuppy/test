@@ -173,6 +173,21 @@ class _VideoFeedItemState extends State<VideoFeedItem>
       // Start playback once transition is complete
       _startPlayback();
     }
+
+    // Pause playback during scrolling if this is the current page
+    if (widget.pageController.page?.round() == widget.index) {
+      final isScrolling =
+          (widget.pageController.page! - widget.index).abs() > 0.01;
+      if (isScrolling && _animationController.isAnimating) {
+        _animationController.stop();
+        _speechService.pause();
+      } else if (!isScrolling &&
+          !_animationController.isAnimating &&
+          _isPageTransitionComplete) {
+        _animationController.forward();
+        _speechService.resume();
+      }
+    }
   }
 
   void _startPlayback() {
@@ -203,6 +218,12 @@ class _VideoFeedItemState extends State<VideoFeedItem>
                 child: NotificationListener<ScrollNotification>(
                   onNotification: (notification) {
                     if (notification is ScrollUpdateNotification) {
+                      // Pause playback when scrolling starts
+                      if (_animationController.isAnimating) {
+                        _animationController.stop();
+                        _speechService.pause();
+                      }
+
                       if (_innerScrollController.position.pixels >=
                               _innerScrollController.position.maxScrollExtent &&
                           notification.metrics.pixels >=
