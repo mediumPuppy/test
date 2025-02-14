@@ -429,6 +429,26 @@ class _VideoFeedItemState extends State<VideoFeedItem>
               style: const TextStyle(color: Colors.black, fontSize: 16),
             ),
           ),
+          // Add restart button when video is complete
+          if (_animationController.isCompleted)
+            Center(
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(
+                    Icons.replay,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                  onPressed: _startPlayback,
+                ),
+              ),
+            ),
         ],
       ),
     );
