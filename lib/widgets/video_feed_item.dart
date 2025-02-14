@@ -107,7 +107,7 @@ class _VideoFeedItemState extends State<VideoFeedItem>
     if (_animationController.isAnimating) {
       print('Stopping animation and audio');
       _animationController.stop();
-      _speechService.stop();
+      _speechService.pause();
       _isSpeaking = false;
     } else {
       print('Starting animation from: ${_animationController.value}');
@@ -115,6 +115,9 @@ class _VideoFeedItemState extends State<VideoFeedItem>
       if (!_isSpeaking) {
         print('Starting speech since not currently speaking');
         _startSpeech();
+      } else {
+        print('Resuming existing speech');
+        _speechService.resume();
       }
     }
   }
@@ -127,21 +130,33 @@ class _VideoFeedItemState extends State<VideoFeedItem>
         'Speech script: ${script.substring(0, script.length > 50 ? 50 : script.length)}...');
     if (script.isNotEmpty) {
       print('Script is not empty, setting _isSpeaking to true');
-      _isSpeaking = true;
+      setState(() {
+        _isSpeaking = true;
+      });
       print('Attempting to play audio');
       try {
         await _speechService.speak(script);
-        print('Audio playback completed');
+        print('Audio playback started');
+
+        // Listen for playback completion
+        if (_speechService.isPlaying) {
+          while (_speechService.isPlaying) {
+            await Future.delayed(const Duration(milliseconds: 100));
+          }
+          print('Audio playback completed naturally');
+          if (mounted) {
+            setState(() {
+              _isSpeaking = false;
+            });
+          }
+        }
       } catch (e) {
         print('Error playing audio: $e');
-      }
-      if (mounted) {
-        print('Widget still mounted, setting _isSpeaking to false');
-        setState(() {
-          _isSpeaking = false;
-        });
-      } else {
-        print('Widget no longer mounted after audio playback');
+        if (mounted) {
+          setState(() {
+            _isSpeaking = false;
+          });
+        }
       }
     } else {
       print('Script is empty, skipping audio playback');
