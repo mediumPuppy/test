@@ -61,6 +61,17 @@ class _VideoFeedItemState extends State<VideoFeedItem>
 
     // Add page controller listener to detect when transition is complete
     widget.pageController.addListener(_onPageScroll);
+
+    // Start playback for first video immediately if we're at index 0
+    if (widget.index == 0) {
+      // Use a post-frame callback to ensure the widget is mounted
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _isPageTransitionComplete = true;
+        });
+        _startPlayback();
+      });
+    }
   }
 
   @override
