@@ -67,6 +67,7 @@ class _VideoFeedItemState extends State<VideoFeedItem>
   late AnimationController _animationController;
   bool _isSpeaking = false;
   bool _isPageTransitionComplete = false;
+  bool _isFullyComplete = false;
 
   @override
   void initState() {
@@ -85,9 +86,15 @@ class _VideoFeedItemState extends State<VideoFeedItem>
     // Add listener to track animation completion
     _animationController.addStatusListener((status) {
       print('Animation status changed to: $status');
-      if (status == AnimationStatus.completed) {
-        print('Video completed! Should show restart button now.');
-        if (mounted) setState(() {});
+      if (status == AnimationStatus.completed && mounted) {
+        print('Video completed! Checking audio state...');
+        setState(() {
+          // Only set fully complete if speech is also done
+          if (!_isSpeaking) {
+            print('Audio already complete - showing restart button');
+            _isFullyComplete = true;
+          }
+        });
       }
     });
 
@@ -176,34 +183,56 @@ class _VideoFeedItemState extends State<VideoFeedItem>
     final script = speechData['script'] as String;
     final preGeneratedMp3Url = speechData['mp3_url'] as String?;
 
-    print(
-        'Speech script: ${script.substring(0, script.length > 50 ? 50 : script.length)}...');
+    print('Speech script length: ${script.length}');
     if (script.isNotEmpty) {
       setState(() {
         _isSpeaking = true;
+        _isFullyComplete = false;
       });
       try {
-        await _speechService.speak(script,
-            preGeneratedMp3Url: preGeneratedMp3Url);
-
-        // Listen for playback completion
-        if (_speechService.isPlaying) {
-          while (_speechService.isPlaying) {
-            await Future.delayed(const Duration(milliseconds: 100));
-          }
+        print('Starting speech playback...');
+        // Add completion callback
+        _speechService.onPlaybackComplete = () {
+          print(
+              'Speech completed via callback. Animation state: ${_animationController.status}');
           if (mounted) {
             setState(() {
               _isSpeaking = false;
+              if (_animationController.isCompleted) {
+                print('Both audio and video complete - showing restart button');
+                _isFullyComplete = true;
+              } else {
+                print(
+                    'Speech done but animation not complete: ${_animationController.value}');
+              }
             });
           }
-        }
+        };
+
+        await _speechService.speak(script,
+            preGeneratedMp3Url: preGeneratedMp3Url);
       } catch (e) {
+        print('Error during speech: $e');
         if (mounted) {
           setState(() {
             _isSpeaking = false;
+            if (_animationController.isCompleted) {
+              print(
+                  'Both audio and video complete (after error) - showing restart button');
+              _isFullyComplete = true;
+            }
           });
         }
       }
+    } else {
+      print('Empty speech script - marking speech as done immediately');
+      setState(() {
+        _isSpeaking = false;
+        if (_animationController.isCompleted) {
+          print('No speech, but animation complete - showing restart button');
+          _isFullyComplete = true;
+        }
+      });
     }
   }
 
@@ -249,6 +278,10 @@ class _VideoFeedItemState extends State<VideoFeedItem>
 
   void _startPlayback() {
     if (mounted) {
+      // Reset complete state when starting playback
+      setState(() {
+        _isFullyComplete = false;
+      });
       // Always start from beginning
       _animationController.reset();
       _animationController.forward();
@@ -271,6 +304,8 @@ class _VideoFeedItemState extends State<VideoFeedItem>
 
   @override
   Widget build(BuildContext context) {
+    print(
+        'Build called. Animation: ${_animationController.status}, Speaking: $_isSpeaking, FullyComplete: $_isFullyComplete');
     final firestoreService = FirestoreService();
 
     return GestureDetector(
@@ -438,12 +473,12 @@ class _VideoFeedItemState extends State<VideoFeedItem>
               style: const TextStyle(color: Colors.black, fontSize: 16),
             ),
           ),
-          // Add restart button when video is complete
-          if (_animationController.isCompleted) ...[
+          // Add restart button when both video and audio are complete
+          if (_isFullyComplete) ...[
             Builder(
               builder: (context) {
                 print(
-                    'Attempting to render restart button. Animation completed: ${_animationController.isCompleted}');
+                    'Attempting to render restart button. Animation: ${_animationController.status}, Speaking: $_isSpeaking}');
                 return Center(
                   child: Container(
                     width: 80,
@@ -489,6 +524,7 @@ class _VideoFeedItemState extends State<VideoFeedItem>
     _jsonController.dispose();
     _innerScrollController.dispose();
     _animationController.dispose();
+    _speechService.onPlaybackComplete = null; // Clear callback
     _speechService.dispose();
     super.dispose();
   }

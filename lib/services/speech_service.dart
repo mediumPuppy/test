@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 
 class SpeechService {
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -15,6 +16,7 @@ class SpeechService {
   File? _currentAudioFile;
   String? _selectedModelId;
   final Map<String, String> _audioCache = {};
+  VoidCallback? _onPlaybackComplete;
 
   Future<void> initialize() async {
     if (!_isInitialized) {
@@ -24,6 +26,14 @@ class SpeechService {
       }
       await _fetchAvailableModels();
       await _initializeCache();
+
+      _audioPlayer.processingStateStream.listen((state) {
+        if (state == ProcessingState.completed) {
+          print('Audio playback completed naturally');
+          _onPlaybackComplete?.call();
+        }
+      });
+
       _isInitialized = true;
     }
   }
@@ -97,7 +107,6 @@ class SpeechService {
     try {
       await initialize();
 
-      // First, check if we have a pre-generated MP3 URL
       if (preGeneratedMp3Url != null && preGeneratedMp3Url.isNotEmpty) {
         print('Using pre-generated MP3 URL: $preGeneratedMp3Url');
         await _audioPlayer.setUrl(preGeneratedMp3Url);
@@ -105,7 +114,6 @@ class SpeechService {
         return;
       }
 
-      // Then, check if we have a cached version
       final cachedPath = await _getCachedAudioPath(text);
       if (cachedPath != null) {
         print('Using cached audio file: $cachedPath');
@@ -114,7 +122,6 @@ class SpeechService {
         return;
       }
 
-      // If no cache or pre-generated URL, generate new audio
       if (_selectedModelId == null) {
         throw Exception('No text-to-speech model available');
       }
@@ -144,16 +151,13 @@ class SpeechService {
         throw Exception('Failed to generate speech: ${response.body}');
       }
 
-      // Cache the new audio
       await _cacheAudio(text, response.bodyBytes);
 
-      // Get the cached file path
       final audioPath = await _getCachedAudioPath(text);
       if (audioPath == null) {
         throw Exception('Failed to cache audio file');
       }
 
-      // Play the audio from the cached file
       await _audioPlayer.setFilePath(audioPath);
       await _audioPlayer.play();
     } catch (e) {
@@ -180,4 +184,8 @@ class SpeechService {
   }
 
   bool get isPlaying => _audioPlayer.playing;
+
+  set onPlaybackComplete(VoidCallback? callback) {
+    _onPlaybackComplete = callback;
+  }
 }
