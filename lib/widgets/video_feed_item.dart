@@ -93,13 +93,14 @@ class _VideoFeedItemState extends State<VideoFeedItem>
           _isPageTransitionComplete = true;
         });
 
-        // Track video and check for quiz before starting playback
-        if (widget.progressTracker.shouldShowQuiz(widget.feed.id)) {
-          await widget.progressTracker.stopPlayback(context);
-          if (widget.onQuizComplete != null) {
-            widget.onQuizComplete!();
-          }
-        } else if (mounted) {
+        // Check if we need to show a quiz
+        final shown = await widget.progressTracker.checkAndShowQuiz(
+          context,
+          widget.userId,
+        );
+
+        // Only start playback if no quiz was shown and we're still mounted
+        if (!shown && mounted) {
           _startPlayback();
         }
       });
@@ -209,15 +210,14 @@ class _VideoFeedItemState extends State<VideoFeedItem>
       // Check if we should show a quiz before starting playback
       print(
           '[VideoFeed] Checking if should show quiz for user: ${widget.userId}');
-      final shown = widget.progressTracker.shouldShowQuiz(widget.feed.id);
+      final shown = await widget.progressTracker.checkAndShowQuiz(
+        context,
+        widget.userId,
+      );
       print('[VideoFeed] Quiz shown: $shown');
 
-      if (shown) {
-        await widget.progressTracker.stopPlayback(context);
-        if (mounted && widget.onQuizComplete != null) {
-          widget.onQuizComplete!();
-        }
-      } else if (mounted) {
+      // Only start playback if no quiz was shown and we're still mounted
+      if (!shown && mounted) {
         _startPlayback();
       }
     }

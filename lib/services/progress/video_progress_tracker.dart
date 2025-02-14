@@ -112,23 +112,24 @@ class VideoProgressTracker implements ProgressTracker {
     _progressController.close();
   }
 
-  // Add quiz-related methods
-  bool shouldShowQuiz(String videoId) {
-    if (!_recentVideos.any((video) => video.id == videoId)) {
+  // Replace the old quiz-related methods with a single async method
+  Future<bool> checkAndShowQuiz(BuildContext context, String userId) async {
+    // First, track this video
+    if (!_recentVideos.any((video) => video.id == _content.id)) {
       _recentVideos.add(_content);
       print(
-          'VideoProgressTracker: Added video[$videoId] to recent videos. Count: ${_recentVideos.length}');
+          'VideoProgressTracker: Added video[${_content.id}] to recent videos. Count: ${_recentVideos.length}');
     }
 
-    if (_recentVideos.length >= _quizThreshold) {
-      print('VideoProgressTracker: Quiz threshold reached. Showing quiz.');
-      return true;
+    // Check if we've reached the threshold
+    if (_recentVideos.length < _quizThreshold) {
+      print('VideoProgressTracker: Not enough videos watched for quiz yet.');
+      return false;
     }
-    return false;
-  }
 
-  Future<void> stopPlayback(BuildContext context) async {
-    print('VideoProgressTracker: Stopping video playback');
+    print('VideoProgressTracker: Quiz threshold reached. Preparing quiz...');
+
+    // Stop video playback
     VideoFeedItem.stopPlayback(context);
 
     // Show loading dialog
@@ -171,7 +172,7 @@ class VideoProgressTracker implements ProgressTracker {
 
     // Generate quiz
     final quiz = await _quizScheduler.generateQuizForUser(
-      userId: _content.creatorId,
+      userId: userId,
       currentTopics: _content.topics,
       previousVideos: List<VideoFeed>.from(_recentVideos),
       questionCount: 5,
@@ -189,7 +190,7 @@ class VideoProgressTracker implements ProgressTracker {
         MaterialPageRoute(
           builder: (context) => QuizScreen(
             quiz: quiz,
-            userId: _content.creatorId,
+            userId: userId,
             videoContext: List<VideoFeed>.from(_recentVideos),
           ),
         ),
@@ -197,6 +198,10 @@ class VideoProgressTracker implements ProgressTracker {
 
       // Clear the list after quiz is completed
       _recentVideos.clear();
+      return true;
     }
+
+    // If we get here, no quiz was shown
+    return false;
   }
 }
