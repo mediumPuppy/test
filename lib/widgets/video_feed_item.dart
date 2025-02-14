@@ -19,6 +19,7 @@ class VideoFeedItem extends StatefulWidget {
   final PageController pageController;
   final String userId;
   final VideoProgressTracker progressTracker;
+  final VoidCallback? onQuizComplete;
 
   const VideoFeedItem({
     super.key,
@@ -28,10 +29,19 @@ class VideoFeedItem extends StatefulWidget {
     required this.pageController,
     required this.userId,
     required this.progressTracker,
+    this.onQuizComplete,
   });
 
   @override
   State<VideoFeedItem> createState() => _VideoFeedItemState();
+
+  // Add a static method to start playback
+  static void startPlayback(BuildContext context) {
+    final state = context.findAncestorStateOfType<_VideoFeedItemState>();
+    if (state != null) {
+      state._startPlayback();
+    }
+  }
 }
 
 class _VideoFeedItemState extends State<VideoFeedItem>
@@ -70,11 +80,25 @@ class _VideoFeedItemState extends State<VideoFeedItem>
     // Start playback for first video immediately if we're at index 0
     if (widget.index == 0) {
       // Use a post-frame callback to ensure the widget is mounted
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
         setState(() {
           _isPageTransitionComplete = true;
         });
-        _startPlayback();
+
+        // Track video and check for quiz before starting playback
+        widget.progressTracker.trackVideo(widget.feed);
+
+        // Reset animation to start and ensure it's paused
+        _animationController.reset();
+        _speechService.pause();
+
+        final shown =
+            await widget.progressTracker.shouldShowQuiz(context, widget.userId);
+
+        // Only start playback if no quiz was shown
+        if (!shown && mounted) {
+          _startPlayback();
+        }
       });
     }
   }
@@ -170,7 +194,7 @@ class _VideoFeedItemState extends State<VideoFeedItem>
     }
   }
 
-  void _onPageScroll() {
+  void _onPageScroll() async {
     // Check if we're at a whole number page index (transition complete)
     if (widget.pageController.page?.round() == widget.index &&
         !_isPageTransitionComplete &&
@@ -178,30 +202,28 @@ class _VideoFeedItemState extends State<VideoFeedItem>
       setState(() {
         _isPageTransitionComplete = true;
       });
-      // Start playback once transition is complete
-      _startPlayback();
 
-      // Track video for quiz scheduling
+      // Track video for quiz scheduling first
       widget.progressTracker.trackVideo(widget.feed);
 
-      // Check if we should show a quiz
-      print(
-          '[VideoFeed] Checking if should show quiz for user: ${widget.userId}');
-
-      // Pause playback before checking for quiz
-      _animationController.stop();
+      // Reset animation to start and ensure it's paused
+      _animationController.reset();
       _speechService.pause();
 
-      widget.progressTracker
-          .shouldShowQuiz(context, widget.userId)
-          .then((shown) {
-        print('[VideoFeed] Quiz shown: $shown');
-        // Resume playback if quiz was not shown or after quiz is completed
-        if (!shown && mounted) {
-          _animationController.forward();
-          _speechService.resume();
-        }
-      });
+      // Check if we should show a quiz before starting playback
+      print(
+          '[VideoFeed] Checking if should show quiz for user: ${widget.userId}');
+      final shown =
+          await widget.progressTracker.shouldShowQuiz(context, widget.userId);
+      print('[VideoFeed] Quiz shown: $shown');
+
+      // Only start playback if no quiz was shown
+      if (!shown && mounted) {
+        _startPlayback();
+      } else if (shown && mounted && widget.onQuizComplete != null) {
+        // Register the callback to start playback after quiz
+        widget.onQuizComplete!();
+      }
     }
 
     // Pause playback during scrolling if this is the current page
@@ -222,7 +244,16 @@ class _VideoFeedItemState extends State<VideoFeedItem>
 
   void _startPlayback() {
     if (mounted) {
-      _animationController.forward();
+      print('[VideoFeed] Starting playback from beginning');
+      // Always start from beginning
+      _animationController.reset();
+      // Stop any existing speech
+      _speechService.stop();
+      setState(() {
+        _isSpeaking = false;
+      });
+      // Start fresh
+      _animationController.forward(from: 0.0);
       _startSpeech();
     }
   }

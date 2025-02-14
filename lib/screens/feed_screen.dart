@@ -180,6 +180,10 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
                     pageController: _pageController,
                     userId: user.uid,
                     progressTracker: _videoProgressTracker,
+                    onQuizComplete: () {
+                      // Use the static method to start playback
+                      VideoFeedItem.startPlayback(context);
+                    },
                   ),
                   // Detect last video by comparing index with total count
                   if (index == videos.length - 1)

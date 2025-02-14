@@ -3,6 +3,7 @@ import '../models/video_feed.dart';
 import '../screens/quiz_screen.dart';
 import '../services/quiz_scheduler_service.dart';
 import 'package:collection/collection.dart';
+import '../widgets/video_feed_item.dart';
 
 class VideoProgressTracker {
   static const int videosBeforeQuiz = 2;
@@ -40,8 +41,10 @@ class VideoProgressTracker {
         _recentVideos.expand((video) => video.topics).toSet().toList();
     print('[VideoTracker] Topics collected for quiz: ${topics.join(", ")}');
 
-    // Show loading overlay
+    // Ensure we're mounted before proceeding
     if (!context.mounted) return false;
+
+    // Show loading overlay with pause message first
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -57,6 +60,15 @@ class VideoProgressTracker {
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
                   Text(
+                    'Video Paused',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  Text(
                     'Quiz incoming...',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
@@ -69,6 +81,21 @@ class VideoProgressTracker {
         ),
       ),
     );
+
+    // Find the VideoFeedItem widget and pause it
+    final videoFeedItem =
+        context.findAncestorWidgetOfExactType<VideoFeedItem>();
+    if (videoFeedItem != null) {
+      // Pause the video by simulating a tap
+      GestureDetector? gestureDetector =
+          context.findAncestorWidgetOfExactType<GestureDetector>();
+      if (gestureDetector != null) {
+        gestureDetector.onTap?.call();
+      }
+    }
+
+    // Add a small delay to ensure the UI updates
+    await Future.delayed(const Duration(milliseconds: 100));
 
     // Generate a quiz based on recent videos
     print('[VideoTracker] Generating quiz for user: $userId');
@@ -102,11 +129,26 @@ class VideoProgressTracker {
           ),
         ),
       );
+
+      // After quiz is completed, clear tracked videos and restart playback
+      if (context.mounted) {
+        print('[VideoTracker] Quiz completed, clearing video history');
+        _recentVideos.clear();
+
+        // Find the VideoFeedItem widget and restart playback
+        final videoFeedItem =
+            context.findAncestorWidgetOfExactType<VideoFeedItem>();
+        if (videoFeedItem != null) {
+          // Restart the video by simulating a tap
+          GestureDetector? gestureDetector =
+              context.findAncestorWidgetOfExactType<GestureDetector>();
+          if (gestureDetector != null) {
+            gestureDetector.onTap?.call();
+          }
+        }
+      }
     }
 
-    print('[VideoTracker] Quiz completed, clearing video history');
-    // Clear tracked videos after quiz
-    _recentVideos.clear();
     return true;
   }
 
