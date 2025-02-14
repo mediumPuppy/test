@@ -578,50 +578,67 @@ Output ONLY the JSON object.''';
       // Log all questions and their difficulties before filtering
       print('\n[GPTService] Questions before filtering:');
       (aiResponse['questions'] as List).forEach((q) {
+        final questionPreview = q['question']?.toString() ?? '';
+        // Safely truncate the question preview
+        final previewLength =
+            questionPreview.length > 30 ? 30 : questionPreview.length;
         print(
-            '[GPTService] Question: "${q['question']?.toString().substring(0, 20)}..." - Difficulty: ${q['difficulty']}');
+            '[GPTService] Question: "${questionPreview.substring(0, previewLength)}${previewLength == 30 ? '...' : ''}" - Difficulty: ${q['difficulty']}');
       });
 
       // Filter questions to match exact difficulty and limit count
       var filteredQuestions = (aiResponse['questions'] as List)
           .where((q) {
-            final questionDifficulty =
-                q['difficulty']?.toString().toLowerCase() ?? '';
-            final targetDifficulty = difficulty.name.toLowerCase();
-            print('\n[GPTService] Difficulty comparison:');
-            print('  Question difficulty: "$questionDifficulty"');
-            print('  Target difficulty:   "$targetDifficulty"');
-            print('  Match: ${questionDifficulty == targetDifficulty}');
-            return questionDifficulty == targetDifficulty;
+            try {
+              final questionDifficulty =
+                  q['difficulty']?.toString().toLowerCase() ?? '';
+              final targetDifficulty = difficulty.name.toLowerCase();
+              print('\n[GPTService] Difficulty comparison:');
+              print('  Question difficulty: "$questionDifficulty"');
+              print('  Target difficulty:   "$targetDifficulty"');
+              print('  Match: ${questionDifficulty == targetDifficulty}');
+              return questionDifficulty == targetDifficulty;
+            } catch (e) {
+              print('[GPTService] Error comparing difficulties: $e');
+              return false;
+            }
           })
           .take(3) // Ensure we get at most 3 questions
           .map((q) {
-            if (!q.containsKey('question') || !q.containsKey('type')) {
-              print(
-                  '[GPTService] Invalid question structure: ${q.keys.join(', ')}');
-              throw FormatException('Invalid question format');
-            }
+            try {
+              if (!q.containsKey('question') || !q.containsKey('type')) {
+                print(
+                    '[GPTService] Invalid question structure: ${q.keys.join(', ')}');
+                throw FormatException('Invalid question format');
+              }
 
-            return QuizQuestion(
-              id: DateTime.now().millisecondsSinceEpoch.toString() +
-                  '_${q['question'].hashCode}',
-              question: q['question'],
-              type: QuestionType.values.firstWhere(
-                (t) => t.toString().split('.').last == q['type'],
-                orElse: () => QuestionType.multipleChoice,
-              ),
-              difficulty: difficulty,
-              topics: List<String>.from(q['topics'] ?? topics),
-              metadata: Map<String, dynamic>.from(q['metadata'] ?? {}),
-              options:
-                  q['options'] != null ? List<String>.from(q['options']) : null,
-              correctAnswer: q['correctAnswer'],
-              explanation: q['explanation'],
-              commonMistakes: q['commonMistakes'] != null
-                  ? Map<String, String>.from(q['commonMistakes'])
-                  : null,
-            );
+              return QuizQuestion(
+                id: DateTime.now().millisecondsSinceEpoch.toString() +
+                    '_${q['question'].hashCode}',
+                question: q['question'],
+                type: QuestionType.values.firstWhere(
+                  (t) => t.toString().split('.').last == q['type'],
+                  orElse: () => QuestionType.multipleChoice,
+                ),
+                difficulty: difficulty,
+                topics: List<String>.from(q['topics'] ?? topics),
+                metadata: Map<String, dynamic>.from(q['metadata'] ?? {}),
+                options: q['options'] != null
+                    ? List<String>.from(q['options'])
+                    : null,
+                correctAnswer: q['correctAnswer'],
+                explanation: q['explanation'],
+                commonMistakes: q['commonMistakes'] != null
+                    ? Map<String, String>.from(q['commonMistakes'])
+                    : null,
+              );
+            } catch (e) {
+              print('[GPTService] Error creating question: $e');
+              return null;
+            }
           })
+          .where((q) => q != null)
+          .cast<QuizQuestion>()
           .toList();
 
       print('\n[GPTService] RESULTS:');
