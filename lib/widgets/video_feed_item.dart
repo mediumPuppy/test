@@ -3,7 +3,7 @@ import 'dart:async';
 import '../models/video_feed.dart';
 import '../services/firestore_service.dart';
 import '../services/topic_progress_service.dart';
-import '../services/video_progress_tracker.dart';
+import '../services/progress/video_progress_tracker.dart';
 import 'action_bar.dart';
 import '../screens/ai_explanation_screen.dart';
 import '../controllers/json_video_controller.dart';
@@ -40,6 +40,14 @@ class VideoFeedItem extends StatefulWidget {
     final state = context.findAncestorStateOfType<_VideoFeedItemState>();
     if (state != null) {
       state._startPlayback();
+    }
+  }
+
+  // Add a static method to stop playback
+  static void stopPlayback(BuildContext context) {
+    final state = context.findAncestorStateOfType<_VideoFeedItemState>();
+    if (state != null) {
+      state._stopPlayback();
     }
   }
 }
@@ -86,17 +94,12 @@ class _VideoFeedItemState extends State<VideoFeedItem>
         });
 
         // Track video and check for quiz before starting playback
-        widget.progressTracker.trackVideo(widget.feed);
-
-        // Reset animation to start and ensure it's paused
-        _animationController.reset();
-        _speechService.pause();
-
-        final shown =
-            await widget.progressTracker.shouldShowQuiz(context, widget.userId);
-
-        // Only start playback if no quiz was shown
-        if (!shown && mounted) {
+        if (widget.progressTracker.shouldShowQuiz(widget.feed.id)) {
+          await widget.progressTracker.stopPlayback(context);
+          if (widget.onQuizComplete != null) {
+            widget.onQuizComplete!();
+          }
+        } else if (mounted) {
           _startPlayback();
         }
       });
@@ -203,26 +206,19 @@ class _VideoFeedItemState extends State<VideoFeedItem>
         _isPageTransitionComplete = true;
       });
 
-      // Track video for quiz scheduling first
-      widget.progressTracker.trackVideo(widget.feed);
-
-      // Reset animation to start and ensure it's paused
-      _animationController.reset();
-      _speechService.pause();
-
       // Check if we should show a quiz before starting playback
       print(
           '[VideoFeed] Checking if should show quiz for user: ${widget.userId}');
-      final shown =
-          await widget.progressTracker.shouldShowQuiz(context, widget.userId);
+      final shown = widget.progressTracker.shouldShowQuiz(widget.feed.id);
       print('[VideoFeed] Quiz shown: $shown');
 
-      // Only start playback if no quiz was shown
-      if (!shown && mounted) {
+      if (shown) {
+        await widget.progressTracker.stopPlayback(context);
+        if (mounted && widget.onQuizComplete != null) {
+          widget.onQuizComplete!();
+        }
+      } else if (mounted) {
         _startPlayback();
-      } else if (shown && mounted && widget.onQuizComplete != null) {
-        // Register the callback to start playback after quiz
-        widget.onQuizComplete!();
       }
     }
 
@@ -244,17 +240,23 @@ class _VideoFeedItemState extends State<VideoFeedItem>
 
   void _startPlayback() {
     if (mounted) {
-      print('[VideoFeed] Starting playback from beginning');
       // Always start from beginning
       _animationController.reset();
-      // Stop any existing speech
-      _speechService.stop();
+      _animationController.forward();
+      _startSpeech();
+    }
+  }
+
+  void _stopPlayback() {
+    if (mounted) {
+      // Stop the animation
+      _animationController.stop();
+      // Also stop the audio
+      _speechService.pause();
+
       setState(() {
         _isSpeaking = false;
       });
-      // Start fresh
-      _animationController.forward(from: 0.0);
-      _startSpeech();
     }
   }
 

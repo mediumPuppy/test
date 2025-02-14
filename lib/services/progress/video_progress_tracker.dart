@@ -1,6 +1,10 @@
+// lib/services/progress/video_progress_tracker.dart
+// ================================================================================
 import 'dart:async';
 import '../../models/video_feed.dart';
 import 'progress_tracker.dart';
+import 'package:flutter/widgets.dart'; // Add this for BuildContext
+import '../../widgets/video_feed_item.dart'; // Add this for VideoFeedItem
 
 /// Tracks progress for video content
 /// Following Single Responsibility Principle by handling only video progress
@@ -13,6 +17,10 @@ class VideoProgressTracker implements ProgressTracker {
   DateTime? _lastUpdateTime;
   static const _inactivityThreshold =
       Duration(seconds: 3); // Mark complete if user leaves for 3+ seconds
+
+  // Add quiz-related fields
+  final List<String> _recentVideos = [];
+  static const int _quizThreshold = 3; // Show quiz after 3 videos
 
   VideoProgressTracker(this._content) {
     _progress = _content.progress;
@@ -98,5 +106,26 @@ class VideoProgressTracker implements ProgressTracker {
   void dispose() {
     print('VideoProgressTracker: Disposing tracker for video[${_content.id}]');
     _progressController.close();
+  }
+
+  // Add quiz-related methods
+  bool shouldShowQuiz(String videoId) {
+    if (!_recentVideos.contains(videoId)) {
+      _recentVideos.add(videoId);
+      print(
+          'VideoProgressTracker: Added video[$videoId] to recent videos. Count: ${_recentVideos.length}');
+    }
+
+    if (_recentVideos.length >= _quizThreshold) {
+      print('VideoProgressTracker: Quiz threshold reached. Showing quiz.');
+      _recentVideos.clear(); // Reset counter after showing quiz
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> stopPlayback(BuildContext context) async {
+    print('VideoProgressTracker: Stopping video playback');
+    VideoFeedItem.stopPlayback(context);
   }
 }

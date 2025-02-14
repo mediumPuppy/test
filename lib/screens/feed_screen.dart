@@ -10,7 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import '../services/gpt_service.dart';
 import 'package:uuid/uuid.dart';
-import '../services/video_progress_tracker.dart';
+import '../services/progress/video_progress_tracker.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -34,15 +34,14 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
   final PageController _pageController = PageController();
   final FirestoreService _firestoreService = FirestoreService();
   final _progressService = TopicProgressService();
-  late final VideoProgressTracker _videoProgressTracker;
+  Map<String, VideoProgressTracker> _videoProgressTrackers = {};
   int _lastPage = 0;
   int _lastVideoCount = 0; // Track video count changes
 
   @override
   void initState() {
     super.initState();
-    print('[FeedScreen] Initializing VideoProgressTracker');
-    _videoProgressTracker = VideoProgressTracker();
+    print('[FeedScreen] Initializing VideoProgressTracker map');
     _pageController.addListener(_handlePageChange);
   }
 
@@ -171,6 +170,9 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
 
             try {
               final video = VideoFeed.fromFirestore(videoData, videoId);
+              // Create tracker for this video if it doesn't exist
+              _videoProgressTrackers[videoId] ??= VideoProgressTracker(video);
+
               return Stack(
                 children: [
                   VideoFeedItem(
@@ -179,7 +181,7 @@ class _PathVideoFeedState extends State<_PathVideoFeed> {
                     onShare: () {},
                     pageController: _pageController,
                     userId: user.uid,
-                    progressTracker: _videoProgressTracker,
+                    progressTracker: _videoProgressTrackers[videoId]!,
                     onQuizComplete: () {
                       // Use the static method to start playback
                       VideoFeedItem.startPlayback(context);
