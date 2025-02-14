@@ -62,21 +62,25 @@ class QuizSchedulerService {
 
       // If we have previous videos, extract their topics and context
       String? contextSummary;
+      final allTopics = List<String>.from(currentTopics); // Create new list
+
       if (previousVideos != null && previousVideos.isNotEmpty) {
         final contextBuilder = StringBuffer();
         contextBuilder.writeln('Quiz based on your recent lessons:');
 
         for (var video in previousVideos) {
           contextBuilder.writeln('• ${video.title}');
-          // Add topics from previous videos to current topics
-          currentTopics.addAll(video.topics);
+          // Add topics from previous videos to new list
+          allTopics.addAll(video.topics);
         }
 
         // Remove duplicates
-        currentTopics = currentTopics.toSet().toList();
+        allTopics.removeWhere((topic) => topic.isEmpty);
+        final uniqueTopics = allTopics.toSet().toList();
+
         contextSummary = contextBuilder.toString();
         print(
-            '[QuizScheduler] Updated topics after adding from videos: ${currentTopics.join(", ")}');
+            '[QuizScheduler] Updated topics after adding from videos: ${uniqueTopics.join(", ")}');
       }
 
       // Calculate question distribution
@@ -94,13 +98,13 @@ class QuizSchedulerService {
 
       // Get questions for each category
       final difficulty = _getDifficultyForMastery(
-        masteryLevels[currentTopics.last] ?? 0.0,
+        masteryLevels[allTopics.last] ?? 0.0,
       );
       print('[QuizScheduler] Calculated difficulty level: $difficulty');
 
       print('[QuizScheduler] Getting recent questions...');
       final recentQuestions = await _getQuestionsForTopics(
-        topics: currentTopics,
+        topics: allTopics,
         count: adjustedRecentCount,
         difficulty: difficulty,
       );
@@ -115,7 +119,7 @@ class QuizSchedulerService {
       );
 
       print('[QuizScheduler] Getting advanced questions...');
-      final upcomingTopics = await _getUpcomingTopics(currentTopics.last);
+      final upcomingTopics = await _getUpcomingTopics(allTopics.last);
       print('[QuizScheduler] Upcoming topics: ${upcomingTopics.join(", ")}');
       final advancedQuestions = await _getQuestionsForTopics(
         topics: upcomingTopics,
@@ -142,7 +146,7 @@ class QuizSchedulerService {
         title: previousVideos != null
             ? 'Quick Progress Check'
             : 'Progress Check Quiz',
-        topics: [...currentTopics, ...completedTopics, ...upcomingTopics],
+        topics: [...allTopics, ...completedTopics, ...upcomingTopics],
         difficulty: difficulty,
         questions: allQuestions,
         timeLimit: previousVideos != null

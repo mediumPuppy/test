@@ -22,7 +22,7 @@ class VideoProgressTracker implements ProgressTracker {
       Duration(seconds: 3); // Mark complete if user leaves for 3+ seconds
 
   // Add quiz-related fields
-  static final List<String> _recentVideos = [];
+  static final List<VideoFeed> _recentVideos = [];
   static const int _quizThreshold = 3; // Show quiz after 3 videos
   final _quizScheduler = QuizSchedulerService();
 
@@ -114,8 +114,8 @@ class VideoProgressTracker implements ProgressTracker {
 
   // Add quiz-related methods
   bool shouldShowQuiz(String videoId) {
-    if (!_recentVideos.contains(videoId)) {
-      _recentVideos.add(videoId);
+    if (!_recentVideos.any((video) => video.id == videoId)) {
+      _recentVideos.add(_content);
       print(
           'VideoProgressTracker: Added video[$videoId] to recent videos. Count: ${_recentVideos.length}');
     }
@@ -173,7 +173,7 @@ class VideoProgressTracker implements ProgressTracker {
     final quiz = await _quizScheduler.generateQuizForUser(
       userId: _content.creatorId,
       currentTopics: _content.topics,
-      previousVideos: _recentVideos.map((id) => _content).toList(),
+      previousVideos: List<VideoFeed>.from(_recentVideos),
       questionCount: 5,
     );
 
@@ -190,7 +190,7 @@ class VideoProgressTracker implements ProgressTracker {
           builder: (context) => QuizScreen(
             quiz: quiz,
             userId: _content.creatorId,
-            videoContext: _recentVideos.map((id) => _content).toList(),
+            videoContext: List<VideoFeed>.from(_recentVideos),
           ),
         ),
       );
