@@ -61,25 +61,26 @@ class QuizSchedulerService {
       print('[QuizScheduler] User mastery levels: $masteryLevels');
 
       // If we have previous videos, extract their topics
+      var allTopics = List<String>.from(currentTopics); // Create new list
       if (previousVideos != null && previousVideos.isNotEmpty) {
         for (var video in previousVideos) {
-          currentTopics.addAll(video.topics);
+          allTopics.addAll(video.topics);
         }
         // Remove duplicates
-        currentTopics = currentTopics.toSet().toList();
+        allTopics = allTopics.toSet().toList();
         print(
-            '[QuizScheduler] Updated topics after adding from videos: ${currentTopics.join(", ")}');
+            '[QuizScheduler] Updated topics after adding from videos: ${allTopics.join(", ")}');
       }
 
       // Calculate difficulty based on mastery of current topics
       final difficulty = _getDifficultyForMastery(
-        masteryLevels[currentTopics.last] ?? 0.0,
+        masteryLevels[allTopics.last] ?? 0.0,
       );
       print('[QuizScheduler] Calculated difficulty level: $difficulty');
 
       // Generate questions with consistent difficulty
       final questions = await _getQuestionsForTopics(
-        topics: currentTopics,
+        topics: allTopics,
         count: 2, // Always generate 2-3 questions
         difficulty: difficulty,
       );
@@ -98,7 +99,7 @@ class QuizSchedulerService {
         title: previousVideos != null
             ? 'Quick Progress Check'
             : 'Progress Check Quiz',
-        topics: currentTopics,
+        topics: allTopics,
         difficulty: difficulty,
         questions: questions,
         timeLimit: previousVideos != null
