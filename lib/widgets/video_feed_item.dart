@@ -187,10 +187,20 @@ class _VideoFeedItemState extends State<VideoFeedItem>
       // Check if we should show a quiz
       print(
           '[VideoFeed] Checking if should show quiz for user: ${widget.userId}');
+
+      // Pause playback before checking for quiz
+      _animationController.stop();
+      _speechService.pause();
+
       widget.progressTracker
           .shouldShowQuiz(context, widget.userId)
           .then((shown) {
         print('[VideoFeed] Quiz shown: $shown');
+        // Resume playback if quiz was not shown or after quiz is completed
+        if (!shown && mounted) {
+          _animationController.forward();
+          _speechService.resume();
+        }
       });
     }
 

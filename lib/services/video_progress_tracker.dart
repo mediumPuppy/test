@@ -40,6 +40,36 @@ class VideoProgressTracker {
         _recentVideos.expand((video) => video.topics).toSet().toList();
     print('[VideoTracker] Topics collected for quiz: ${topics.join(", ")}');
 
+    // Show loading overlay
+    if (!context.mounted) return false;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => WillPopScope(
+        onWillPop: () async => false,
+        child: const Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text(
+                    'Quiz incoming...',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text('Preparing your progress check'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
     // Generate a quiz based on recent videos
     print('[VideoTracker] Generating quiz for user: $userId');
     final quiz = await _quizScheduler.generateQuizForUser(
@@ -48,6 +78,11 @@ class VideoProgressTracker {
       previousVideos: _recentVideos,
       questionCount: 5, // Shorter quiz for between-video experience
     );
+
+    // Close loading overlay
+    if (context.mounted) {
+      Navigator.of(context).pop();
+    }
 
     if (quiz == null) {
       print('[VideoTracker] Failed to generate quiz');
