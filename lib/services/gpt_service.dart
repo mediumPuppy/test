@@ -425,10 +425,7 @@ Do not include any other text or explanation in your response.''';
       // Ensure questionCount is between 2-3
       questionCount = questionCount.clamp(2, 3);
 
-      final prompt =
-          '''You are a specialized JSON generator for math quizzes. Your task is to output ONLY a valid JSON object with NO additional text or formatting.
-
-Required structure:
+      final prompt = '''Required structure:
 {
   "title": "string - quiz title",
   "questions": [
@@ -466,6 +463,15 @@ VARIETY REQUIREMENTS:
 5. Vary the complexity while staying within the specified difficulty level
 6. Include at least one word problem if appropriate for the topic
 7. Use different formats for presenting similar concepts
+8. RANDOMIZATION REQUIREMENTS:
+   - Use random numbers appropriate for the skill level of the user
+   - Randomly choose from different real-world contexts (sports, cooking, shopping, travel, etc.)
+   - Randomly vary question formats (equations, word problems, comparisons)
+   - Use different variable names (not just x, try a, b, n, p, etc.)
+   - Mix positive and negative numbers
+   - Include decimals and fractions randomly
+   - Vary the length and complexity of word problems
+   - Use different types of mathematical relationships (greater than, equal to, etc.)
 
 Topics to cover: ${topics.join(", ")}
 Difficulty Level: ${difficulty.name}
@@ -473,15 +479,26 @@ Number of questions: $questionCount
 
 Additional Guidelines:
 1. For ${difficulty.name} difficulty:
-   - Beginner: Focus on basic concepts, single-step problems
-   - Intermediate: Two-step problems, basic word problems
-   - Advanced: Multi-step problems, complex applications
+   - Beginner: Focus on basic concepts, single-step problems, use small whole numbers (-20 to 20)
+   - Intermediate: Two-step problems, basic word problems, include decimals and simple fractions
+   - Advanced: Multi-step problems, complex applications, include harder fractions and negative numbers
 2. Ensure questions build on different aspects of the topic
 3. Include real-world applications where possible
 4. Make wrong answers plausible but clearly incorrect
 5. Provide detailed explanations for both correct and incorrect answers
+6. CONTEXTUAL VARIETY:
+   - Use different measurement units (meters, feet, liters, etc.)
+   - Include various real-world scenarios (shopping, sports, cooking, travel)
+   - Mix abstract and concrete problems
+   - Vary between story problems and direct calculations
+   - Use different ways to present the same concept
 
 Output ONLY the JSON object.''';
+
+      final systemPrompt =
+          '''You are a creative math quiz generator. Your goal is to create highly varied, unique questions that test the same concepts in different ways. Never repeat patterns or numbers.
+
+$prompt''';
 
       String rawResponse;
       if (_provider == 'openai') {
@@ -491,11 +508,12 @@ Output ONLY the JSON object.''';
             OpenAIChatCompletionChoiceMessageModel(
               role: OpenAIChatMessageRole.system,
               content: [
-                OpenAIChatCompletionChoiceMessageContentItemModel.text(prompt),
+                OpenAIChatCompletionChoiceMessageContentItemModel.text(
+                    systemPrompt),
               ],
             ),
           ],
-          temperature: 0.7,
+          temperature: 1.0, // Increased from 0.7 for more randomness
           maxTokens: 2000,
         );
 
@@ -507,10 +525,11 @@ Output ONLY the JSON object.''';
           "contents": [
             {
               "parts": [
-                {"text": prompt}
+                {"text": systemPrompt}
               ]
             }
-          ]
+          ],
+          "generationConfig": {"temperature": 1.0, "topP": 0.8, "topK": 40}
         };
 
         final uri = Uri.parse(_geminiEndpoint)
