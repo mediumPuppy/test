@@ -81,7 +81,7 @@ class QuizSchedulerService {
       // Generate questions with consistent difficulty
       final questions = await _getQuestionsForTopics(
         topics: allTopics,
-        count: 2, // Always generate 2-3 questions
+        count: 5, // Generate 5 questions for a comprehensive review
         difficulty: difficulty,
       );
 
@@ -97,14 +97,14 @@ class QuizSchedulerService {
       return Quiz(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         title: previousVideos != null
-            ? 'Quick Progress Check'
+            ? '5-Video Progress Check'
             : 'Progress Check Quiz',
         topics: allTopics,
         difficulty: difficulty,
         questions: questions,
         timeLimit: previousVideos != null
-            ? 300
-            : 900, // 5 minutes for quick quiz, 15 for regular
+            ? 600 // 10 minutes for 5-video quiz
+            : 900, // 15 for regular
         shuffleQuestions: true,
         metadata: {
           'generatedFor': userId,

@@ -23,7 +23,7 @@ class VideoProgressTracker implements ProgressTracker {
 
   // Add quiz-related fields
   static final List<VideoFeed> _recentVideos = [];
-  static const int _quizThreshold = 3; // Show quiz after 3 videos
+  static const int _quizThreshold = 5; // Show quiz after watching 5 videos
   final _quizScheduler = QuizSchedulerService();
 
   VideoProgressTracker(this._content) {

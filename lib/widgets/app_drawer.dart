@@ -69,37 +69,6 @@ class AppDrawer extends StatelessWidget {
               );
             },
           ),
-          ListTile(
-            leading: const Icon(Icons.quiz),
-            title: const Text('Quizzes'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.pushNamed(context, '/quizzes');
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.edit),
-            title: const Text('Whiteboard'),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const WhiteboardScreen()),
-              );
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.architecture),
-            title: const Text('Geometry Drawing Demo'),
-            onTap: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const GeometryDrawingTestScreen()),
-              );
-            },
-          ),
           const Divider(),
           ListTile(
             leading: const Icon(Icons.logout),
