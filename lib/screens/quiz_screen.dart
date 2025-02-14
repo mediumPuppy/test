@@ -324,7 +324,6 @@ class _QuizScreenState extends State<QuizScreen> {
                     onPressed: () {
                       setState(() {
                         _currentQuestionIndex--;
-                        _showExplanation = false;
                       });
                     },
                     child: Text('Previous'),
@@ -343,7 +342,6 @@ class _QuizScreenState extends State<QuizScreen> {
                         ? () {
                             setState(() {
                               _currentQuestionIndex++;
-                              _showExplanation = false;
                             });
                           }
                         : null,
