@@ -2,99 +2,134 @@ const String geometryDrawingSpec = '''{
   "instructions": {
     "timing": [
       {
-        "stage": "first_set",
+        "stage": "draw_curve",
         "startTime": 0,
-        "endTime": 3,
-        "description": "Drawing 2 apples to represent the number 2.",
-        "easing": "easeIn"
+        "endTime": 2,
+        "description": "Drawing the gentle hill curve."
       },
       {
-        "stage": "second_set",
-        "startTime": 3,
+        "stage": "draw_secant",
+        "startTime": 2,
+        "endTime": 4,
+        "description": "Drawing the secant line connecting two points on the curve."
+      },
+      {
+        "stage": "draw_tangent",
+        "startTime": 4,
         "endTime": 6,
-        "description": "Drawing 3 apples to represent the number 3.",
-        "easing": "linear"
+        "description": "Drawing the tangent line as the secant line converges."
       },
       {
-        "stage": "total_equation",
+        "stage": "draw_labels",
         "startTime": 6,
-        "endTime": 9,
-        "description": "Displaying the equation 2 + 3 = 5.",
-        "easing": "easeOut"
+        "endTime": 8,
+        "description": "Adding labels to key elements."
       }
     ],
     "drawing": {
       "shapes": [
         {
-          "id": "first_set",
+          "id": "draw_curve",
           "vertices": [
-            { "x": 60, "y": 150 },
-            { "x": 110, "y": 150 }
+            { "x": 40, "y": 360 },
+            { "x": 140, "y": 420 },
+            { "x": 280, "y": 360 }
           ],
-          "path": "moveTo(70,150) arcTo(50,140,20,20,0,6.28,true) close() moveTo(120,150) arcTo(100,140,20,20,0,6.28,true) close()",
-          "style": "fill",
-          "strokeWidth": 2,
-          "color": "#FF0000",
-          "fadeInRange": [0, 3]
-        },
-        {
-          "id": "second_set",
-          "vertices": [
-            { "x": 60, "y": 250 },
-            { "x": 110, "y": 250 },
-            { "x": 160, "y": 250 }
-          ],
-          "path": "moveTo(70,250) arcTo(50,240,20,20,0,6.28,true) close() moveTo(120,250) arcTo(100,240,20,20,0,6.28,true) close() moveTo(170,250) arcTo(150,240,20,20,0,6.28,true) close()",
-          "style": "fill",
-          "strokeWidth": 2,
-          "color": "#FF0000",
-          "fadeInRange": [3, 6]
-        },
-        {
-          "id": "total_equation",
-          "vertices": [
-            { "x": 60, "y": 350 },
-            { "x": 260, "y": 350 }
-          ],
-          "path": "moveTo(60,350) lineTo(260,350)",
+          "path": "moveTo(40,360) quadraticBezierTo(140,420,280,360)",
           "style": "stroke",
-          "strokeWidth": 2,
-          "color": "#0000FF",
-          "fadeInRange": [6, 9]
+          "strokeWidth": 3,
+          "color": "#1E90FF",
+          "fadeInRange": [0, 2]
+        },
+        {
+          "id": "draw_secant",
+          "vertices": [
+            { "x": 81.6, "y": 379.2 },
+            { "x": 174.4, "y": 388.8 }
+          ],
+          "path": "moveTo(81.6,379.2) lineTo(174.4,388.8)",
+          "style": "stroke",
+          "strokeWidth": 3,
+          "color": "#FF4500",
+          "fadeInRange": [2, 4]
+        },
+        {
+          "id": "draw_tangent",
+          "vertices": [
+            { "x": 50, "y": 380.9 },
+            { "x": 250, "y": 401.6 }
+          ],
+          "path": "moveTo(50,380.9) lineTo(250,401.6)",
+          "style": "stroke",
+          "strokeWidth": 3,
+          "color": "#32CD32",
+          "fadeInRange": [4, 6]
         }
       ],
       "labels": [
         {
-          "id": "first_set",
-          "text": "2 apples",
-          "position": { "x": 55, "y": 100 },
+          "id": "draw_curve",
+          "text": "Curve",
+          "position": { "x": 160, "y": 310 },
           "color": "#000000",
-          "fadeInRange": [0, 3],
+          "fadeInRange": [0, 2],
           "handwritten": true
         },
         {
-          "id": "second_set",
-          "text": "3 apples ?",
-          "position": { "x": 55, "y": 265 },
+          "id": "draw_secant",
+          "text": "Secant",
+          "position": { "x": 128, "y": 364 },
           "color": "#000000",
-          "fadeInRange": [3, 6],
+          "fadeInRange": [2, 4],
           "handwritten": true
         },
         {
-          "id": "total_equation",
-          "text": "2 + 3 = 5",
-          "position": { "x": 120, "y": 310 },
+          "id": "draw_tangent",
+          "text": "Tangent",
+          "position": { "x": 110, "y": 450 },
           "color": "#000000",
-          "fadeInRange": [6, 9],
+          "fadeInRange": [4, 6],
+          "handwritten": true
+        },
+        {
+          "id": "point_P",
+          "text": "P",
+          "position": { "x": 66, "y": 369 },
+          "color": "#FF4500",
+          "fadeInRange": [2, 4],
+          "handwritten": true
+        },
+        {
+          "id": "point_Q",
+          "text": "Q",
+          "position": { "x": 184, "y": 400 },
+          "color": "#FF4500",
+          "fadeInRange": [2, 4],
+          "handwritten": true
+        },
+        {
+          "id": "point_T",
+          "text": "T",
+          "position": { "x": 116, "y": 410 },
+          "color": "#32CD32",
+          "fadeInRange": [4, 6],
+          "handwritten": true
+        },
+        {
+          "id": "label_derivative",
+          "text": "Derivative = slope at T",
+          "position": { "x": 260, "y": 410 },
+          "color": "#32CD32",
+          "fadeInRange": [4, 6],
           "handwritten": true
         }
       ]
     },
     "speech": {
-      "script": "Let's add some apples! Look, here are 2 apples. Now, we add 3 more apples. Count them all together: 2 plus 3 makes 5! Great job!",
+      "script": "This lesson illustrates how the derivative of a curve at a point is the slope of the tangent line. First, we draw a gentle hill. Then, we mark two points on the curve and connect them with a secant line. As one point slides closer, the secant line becomes the tangent line, representing the derivative.",
       "pacing": {
-        "initialDelay": 0,
-        "betweenStages": 0,
+        "initialDelay": 1,
+        "betweenStages": 2,
         "finalDelay": 2
       }
     }

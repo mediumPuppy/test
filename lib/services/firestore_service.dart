@@ -223,6 +223,7 @@ class FirestoreService {
             .collection('videos')
             .where('topicId', isEqualTo: currentTopicId)
             .where('learningPathId', isEqualTo: learningPathId)
+            .orderBy('createdAt', descending: false)
             .snapshots();
       }
     });
