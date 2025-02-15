@@ -79,7 +79,7 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
         await _firestoreService.getLearningPathTopics(_selectedPathId!).first;
 
     final topics =
-        pathDoc.docs.map((doc) => doc.data()['name'] as String).toList();
+        pathDoc.docs.map((doc) => doc.data()['id'] as String).toList();
     return topics;
   }
 

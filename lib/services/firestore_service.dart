@@ -75,16 +75,11 @@ class FirestoreService {
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getLearningPathTopics(
-      String pathId) {
+      String learningPathId) {
     return _db
-        .collection('learning_paths')
-        .doc(pathId)
         .collection('topics')
-        .withConverter<Map<String, dynamic>>(
-          fromFirestore: (snapshot, _) => snapshot.data() ?? {},
-          toFirestore: (data, _) => data,
-        )
-        .orderBy('order')
+        .where('learningPathId', isEqualTo: learningPathId)
+        .orderBy('orderIndex')
         .snapshots();
   }
 
@@ -104,9 +99,8 @@ class FirestoreService {
 
   Future<int> getTopicCount(String pathId) async {
     final snapshot = await _db
-        .collection('learning_paths')
-        .doc(pathId)
         .collection('topics')
+        .where('learningPathId', isEqualTo: pathId)
         .count()
         .get();
     return snapshot.count ?? 0;
@@ -972,47 +966,50 @@ class FirestoreService {
       for (final yearData in curriculum) {
         final year = yearData['year'] as String;
         final subject = yearData['subject'] as String;
-        final introduction = yearData['introduction'] as String;
-        final criticalAreas =
-            List<String>.from(yearData['criticalAreas'] as List);
         final learningPathId =
             '$year-$subject'.replaceAll(' ', '-').toLowerCase();
 
-        // Create learning path document
+        // Create learning path with all required fields
         await _db.collection('learning_paths').doc(learningPathId).set({
           'id': learningPathId,
-          'year': year,
-          'subject': subject,
-          'introduction': introduction,
-          'criticalAreas': criticalAreas,
-          'createdAt': FieldValue.serverTimestamp(),
+          'title': '$year $subject',
+          'description': yearData['introduction'] as String,
+          'creatorId': 'teacher1',
+          'difficulty': 'beginner',
+          'estimatedHours': 0.5,
+          'prerequisites': [],
+          'subject': subject.toLowerCase(),
+          'thumbnail': '',
+          'totalVideos': 0,
         });
 
-        // Add topics to the learning path
+        // Add topics (standards) to the main topics collection
         final strands = yearData['strands'] as List<dynamic>;
         for (final strandData in strands) {
-          final strandName = strandData['strandName'] as String;
           final standards = strandData['standards'] as List<dynamic>;
           for (final standardData in standards) {
             final standardId = standardData['id'] as String;
-            final description = standardData['description'] as String;
-            final topicId = '$learningPathId-$standardId'
-                .replaceAll(' ', '-')
-                .toLowerCase();
+            final topicId = standardId.toLowerCase();
+            final topicTitle =
+                standardData['description'].toString().split('.').first;
 
-            await _db
-                .collection('learning_paths')
-                .doc(learningPathId)
-                .collection('topics')
-                .doc(topicId)
-                .set({
-              'id': topicId,
-              'standardId': standardId,
-              'strandName': strandName,
-              'description': description,
-              'order': _getOrder(standardId), // Helper to determine order
-              'createdAt': FieldValue.serverTimestamp(),
-            });
+            // Check if the topic already exists
+            final topicDoc = await _db.collection('topics').doc(topicId).get();
+
+            if (!topicDoc.exists) {
+              // If the topic doesn't exist, create it
+              await _db.collection('topics').doc(topicId).set({
+                'id': topicId,
+                'title': topicTitle,
+                'description': standardData['description'] as String,
+                'difficulty': 'beginner',
+                'subject': subject.toLowerCase(),
+                'prerequisites': [],
+                'thumbnail': '',
+                'orderIndex': _getOrder(standardId),
+                'learningPathId': learningPathId,
+              });
+            }
           }
         }
       }
@@ -1020,6 +1017,7 @@ class FirestoreService {
       print('Curriculum data added successfully!');
     } catch (e) {
       print('Error adding curriculum data: $e');
+      rethrow;
     }
   }
 

@@ -36,12 +36,16 @@ class _TopicsScreenState extends State<TopicsScreen> {
     setState(() => _isLoading = true);
     try {
       final progress = await _progressService.getUserProgress(_userId);
-      final completedMap = progress['topicsCompleted'] as Map<String, dynamic>? ?? {};
-      final masteryMap = progress['performanceMetrics'] as Map<String, dynamic>? ?? {};
+      final completedMap =
+          progress['topicsCompleted'] as Map<String, dynamic>? ?? {};
+      final masteryMap =
+          progress['performanceMetrics'] as Map<String, dynamic>? ?? {};
 
       setState(() {
-        _completedTopics = completedMap.map((key, value) => MapEntry(key, true));
-        _masteryLevels = masteryMap.map((key, value) => MapEntry(key, (value as num).toDouble()));
+        _completedTopics =
+            completedMap.map((key, value) => MapEntry(key, true));
+        _masteryLevels = masteryMap
+            .map((key, value) => MapEntry(key, (value as num).toDouble()));
         _isLoading = false;
       });
     } catch (e) {
@@ -107,7 +111,8 @@ class _TopicsScreenState extends State<TopicsScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: _firestoreService.getLearningPathTopics(widget.learningPathId),
+              stream: _firestoreService
+                  .getLearningPathTopics(widget.learningPathId),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Center(child: Text('Error: ${snapshot.error}'));
@@ -132,7 +137,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
                         vertical: 8,
                       ),
                       child: ExpansionTile(
-                        title: Text(topic['name'] ?? 'Unnamed Topic'),
+                        title: Text(topic['id'] ?? 'Unnamed Topic'),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -154,13 +159,14 @@ class _TopicsScreenState extends State<TopicsScreen> {
                           ],
                         ),
                         trailing: isCompleted
-                            ? const Icon(Icons.check_circle, color: Colors.green)
+                            ? const Icon(Icons.check_circle,
+                                color: Colors.green)
                             : TextButton.icon(
                                 icon: const Icon(Icons.check),
                                 label: const Text('Mark Complete'),
                                 onPressed: () => _markTopicComplete(
                                   topicId,
-                                  topic['name'] ?? 'Unnamed Topic',
+                                  topic['id'] ?? 'Unnamed Topic',
                                 ),
                               ),
                         children: [
@@ -168,11 +174,14 @@ class _TopicsScreenState extends State<TopicsScreen> {
                             stream: _firestoreService.getVideosByTopic(topicId),
                             builder: (context, videoSnapshot) {
                               if (videoSnapshot.hasError) {
-                                return Center(child: Text('Error: ${videoSnapshot.error}'));
+                                return Center(
+                                    child:
+                                        Text('Error: ${videoSnapshot.error}'));
                               }
 
                               if (!videoSnapshot.hasData) {
-                                return const Center(child: CircularProgressIndicator());
+                                return const Center(
+                                    child: CircularProgressIndicator());
                               }
 
                               final videos = videoSnapshot.data!.docs;
@@ -180,10 +189,14 @@ class _TopicsScreenState extends State<TopicsScreen> {
                                 children: videos.map((video) {
                                   final videoData = video.data();
                                   return ListTile(
-                                    leading: const Icon(Icons.play_circle_outline),
-                                    title: Text(videoData['title'] ?? 'Untitled Video'),
-                                    subtitle: Text(videoData['description'] ?? ''),
-                                    trailing: Text('${videoData['estimatedMinutes']} min'),
+                                    leading:
+                                        const Icon(Icons.play_circle_outline),
+                                    title: Text(
+                                        videoData['title'] ?? 'Untitled Video'),
+                                    subtitle:
+                                        Text(videoData['description'] ?? ''),
+                                    trailing: Text(
+                                        '${videoData['estimatedMinutes']} min'),
                                     onTap: () {
                                       // TODO: Navigate to video player
                                     },
