@@ -150,6 +150,7 @@ class _LearningPathsScreenState extends State<LearningPathsScreen> {
     });
 
     try {
+      await _firestoreService.initializeSampleData();
       await _firestoreService.initializeCurriculumData();
     } catch (e) {
       if (mounted) {

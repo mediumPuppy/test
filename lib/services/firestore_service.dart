@@ -137,12 +137,15 @@ class FirestoreService {
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getVideosByLearningPath(
       String learningPathId) async* {
+    debugPrint('learningPathId: $learningPathId');
     final userId = _auth.currentUser?.uid;
+    debugPrint('userId: $userId');
     if (userId == null) {
+      debugPrint('No user logged in, returning empty video list');
       yield* _db
           .collection('videos')
           .where('learningPathId', isEqualTo: learningPathId)
-          .limit(0)
+          .limit(1) // Changed from limit(0)
           .snapshots();
       return;
     }
@@ -155,21 +158,25 @@ class FirestoreService {
             .keys
             .toSet();
 
+    debugPrint('User completed topics: $completedTopics');
+
     // Get learning path topics
     final topicsQuery = await _db
-        .collection('learning_paths')
-        .doc(learningPathId)
         .collection('topics')
-        .orderBy('order')
+        .where('learningPathId', isEqualTo: learningPathId)
+        .orderBy('orderIndex')
         .get();
 
     final topics = topicsQuery.docs;
+    debugPrint(
+        'Found ${topics.length} topics for learning path: $learningPathId');
 
     if (topics.isEmpty) {
+      debugPrint('No topics found for learning path: $learningPathId');
       yield* _db
           .collection('videos')
           .where('learningPathId', isEqualTo: learningPathId)
-          .limit(0)
+          .limit(1)
           .snapshots();
       return;
     }
@@ -179,15 +186,17 @@ class FirestoreService {
     for (final topic in topics) {
       final topicId = topic.id;
       final topicData = topic.data();
-      final topicName = topicData['name'] as String? ?? 'Unnamed Topic';
+      debugPrint('Checking topic: ${topicData['title']} (ID: $topicId)');
 
       if (!completedTopics.contains(topicId)) {
         currentTopicId = topicId;
+        debugPrint('Found first incomplete topic: $topicId');
         break;
       }
     }
 
     if (currentTopicId == null) {
+      debugPrint('All topics completed, returning empty video list');
       yield* _db
           .collection('videos')
           .where('learningPathId', isEqualTo: 'completed_$learningPathId')
@@ -195,34 +204,14 @@ class FirestoreService {
       return;
     }
 
-    // Listen to both progress changes and videos
+    debugPrint('Getting videos for topic: $currentTopicId');
+    // Get videos for the current topic
     yield* _db
-        .collection('user_progress')
-        .doc(userId)
-        .snapshots()
-        .asyncExpand((progressSnapshot) async* {
-      final newProgress = progressSnapshot.data() ?? {};
-      final newCompletedTopics =
-          (newProgress['topicsCompleted'] as Map<String, dynamic>? ?? {})
-              .keys
-              .toSet();
-
-      // If this topic is now complete, return empty to trigger completion UI
-      if (newCompletedTopics.contains(currentTopicId)) {
-        yield* _db
-            .collection('videos')
-            .where('learningPathId', isEqualTo: 'completed_$learningPathId')
-            .orderBy('createdAt')
-            .snapshots();
-      } else {
-        yield* _db
-            .collection('videos')
-            .where('topicId', isEqualTo: currentTopicId)
-            .where('learningPathId', isEqualTo: learningPathId)
-            .orderBy('createdAt')
-            .snapshots();
-      }
-    });
+        .collection('videos')
+        .where('topicId', isEqualTo: currentTopicId)
+        .where('learningPathId', isEqualTo: learningPathId)
+        .orderBy('orderInPath')
+        .snapshots();
   }
 
   Stream<QuerySnapshot<Map<String, dynamic>>> getVideosBySelectedTopic(
@@ -484,8 +473,8 @@ class FirestoreService {
   Future<void> initializeSampleData() async {
     debugPrint('Starting sample data initialization...');
 
-    // Clear existing data first
-    debugPrint('Clearing existing data...');
+    // Clear existing videos only
+    debugPrint('Clearing existing videos...');
     final batch = _db.batch();
 
     // Clear videos
@@ -494,69 +483,14 @@ class FirestoreService {
       batch.delete(doc.reference);
     }
 
-    // Clear learning paths and their subcollections
-    final existingPaths = await _db.collection('learning_paths').get();
-    for (final pathDoc in existingPaths.docs) {
-      // Clear topics subcollection
-      final topics = await pathDoc.reference.collection('topics').get();
-      for (final topicDoc in topics.docs) {
-        batch.delete(topicDoc.reference);
-      }
-      batch.delete(pathDoc.reference);
-    }
-
-    // Clear topics
-    final existingTopics = await _db.collection('topics').get();
-    for (final doc in existingTopics.docs) {
-      batch.delete(doc.reference);
-    }
-
     await batch.commit();
-    debugPrint('Existing data cleared');
-
-    // Initialize fresh data
-    await initializeSampleLearningPaths();
-    await initializeTopics();
+    debugPrint('Existing videos cleared');
 
     debugPrint('Initializing videos...');
 
-    // First, get all learning paths to map their IDs
-    final learningPathsSnapshot = await _db.collection('learning_paths').get();
-    final learningPathMap = Map.fromEntries(learningPathsSnapshot.docs
-        .map((doc) => MapEntry(doc.data()['id'] as String, doc.id)));
-    debugPrint('Learning path mapping: $learningPathMap');
-
-    // Then get all topics to map their IDs
-    final topicsSnapshot = await _db.collection('topics').get();
-    final topicMap = Map.fromEntries(topicsSnapshot.docs
-        .map((doc) => MapEntry(doc.data()['id'] as String, doc.id)));
-    debugPrint('Topic mapping: $topicMap');
-
-    // Add sample videos with mapped IDs
+    // Add sample videos directly with their topic IDs
     for (var video in sampleVideos) {
       final videoData = Map<String, dynamic>.from(video);
-
-      // Map the old topic ID to the new one
-      final oldTopicId = videoData['topicId'] as String;
-      final newTopicId = topicMap[oldTopicId];
-      if (newTopicId == null) {
-        debugPrint('Warning: No mapping found for topic ID: $oldTopicId');
-        continue;
-      }
-      videoData['topicId'] = newTopicId;
-
-      // Map the old learning path ID to the new one
-      final oldPathId = videoData['learningPathId'] as String;
-      final newPathId = learningPathMap[oldPathId];
-      if (newPathId == null) {
-        debugPrint(
-            'Warning: No mapping found for learning path ID: $oldPathId');
-        continue;
-      }
-      videoData['learningPathId'] = newPathId;
-
-      // Insert the geometry drawing spec JSON into this video record
-      videoData['videoJson'] = jsonDecode(geometryDrawingSpec);
 
       // Convert DateTime to Timestamp for Firestore
       videoData['createdAt'] =
@@ -564,8 +498,9 @@ class FirestoreService {
 
       await _db.collection('videos').add(videoData);
       debugPrint(
-          'Added video: ${videoData['title']} to path: ${videoData['learningPathId']} and topic: ${videoData['topicId']}');
+          'Added video: ${videoData['title']} for topic: ${videoData['topicId']}');
     }
+
     debugPrint('Sample data initialization complete');
   }
 
@@ -985,6 +920,8 @@ class FirestoreService {
 
         // Add topics (standards) to the main topics collection
         final strands = yearData['strands'] as List<dynamic>;
+        int orderIndex = 1; // Start at 1 and increment for each topic
+
         for (final strandData in strands) {
           final standards = strandData['standards'] as List<dynamic>;
           for (final standardData in standards) {
@@ -997,7 +934,7 @@ class FirestoreService {
             final topicDoc = await _db.collection('topics').doc(topicId).get();
 
             if (!topicDoc.exists) {
-              // If the topic doesn't exist, create it
+              // If the topic doesn't exist, create it with sequential orderIndex
               await _db.collection('topics').doc(topicId).set({
                 'id': topicId,
                 'title': topicTitle,
@@ -1006,9 +943,10 @@ class FirestoreService {
                 'subject': subject.toLowerCase(),
                 'prerequisites': [],
                 'thumbnail': '',
-                'orderIndex': _getOrder(standardId),
+                'orderIndex': orderIndex, // Use the sequential order
                 'learningPathId': learningPathId,
               });
+              orderIndex++; // Increment for next topic
             }
           }
         }
@@ -1019,13 +957,6 @@ class FirestoreService {
       print('Error adding curriculum data: $e');
       rethrow;
     }
-  }
-
-  // Helper function to determine the order of topics based on standardId
-  int _getOrder(String standardId) {
-    // Extract the numeric part of the standardId and use it as the order
-    final numericPart = int.tryParse(standardId.split('.').last) ?? 0;
-    return numericPart;
   }
 
   Future<void> initializeCurriculumData() async {
@@ -1042,9 +973,33 @@ class FirestoreService {
       final curriculumData = jsonDecode(jsonString);
 
       await addCurriculumData(curriculumData);
-      print('Curriculum data initialized successfully!');
+      await initializeSampleVideos();
+      print('Curriculum data and sample videos initialized successfully!');
     } catch (e) {
       print('Error initializing curriculum data: $e');
     }
+  }
+
+  Future<void> initializeSampleVideos() async {
+    debugPrint('Checking for existing videos...');
+    final videosSnapshot = await _db.collection('videos').get();
+    if (videosSnapshot.docs.isNotEmpty) {
+      debugPrint('Videos already exist, skipping initialization');
+      return;
+    }
+
+    debugPrint('Initializing sample videos...');
+    for (final videoData in sampleVideos) {
+      // Use the geometry drawing spec for videoJson
+      final Map<String, dynamic> videoJsonData =
+          jsonDecode(geometryDrawingSpec) as Map<String, dynamic>;
+
+      videoData['videoJson'] = videoJsonData;
+      videoData['createdAt'] = FieldValue.serverTimestamp();
+
+      await _db.collection('videos').doc(videoData['id']).set(videoData);
+      debugPrint('Added video: ${videoData['title']}');
+    }
+    debugPrint('Sample videos initialized successfully!');
   }
 }

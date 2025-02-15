@@ -104,6 +104,7 @@ class _TopicsScreenState extends State<TopicsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('learningPathId: ${widget.learningPathId}');
     return Scaffold(
       appBar: AppBar(
         title: const Text('Topics'),
@@ -137,7 +138,8 @@ class _TopicsScreenState extends State<TopicsScreen> {
                         vertical: 8,
                       ),
                       child: ExpansionTile(
-                        title: Text(topic['id'] ?? 'Unnamed Topic'),
+                        title: Text(
+                            '${topic['orderIndex']}. ${topic['title'] ?? topic['id'] ?? 'Unnamed Topic'}'),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
