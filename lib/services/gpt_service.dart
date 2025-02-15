@@ -121,47 +121,10 @@ class GptService {
 
 Topic: $topic
 
-CRITICAL SPATIAL PLANNING REQUIREMENTS:
-1. Screen Dimensions: 320x568 points (iPhone SE 1st gen)
-   - Width: 0 to 320 points
-   - Height: 0 to 568 points
-   - You MUST calculate final positions of ALL elements
-
-2. Element Size Guidelines:
-   - Each handwritten character: 35px height, 20px width
-   - Typical shape sizes: 80-150px
-   - Minimum spacing between elements: 30px
-   - Label padding from shapes: 20px minimum
-
-3. Spatial Planning Steps:
-   a) First, calculate total space needed for all shapes
-   b) Then, calculate space needed for all labels
-   c) Add padding between elements
-   d) Verify total space fits within 320x568
-   e) If too large, scale down proportionally
-   f) If too small, consider using more vertical space
-
-4. Position Calculation Rules:
-   - For each shape: x_position + shape_width must be < 320
-   - For each shape: y_position + shape_height must be < 568
-   - For each label: text_length * 20 + x_position must be < 320
-   - For each label: y_position + 35 must be < 568
-   - Account for multi-line text in space calculations
-
 Return a concise description of the final drawing we want and the teaching script. Include:
 1. The concept/topic description
-2. List of shapes with EXACT coordinates (must include width/height), colors, and labeling positions
-   Format: {
-     "shape": "type",
-     "position": {"x": X, "y": Y},
-     "dimensions": {"width": W, "height": H},
-     "label": {
-       "text": "text",
-       "position": {"x": X, "y": Y},
-       "spaceNeeded": {"width": W, "height": H}
-     }
-   }
-3. 2-3 sentence teaching script summary to be used in the video.
+2. List of shapes with approximate coordinates, colors, and labeling ideas
+3. 2-3 sentence teaching script summary
 
 Output as a simple JSON with "layoutDescription" and "teachingFocus" fields only. No additional text or commentary.''';
 

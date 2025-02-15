@@ -133,7 +133,7 @@ class FirestoreService {
     return _db
         .collection('videos')
         .where('topicId', isEqualTo: topicId)
-        .orderBy('orderInPath')
+        .orderBy('createdAt')
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data()!,
           toFirestore: (data, _) => data,
@@ -218,12 +218,14 @@ class FirestoreService {
         yield* _db
             .collection('videos')
             .where('learningPathId', isEqualTo: 'completed_$learningPathId')
+            .orderBy('createdAt')
             .snapshots();
       } else {
         yield* _db
             .collection('videos')
             .where('topicId', isEqualTo: currentTopicId)
             .where('learningPathId', isEqualTo: learningPathId)
+            .orderBy('createdAt')
             .snapshots();
       }
     });
@@ -234,7 +236,7 @@ class FirestoreService {
     return _db
         .collection('videos')
         .where('topic', isEqualTo: topicId)
-        .orderBy('orderInPath')
+        .orderBy('createdAt')
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data()!,
           toFirestore: (data, _) => data,
@@ -245,6 +247,7 @@ class FirestoreService {
   Stream<QuerySnapshot<Map<String, dynamic>>> getRandomVideos() {
     return _db
         .collection('videos')
+        .orderBy('createdAt')
         .limit(20)
         .withConverter<Map<String, dynamic>>(
           fromFirestore: (snapshot, _) => snapshot.data()!,
